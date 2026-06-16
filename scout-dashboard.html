@@ -116,7 +116,7 @@
         .req-card {
             background: white;
             border-radius: 24px;
-            padding: 20px;
+            padding: 24px 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
 
@@ -129,12 +129,17 @@
 
         .req-name {
             font-weight: 600;
-            font-size: 16px;
+            font-size: 20px;
             color: #2d5a4a;
         }
 
+        .req-left-icon {
+            font-size: 32px;
+            margin-right: 12px;
+        }
+
         .req-status-icon {
-            font-size: 28px;
+            font-size: 32px;
         }
 
         .req-footer {
@@ -361,11 +366,11 @@
                 return `
                     <div class="req-card">
                         <div class="req-header">
-                            <span class="req-name"><span style="margin-right: 10px;">${leftIcon}</span>${req}</span>
+                            <span class="req-name"><span class="req-left-icon">${leftIcon}</span>${req}</span>
                             <span class="req-status-icon">${statusIcon}</span>
                         </div>
                         <div class="req-footer">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 Notes</a>
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">Notes</a>
                             ${actionHtml}
                         </div>
                     </div>
