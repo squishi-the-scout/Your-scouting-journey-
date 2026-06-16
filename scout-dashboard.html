@@ -21,33 +21,297 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
         h1 { color: #2d5a4a; font-size: 28px; margin-bottom: 12px; }
-        .subtitle { color: #5a7c6e; margin-bottom: 32px; border-bottom: 2px solid #e0f0e8; padding-bottom: 16px; }
+        .subtitle { color: #5a7c6e; margin-bottom: 20px; }
         .logout-btn { background: #8fbcbb; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; margin-bottom: 30px; }
-        .info-card { background: #f9fbfa; padding: 24px; border-radius: 24px; text-align: center; }
-        .info-card h2 { color: #2d5a4a; margin-bottom: 16px; }
-        .info-card p { color: #5a7c6e; margin-bottom: 8px; }
+        
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0f0e8;
+            flex-wrap: wrap;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5a7c6e;
+            border-radius: 20px 20px 0 0;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #2d5a4a;
+            background: #e0f0e8;
+        }
+        
+        /* Progress bar */
+        .progress-bar-container {
+            background: #e0e0e0;
+            border-radius: 20px;
+            height: 20px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: #8fbcbb;
+            height: 100%;
+            width: 0%;
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #5a7c6e;
+            margin-bottom: 30px;
+        }
+        
+        /* Requirement items */
+        .requirement-item {
+            background: #f9fbfa;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .req-icon {
+            font-size: 24px;
+            min-width: 40px;
+        }
+        .req-name {
+            flex: 1;
+            font-weight: 500;
+            color: #2d5a4a;
+        }
+        .mark-ready-btn {
+            background: #8fbcbb;
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .mark-ready-btn:hover {
+            background: #7da8a7;
+        }
+        .pending-badge {
+            background: #f0b27a;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .approved-badge {
+            background: #8fbcbb;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🌸 Welcome, <span id="scout-name">Scout</span>!</h1>
-        <div class="subtitle">Your personal progress dashboard</div>
+        <div class="subtitle">Your Scouting Journey</div>
         <button id="logout-btn" class="logout-btn">Logout</button>
-        <div class="info-card">
-            <h2>📋 Your Dashboard</h2>
-            <p>This is <strong id="username-display">your</strong> dashboard.</p>
-            <p>✅ Requirements list coming soon!</p>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <button class="tab active" data-tab="membership">🏕️ Membership</button>
+            <button class="tab" data-tab="second">⭐ Second Class</button>
+            <button class="tab" data-tab="first">🌟 First Class</button>
+            <button class="tab" data-tab="badges">🏅 Badges</button>
         </div>
+
+        <!-- Progress section -->
+        <div id="progress-section"></div>
+        <div id="requirements-list"></div>
     </div>
-    <script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
+            authDomain: "gis-scout-tracker.firebaseapp.com",
+            projectId: "gis-scout-tracker",
+            storageBucket: "gis-scout-tracker.firebasestorage.app",
+            messagingSenderId: "592952880381",
+            appId: "1:592952880381:web:be5989bc062b7b26cb6294"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser || currentUser.role !== 'scout') window.location.href = 'index.html';
         document.getElementById('scout-name').innerText = currentUser.username;
-        document.getElementById('username-display').innerText = currentUser.username;
+
         document.getElementById('logout-btn').onclick = () => {
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         };
+
+        // Requirement data
+        const requirementsData = {
+            membership: [
+                "Law and Promise",
+                "Scout Uniform, Badges and Positions",
+                "Knots and Whipping",
+                "Woodcraft Signs",
+                "National Flag, Anthem, Emblem, Tree, Flower",
+                "Scouting History",
+                "Salutes, Signs, Handshake, Scout Staff",
+                "Dress a Wound",
+                "Whistle Calls, Silent Signs, Formations",
+                "Re-test Membership",
+                "Interview by Scouter",
+                "Investiture"
+            ],
+            second: [
+                "Second Class Requirement 1",
+                "Second Class Requirement 2",
+                "Second Class Requirement 3"
+            ],
+            first: [
+                "First Class Requirement 1",
+                "First Class Requirement 2",
+                "First Class Requirement 3"
+            ],
+            badges: [
+                "Coming Soon: Proficiency Badges"
+            ]
+        };
+
+        let currentTab = 'membership';
+        let scoutStatus = {}; // { "requirementName": "approved" | "pending" | "todo" }
+
+        async function loadScoutStatus() {
+            const statusDoc = await getDoc(doc(db, 'scoutStatus', currentUser.uid));
+            if (statusDoc.exists()) {
+                scoutStatus = statusDoc.data();
+            } else {
+                scoutStatus = {};
+            }
+        }
+
+        async function saveScoutStatus() {
+            await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
+        }
+
+        function getIconForStatus(status) {
+            if (status === 'approved') return '🟢';
+            if (status === 'pending') return '✋';
+            return '⭕';
+        }
+
+        function updateProgressBar() {
+            const requirements = requirementsData[currentTab];
+            const total = requirements.length;
+            let completed = 0;
+            requirements.forEach(req => {
+                if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
+            });
+            const percent = total > 0 ? (completed / total) * 100 : 0;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+            document.getElementById('progress-text').innerHTML = `${completed} of ${total} completed`;
+        }
+
+        async function markAsReady(reqName) {
+            const key = `${currentTab}_${reqName}`;
+            if (scoutStatus[key] === 'approved') return;
+            scoutStatus[key] = 'pending';
+            await saveScoutStatus();
+            renderRequirements();
+        }
+
+        function renderRequirements() {
+            const container = document.getElementById('requirements-list');
+            const requirements = requirementsData[currentTab];
+            
+            container.innerHTML = requirements.map(req => {
+                const key = `${currentTab}_${req}`;
+                const status = scoutStatus[key] || 'todo';
+                const icon = getIconForStatus(status);
+                let actionButton = '';
+                
+                if (status === 'todo') {
+                    actionButton = `<button class="mark-ready-btn" data-req="${req}">Mark as ready</button>`;
+                } else if (status === 'pending') {
+                    actionButton = `<span class="pending-badge">Waiting for leader</span>`;
+                } else if (status === 'approved') {
+                    actionButton = `<span class="approved-badge">✓ Completed!</span>`;
+                }
+                
+                return `
+                    <div class="requirement-item">
+                        <span class="req-icon">${icon}</span>
+                        <span class="req-name">${req}</span>
+                        ${actionButton}
+                    </div>
+                `;
+            }).join('');
+
+            // Add event listeners for "Mark as ready" buttons
+            document.querySelectorAll('.mark-ready-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const reqName = btn.getAttribute('data-req');
+                    markAsReady(reqName);
+                });
+            });
+            
+            updateProgressBar();
+        }
+
+        async function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => {
+                if (t.getAttribute('data-tab') === tab) {
+                    t.classList.add('active');
+                } else {
+                    t.classList.remove('active');
+                }
+            });
+            
+            await loadScoutStatus();
+            renderRequirements();
+        }
+
+        // Tab click listeners
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                switchTab(tab.getAttribute('data-tab'));
+            });
+        });
+
+        // Add progress bar HTML
+        const progressSection = document.getElementById('progress-section');
+        progressSection.innerHTML = `
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+            <div id="progress-text" class="progress-text">Loading...</div>
+        `;
+
+        // Initialize
+        async function init() {
+            await loadScoutStatus();
+            renderRequirements();
+        }
+        init();
     </script>
 </body>
 </html>
