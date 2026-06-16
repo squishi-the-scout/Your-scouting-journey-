@@ -8,10 +8,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>🌸 Welcome, <span id="scout-name">Scout</span>!</h1>
-        <p class="subtitle">Your Scouting Journey</p>
-
-        <button id="logout-btn" class="button logout-btn">Logout</button>
+        <div class="header-card">
+            <h1>🌸 Welcome, <span id="scout-name">Scout</span></h1>
+            <div class="subtitle">Your Scouting Journey</div>
+            <button id="logout-btn" class="logout-btn">Log out</button>
+        </div>
 
         <div class="tab-bar">
             <button class="tab active" data-tab="membership">🏕️ Membership</button>
@@ -20,19 +21,17 @@
             <button class="tab" data-tab="badges">🏅 Badges</button>
         </div>
 
-        <div class="progress-section">
-            <div class="progress-label">
-                <span>Progress</span>
-                <span id="progress-count">0/0 completed</span>
+        <div class="progress-card">
+            <div class="progress-header">
+                <span>📊 Progress</span>
+                <span id="progress-count">0/0</span>
             </div>
-            <div class="progress-bar-container">
-                <div id="progress-bar" class="progress-bar"></div>
+            <div class="progress-bar-bg">
+                <div id="progress-bar" class="progress-bar-fill"></div>
             </div>
         </div>
 
-        <div id="requirements-list" class="requirements-list">
-            Loading...
-        </div>
+        <div id="requirements-grid" class="requirements-grid"></div>
     </div>
 
     <script type="module" src="scout-dashboard.js"></script>
