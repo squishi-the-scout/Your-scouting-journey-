@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirement Notes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        h1 { color: #2d5a4a; font-size: 28px; margin-bottom: 12px; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #8fbcbb;
+            text-decoration: none;
+        }
+        .content {
+            line-height: 1.6;
+            color: #2d5a4a;
+        }
+        .content h3 { margin-top: 20px; margin-bottom: 10px; }
+        .content ul { margin-left: 20px; margin-bottom: 20px; }
+        .content li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="scout-dashboard.html" class="back-link">← Back to Dashboard</a>
+        <h1 id="req-title">Loading...</h1>
+        <div id="req-content" class="content">Loading notes...</div>
+    </div>
+
+    <script>
+        // Get requirement from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const reqName = urlParams.get('name');
+        const tab = urlParams.get('tab') || 'membership';
+
+        // Notes content for each requirement
+        const notesData = {
+            membership: {
+                "Law and Promise": {
+                    title: "Law and Promise",
+                    content: `
+                        <h3>📖 What to learn:</h3>
+                        <p>Write the Scout Law and Promise clearly in your Logbook. Understand what each point means.</p>
+                        <h3>🗣️ Discussion points:</h3>
+                        <ul>
+                            <li>What does "A Scout is trustworthy" mean in daily life?</li>
+                            <li>How can you practice the Scout Promise at school and at home?</li>
+                            <li>Talk with your leader about how Scouting has changed you.</li>
+                        </ul>
+                        <h3>✅ To pass:</h3>
+                        <p>Discuss with your leader how you live by the Promise every day.</p>
+                    `
+                },
+                "Knots and Whipping": {
+                    title: "Knots and Whipping",
+                    content: `
+                        <h3>🪢 Knots you need to know:</h3>
+                        <ul>
+                            <li><strong>Reef Knot</strong> - for joining two ropes of equal thickness</li>
+                            <li><strong>Sheet Bend</strong> - for joining ropes of different thickness</li>
+                            <li><strong>Clove Hitch</strong> - for starting lashings</li>
+                            <li><strong>Bowline</strong> - for making a fixed loop</li>
+                            <li><strong>Round Turn and Two Half Hitches</strong> - for tying to a post</li>
+                            <li><strong>Sheep Shank</strong> - for shortening a rope</li>
+                        </ul>
+                        <h3>📝 Practice:</h3>
+                        <p>Practice each knot until you can tie it blindfolded. Demonstrate all six to your leader.</p>
+                        <h3>🔧 Whipping:</h3>
+                        <p>Learn to whip the end of a rope to prevent fraying.</p>
+                    `
+                }
+                // Add more requirements here as you write them
+            }
+        };
+
+        function getNotes(tab, name) {
+            if (notesData[tab] && notesData[tab][name]) {
+                return notesData[tab][name];
+            }
+            return {
+                title: name,
+                content: `<p>📝 Notes for "${name}" coming soon. Ask your leader for guidance.</p>`
+            };
+        }
+
+        const notes = getNotes(tab, reqName);
+        document.getElementById('req-title').innerText = notes.title;
+        document.getElementById('req-content').innerHTML = notes.content;
+    </script>
+</body>
+</html>
