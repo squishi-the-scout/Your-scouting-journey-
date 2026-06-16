@@ -49,10 +49,7 @@
             usersSnapshot.forEach(doc => {
                 const data = doc.data();
                 if (data.role === 'scout') {
-                    scouts.push({ 
-                        id: doc.id,           // This is the email (e.g., zasha@gis-scout.local)
-                        username: data.username 
-                    });
+                    scouts.push({ id: doc.id, username: data.username });
                 }
             });
             return scouts;
@@ -70,7 +67,6 @@
             container.innerHTML = '';
             
             for (const scout of scouts) {
-                // Use scout.id (the email) to look up progress
                 const statusDoc = await getDoc(doc(db, 'scoutStatus', scout.id));
                 const status = statusDoc.exists() ? statusDoc.data() : {};
                 
