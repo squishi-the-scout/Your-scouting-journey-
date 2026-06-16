@@ -20,10 +20,8 @@
             padding: 40px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        h1 { color: #2d5a4a; font-size: 28px; margin-bottom: 12px; }
-        .subtitle { color: #5a7c6e; margin-bottom: 20px; }
+        h1 { color: #2d5a4a; margin-bottom: 20px; }
         .logout-btn { background: #8fbcbb; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; margin-bottom: 30px; }
-        
         .scout-card {
             background: #f9fbfa;
             border-radius: 24px;
@@ -31,26 +29,13 @@
             margin-bottom: 30px;
             border: 1px solid #e0f0e8;
         }
-        .scout-name {
-            font-size: 22px;
-            font-weight: 600;
-            color: #2d5a4a;
-            margin-bottom: 16px;
-        }
+        .scout-name { font-size: 22px; font-weight: 600; color: #2d5a4a; margin-bottom: 16px; }
         .requirement-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 12px 0;
             border-bottom: 1px solid #e0e0e0;
-        }
-        .req-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .req-icon {
-            font-size: 20px;
         }
         .approve-btn {
             background: #8fbcbb;
@@ -60,21 +45,14 @@
             border-radius: 20px;
             cursor: pointer;
         }
-        .approve-btn:hover {
-            background: #7da8a7;
-        }
-        .approved-text {
-            color: #8fbcbb;
-            font-weight: 500;
-        }
+        .no-pending { color: #5a7c6e; padding: 12px 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>👋 Leader Dashboard</h1>
-        <div class="subtitle">Manage scout progress</div>
         <button id="logout-btn" class="logout-btn">Logout</button>
-        <div id="scouts-list"></div>
+        <div id="scouts-list">Loading...</div>
     </div>
 
     <script type="module">
@@ -96,117 +74,91 @@
         const db = getFirestore(app);
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
+        if (!currentUser || currentUser.role !== 'leader') {
+            window.location.href = 'index.html';
+        }
 
         document.getElementById('logout-btn').onclick = () => {
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         };
 
-        const requirementsData = {
-            membership: [
-                "Law and Promise",
-                "Scout Uniform, Badges and Positions",
-                "Knots and Whipping",
-                "Woodcraft Signs",
-                "National Flag, Anthem, Emblem, Tree, Flower",
-                "Scouting History",
-                "Salutes, Signs, Handshake, Scout Staff",
-                "Dress a Wound",
-                "Whistle Calls, Silent Signs, Formations",
-                "Re-test Membership",
-                "Interview by Scouter",
-                "Investiture"
-            ]
-        };
+        const membershipReqs = [
+            "Law and Promise", "Scout Uniform, Badges and Positions", "Knots and Whipping",
+            "Woodcraft Signs", "National Flag, Anthem, Emblem, Tree, Flower", "Scouting History",
+            "Salutes, Signs, Handshake, Scout Staff", "Dress a Wound",
+            "Whistle Calls, Silent Signs, Formations", "Re-test Membership",
+            "Interview by Scouter", "Investiture"
+        ];
 
         async function loadScouts() {
-            const usersRef = collection(db, 'users');
-            const snapshot = await getDocs(usersRef);
+            const usersSnapshot = await getDocs(collection(db, 'users'));
             const scouts = [];
-            for (const userDoc of snapshot.docs) {
-                const data = userDoc.data();
+            usersSnapshot.forEach(doc => {
+                const data = doc.data();
                 if (data.role === 'scout') {
-                    scouts.push({ id: userDoc.id, username: data.username });
+                    scouts.push({ id: doc.id, username: data.username });
                 }
-            }
+            });
             return scouts;
         }
 
-        async function loadScoutStatus(scoutId) {
-            const statusDoc = await getDoc(doc(db, 'scoutStatus', scoutId));
-            if (statusDoc.exists()) {
-                return statusDoc.data();
-            }
-            return {};
-        }
-
-        async function approveRequirement(scoutId, tab, reqName) {
-            const statusRef = doc(db, 'scoutStatus', scoutId);
-            const currentStatus = await loadScoutStatus(scoutId);
-            currentStatus[`${tab}_${reqName}`] = 'approved';
-            await setDoc(statusRef, currentStatus);
-            renderDashboard();
-        }
-
-        async function renderDashboard() {
+        async function render() {
             const scouts = await loadScouts();
             const container = document.getElementById('scouts-list');
-            container.innerHTML = '';
-
-            for (const scout of scouts) {
-                const status = await loadScoutStatus(scout.id);
-                
-                // Collect pending requirements
-                const pendingItems = [];
-                for (const req of requirementsData.membership) {
-                    const key = `membership_${req}`;
-                    if (status[key] === 'pending') {
-                        pendingItems.push(req);
-                    }
-                }
-
-                if (pendingItems.length === 0) {
-                    container.innerHTML += `
-                        <div class="scout-card">
-                            <div class="scout-name">📋 ${scout.username}</div>
-                            <div>✨ No pending approvals — all caught up!</div>
-                        </div>
-                    `;
-                } else {
-                    let reqHtml = '';
-                    for (const req of pendingItems) {
-                        reqHtml += `
-                            <div class="requirement-row">
-                                <div class="req-info">
-                                    <span class="req-icon">✋</span>
-                                    <span>${req}</span>
-                                </div>
-                                <button class="approve-btn" data-scout="${scout.id}" data-req="${req}">Approve</button>
-                            </div>
-                        `;
-                    }
-                    
-                    container.innerHTML += `
-                        <div class="scout-card">
-                            <div class="scout-name">📋 ${scout.username}</div>
-                            ${reqHtml}
-                        </div>
-                    `;
-                }
+            
+            if (scouts.length === 0) {
+                container.innerHTML = '<p>No scouts found.</p>';
+                return;
             }
 
-            // Add approve button listeners
+            container.innerHTML = '';
+            
+            for (const scout of scouts) {
+                const statusDoc = await getDoc(doc(db, 'scoutStatus', scout.id));
+                const status = statusDoc.exists() ? statusDoc.data() : {};
+                
+                const pending = [];
+                for (const req of membershipReqs) {
+                    if (status[`membership_${req}`] === 'pending') {
+                        pending.push(req);
+                    }
+                }
+                
+                const card = document.createElement('div');
+                card.className = 'scout-card';
+                card.innerHTML = `<div class="scout-name">📋 ${scout.username}</div>`;
+                
+                if (pending.length === 0) {
+                    card.innerHTML += '<div class="no-pending">✅ No pending approvals</div>';
+                } else {
+                    pending.forEach(req => {
+                        const row = document.createElement('div');
+                        row.className = 'requirement-row';
+                        row.innerHTML = `
+                            <span>✋ ${req}</span>
+                            <button class="approve-btn" data-scout="${scout.id}" data-req="${req}">Approve</button>
+                        `;
+                        card.appendChild(row);
+                    });
+                }
+                container.appendChild(card);
+            }
+            
             document.querySelectorAll('.approve-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const scoutId = btn.getAttribute('data-scout');
-                    const reqName = btn.getAttribute('data-req');
-                    approveRequirement(scoutId, 'membership', reqName);
+                btn.addEventListener('click', async (e) => {
+                    const scoutId = btn.dataset.scout;
+                    const reqName = btn.dataset.req;
+                    const statusRef = doc(db, 'scoutStatus', scoutId);
+                    const current = (await getDoc(statusRef)).data() || {};
+                    current[`membership_${reqName}`] = 'approved';
+                    await setDoc(statusRef, current);
+                    render(); // refresh
                 });
             });
         }
-
-        renderDashboard();
+        
+        render();
     </script>
 </body>
 </html>
