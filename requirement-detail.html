@@ -68,12 +68,8 @@
             <h1 id="req-title">Loading...</h1>
             <div class="subtitle">Study notes and requirements</div>
         </div>
-
-        <div id="notes-content" class="notes-content">
-            <p>Loading notes...</p>
-        </div>
+        <div id="notes-content" class="notes-content"><p>Loading notes...</p></div>
     </div>
-
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const reqName = urlParams.get('name');
@@ -83,387 +79,51 @@
             membership: {
                 "Law and Promise": {
                     title: "Law and Promise",
-                    content: `
-                        <h3>📖 What to Learn</h3>
-                        <p>Write the Scout Law and Promise clearly in your Logbook. Understand what each point means.</p>
-
-                        <div class="highlight">
-                            <strong>The Scout Promise (English):</strong><br>
-                            "On my honour, I promise that I will do my best to do my duty to Allah and the country, to help others at all times, and to obey the Scout Law."
-                        </div>
-
-                        <div class="highlight">
-                            <strong>The Scout Promise (Dhivehi):</strong><br>
-                            "ސްކައުޓުންގެ ގާނޫނުތަކަށް އަބަދުވެސް ފުރިހަމައަށް ތަބާވެ، މާތްﷲ އަށާއި އަމިއްލަ ވަތަނަށް އަދާކޮށްދޭންޖެހޭ ވާޖިބްތައް ފުރިހަމައަށް އަދާކުރުމާއެކު އެހީއަކަށް ބޭނުންވެފައިވާ ފަރާތްތަކަށް އަބަދުވެސް އެހީތެރިވުމަށް އަހުރެން ވައުދުވަމެވެ."
-                        </div>
-
-                        <h3>📜 The 11 Scout Laws</h3>
-                        <ul>
-                            <li><strong>1.</strong> A Scout is Trustworthy</li>
-                            <li><strong>2.</strong> A Scout is Loyal</li>
-                            <li><strong>3.</strong> A Scout is Helpful</li>
-                            <li><strong>4.</strong> A Scout is Brotherly</li>
-                            <li><strong>5.</strong> A Scout is Friendly</li>
-                            <li><strong>6.</strong> A Scout is Kind</li>
-                            <li><strong>7.</strong> A Scout is Tolerant</li>
-                            <li><strong>8.</strong> A Scout is Cheerful</li>
-                            <li><strong>9.</strong> A Scout is Thrifty</li>
-                            <li><strong>10.</strong> A Scout is Environment Friendly</li>
-                            <li><strong>11.</strong> A Scout is Clean in thought, Word, and Deed</li>
-                        </ul>
-
-                        <h3>🗣️ The Scout Motto</h3>
-                        <p><strong>"Be Prepared"</strong> — always in a state of readiness in mind and body to do your duty.</p>
-
-                        <h3>🗣️ Discussion Points</h3>
-                        <ul>
-                            <li>What does each point of the Scout Law mean to you?</li>
-                            <li>Give an example of how you lived the Promise this week.</li>
-                            <li>Talk with your leader about how Scouting has changed you.</li>
-                        </ul>
-                    `
+                    content: `<h3>📖 What to Learn</h3><p>Write the Scout Law and Promise clearly in your Logbook. Understand what each point means.</p><div class="highlight"><strong>The Scout Promise (English):</strong><br>"On my honour, I promise that I will do my best to do my duty to Allah and the country, to help others at all times, and to obey the Scout Law."</div><div class="highlight"><strong>The Scout Promise (Dhivehi):</strong><br>"ސްކައުޓުންގެ ގާނޫނުތަކަށް އަބަދުވެސް ފުރިހަމައަށް ތަބާވެ، މާތްﷲ އަށާއި އަމިއްލަ ވަތަނަށް އަދާކޮށްދޭންޖެހޭ ވާޖިބްތައް ފުރިހަމައަށް އަދާކުރުމާއެކު އެހީއަކަށް ބޭނުންވެފައިވާ ފަރާތްތަކަށް އަބަދުވެސް އެހީތެރިވުމަށް އަހުރެން ވައުދުވަމެވެ."</div><h3>📜 The 11 Scout Laws</h3><ul><li><strong>1.</strong> A Scout is Trustworthy</li><li><strong>2.</strong> A Scout is Loyal</li><li><strong>3.</strong> A Scout is Helpful</li><li><strong>4.</strong> A Scout is Brotherly</li><li><strong>5.</strong> A Scout is Friendly</li><li><strong>6.</strong> A Scout is Kind</li><li><strong>7.</strong> A Scout is Tolerant</li><li><strong>8.</strong> A Scout is Cheerful</li><li><strong>9.</strong> A Scout is Thrifty</li><li><strong>10.</strong> A Scout is Environment Friendly</li><li><strong>11.</strong> A Scout is Clean in thought, Word, and Deed</li></ul><h3>🗣️ The Scout Motto</h3><p><strong>"Be Prepared"</strong> — always in a state of readiness in mind and body to do your duty.</p><h3>🗣️ Discussion Points</h3><ul><li>What does each point of the Scout Law mean to you?</li><li>Give an example of how you lived the Promise this week.</li><li>Talk with your leader about how Scouting has changed you.</li></ul>`
                 },
-
                 "Scout Uniform, Badges and Positions": {
                     title: "Scout Uniform, Badges and Positions",
-                    content: `
-                        <h3>👕 The Scout Uniform</h3>
-                        <p><strong>Boy Scout Uniform:</strong> Light green short-sleeved shirt with collars + dark blue long trousers.</p>
-                        <p><strong>Girl Scout Uniform:</strong> Light green shirt (long or short sleeved — if veiled, dark blue hijab with long sleeves) + dark blue long trousers.</p>
-                        <p><strong>Accessories:</strong> Plain black socks, black shoes, black Scout belt.</p>
-
-                        <h3>🏅 Badges and their Positions</h3>
-                        <table>
-                            <tr><th>Badge</th><th>Position</th></tr>
-                            <tr><td>National Membership Badge</td><td>Front of left pocket</td></tr>
-                            <tr><td>World Scout Badge</td><td>Front of right pocket</td></tr>
-                            <tr><td>Shoulder Patch ("Scouts of Maldives")</td><td>Left shoulder</td></tr>
-                            <tr><td>Patrol Badge</td><td>Patrol-designed, max 4x4cm</td></tr>
-                            <tr><td>Ranking Stripes</td><td>Upper region of right pocket (1cm from pocket)</td></tr>
-                            <tr><td>Group Number</td><td>Left arm, below atoll patch</td></tr>
-                            <tr><td>Atoll Patch</td><td>Distinguishes the atoll</td></tr>
-                            <tr><td>Temporary Insignia</td><td>Allowed for 3 months (e.g., Jamboree badge)</td></tr>
-                        </table>
-
-                        <h3>🎨 Shoulder Loops / Epaulets (Colour by Section)</h3>
-                        <ul>
-                            <li>🟡 Yellow — Cub Scouts</li>
-                            <li>🟢 Green — Scouts</li>
-                            <li>🔴 Red — Leaders</li>
-                            <li>🔵 Blue — Venture Scouts</li>
-                            <li>🔵 Dark Blue — Scout Clubs</li>
-                            <li>🟣 Purple — Council Members</li>
-                            <li>🟤 Maroon — Rover Scouts</li>
-                        </ul>
-
-                        <h3>🧣 Scarves</h3>
-                        <ul>
-                            <li><strong>Group Scarf:</strong> Represents your specific group</li>
-                            <li><strong>National Scarf:</strong> Red with green/white stripes and a fish — worn for national events</li>
-                            <li><strong>Gilwell Scarf:</strong> Awarded to leaders achieving Wood Badge</li>
-                        </ul>
-
-                        <h3>⭐ Highest Awards</h3>
-                        <ul>
-                            <li><strong>President's Scout:</strong> Highest youth rank — awarded by the President or appointed minister</li>
-                            <li><strong>Baden Powell Award:</strong> Highest rank for Service or Rover Scouts</li>
-                        </ul>
-                    `
+                    content: `<h3>👕 The Scout Uniform</h3><p><strong>Boy Scout Uniform:</strong> Light green short-sleeved shirt with collars + dark blue long trousers.</p><p><strong>Girl Scout Uniform:</strong> Light green shirt (long or short sleeved — if veiled, dark blue hijab with long sleeves) + dark blue long trousers.</p><p><strong>Accessories:</strong> Plain black socks, black shoes, black Scout belt.</p><h3>🏅 Badges and their Positions</h3><table><tr><th>Badge</th><th>Position</th></tr><tr><td>National Membership Badge</td><td>Front of left pocket</td></tr><tr><td>World Scout Badge</td><td>Front of right pocket</td></tr><tr><td>Shoulder Patch ("Scouts of Maldives")</td><td>Left shoulder</td></tr><tr><td>Patrol Badge</td><td>Patrol-designed, max 4x4cm</td></tr><tr><td>Ranking Stripes</td><td>Upper region of right pocket (1cm from pocket)</td></tr><tr><td>Group Number</td><td>Left arm, below atoll patch</td></tr><tr><td>Atoll Patch</td><td>Distinguishes the atoll</td></tr><tr><td>Temporary Insignia</td><td>Allowed for 3 months (e.g., Jamboree badge)</td></tr></table><h3>🎨 Shoulder Loops / Epaulets (Colour by Section)</h3><ul><li>🟡 Yellow — Cub Scouts</li><li>🟢 Green — Scouts</li><li>🔴 Red — Leaders</li><li>🔵 Blue — Venture Scouts</li><li>🔵 Dark Blue — Scout Clubs</li><li>🟣 Purple — Council Members</li><li>🟤 Maroon — Rover Scouts</li></ul><h3>🧣 Scarves</h3><ul><li><strong>Group Scarf:</strong> Represents your specific group</li><li><strong>National Scarf:</strong> Red with green/white stripes and a fish — worn for national events</li><li><strong>Gilwell Scarf:</strong> Awarded to leaders achieving Wood Badge</li></ul><h3>⭐ Highest Awards</h3><ul><li><strong>President's Scout:</strong> Highest youth rank — awarded by the President or appointed minister</li><li><strong>Baden Powell Award:</strong> Highest rank for Service or Rover Scouts</li></ul>`
                 },
-
                 "Knots and Whipping": {
                     title: "Knots and Whipping",
-                    content: `
-                        <h3>🪢 Parts of a Rope</h3>
-                        <p>Two ends and a standing part.</p>
-
-                        <h3>🪢 The Knots You Need to Know</h3>
-                        <table>
-                            <tr><th>Knot</th><th>Use</th></tr>
-                            <tr><td><strong>Reef Knot</strong></td><td>Joining two ropes of equal thickness (parcel knot — not for heavy loads)</td></tr>
-                            <tr><td><strong>Sheet Bend</strong></td><td>Joining two ropes of unequal size — also for attaching flag cord to flag</td></tr>
-                            <tr><td><strong>Bowline</strong></td><td>Creates a fixed loop that won't slip or jam — used for rescue, climbing, lifesaving</td></tr>
-                            <tr><td><strong>Sheepshank</strong></td><td>Shortening a rope without cutting it — also protects a weak section</td></tr>
-                            <tr><td><strong>Clove Hitch</strong></td><td>Tying around poles and posts — used in square and diagonal lashings</td></tr>
-                            <tr><td><strong>Round Turn and Two Half Hitches</strong></td><td>Fastening rope to a post, tree, or tent peg — allows easy adjustment</td></tr>
-                            <tr><td><strong>Common Whipping</strong></td><td>Binding rope end to prevent unraveling — also prevents splitting of wooden pegs</td></tr>
-                        </table>
-
-                        <div class="highlight">
-                            <strong>💡 Tip:</strong> A figure-of-eight knot is a temporary stop; whipping is permanent.
-                        </div>
-
-                        <h3>📝 Practice</h3>
-                        <p>Practice each knot until you can tie it blindfolded. Demonstrate all six to your leader.</p>
-                    `
+                    content: `<h3>🪢 Parts of a Rope</h3><p>Two ends and a standing part.</p><h3>🪢 The Knots You Need to Know</h3><table><tr><th>Knot</th><th>Use</th></tr><tr><td><strong>Reef Knot</strong></td><td>Joining two ropes of equal thickness (parcel knot — not for heavy loads)</td></tr><tr><td><strong>Sheet Bend</strong></td><td>Joining two ropes of unequal size — also for attaching flag cord to flag</td></tr><tr><td><strong>Bowline</strong></td><td>Creates a fixed loop that won't slip or jam — used for rescue, climbing, lifesaving</td></tr><tr><td><strong>Sheepshank</strong></td><td>Shortening a rope without cutting it — also protects a weak section</td></tr><tr><td><strong>Clove Hitch</strong></td><td>Tying around poles and posts — used in square and diagonal lashings</td></tr><tr><td><strong>Round Turn and Two Half Hitches</strong></td><td>Fastening rope to a post, tree, or tent peg — allows easy adjustment</td></tr><tr><td><strong>Common Whipping</strong></td><td>Binding rope end to prevent unraveling — also prevents splitting of wooden pegs</td></tr></table><div class="highlight"><strong>💡 Tip:</strong> A figure-of-eight knot is a temporary stop; whipping is permanent.</div><h3>📝 Practice</h3><p>Practice each knot until you can tie it blindfolded. Demonstrate all six to your leader.</p>`
                 },
-
                 "Woodcraft Signs": {
                     title: "Woodcraft Signs",
-                    content: `
-                        <h3>🌲 What Are Woodcraft Signs?</h3>
-                        <p>Scout trail signs are made on the ground, close to the right-hand side of the road. They should never damage or disfigure property. When a Scout makes signs, they also draw the head of their Patrol animal.</p>
-
-                        <h3>🪧 Common Woodcraft Signs</h3>
-                        <table>
-                            <tr><th>Sign</th><th>Meaning</th></tr>
-                            <tr><td>➡️</td><td>Keep Going</td></tr>
-                            <tr><td>⬆️</td><td>This Way</td></tr>
-                            <tr><td>↷</td><td>Turn Right</td></tr>
-                            <tr><td>↶</td><td>Turn Left</td></tr>
-                            <tr><td>✗</td><td>Wrong Way</td></tr>
-                            <tr><td>⚠️</td><td>Danger / Warning</td></tr>
-                            <tr><td>⭕</td><td>Gone Home / Finished</td></tr>
-                            <tr><td>✓</td><td>Good People</td></tr>
-                            <tr><td>✗</td><td>Bad People</td></tr>
-                            <tr><td>💧</td><td>Drinkable Water</td></tr>
-                            <tr><td>💧 with ✗</td><td>Undrinkable Water</td></tr>
-                        </table>
-
-                        <div class="highlight">
-                            <strong>💡 Tip:</strong> Signs can be made with sticks, stones, pebbles, or drawn in long grass.
-                        </div>
-                    `
+                    content: `<h3>🌲 What Are Woodcraft Signs?</h3><p>Scout trail signs are made on the ground, close to the right-hand side of the road. They should never damage or disfigure property. When a Scout makes signs, they also draw the head of their Patrol animal.</p><h3>🪧 Common Woodcraft Signs</h3><table><tr><th>Sign</th><th>Meaning</th></tr><tr><td>➡️</td><td>Keep Going</td></tr><tr><td>⬆️</td><td>This Way</td></tr><tr><td>↷</td><td>Turn Right</td></tr><tr><td>↶</td><td>Turn Left</td></tr><tr><td>✗</td><td>Wrong Way</td></tr><tr><td>⚠️</td><td>Danger / Warning</td></tr><tr><td>⭕</td><td>Gone Home / Finished</td></tr><tr><td>✓</td><td>Good People</td></tr><tr><td>✗</td><td>Bad People</td></tr><tr><td>💧</td><td>Drinkable Water</td></tr><tr><td>💧 with ✗</td><td>Undrinkable Water</td></tr></table><div class="highlight"><strong>💡 Tip:</strong> Signs can be made with sticks, stones, pebbles, or drawn in long grass.</div>`
                 },
-
                 "National Flag, Anthem, Emblem, Tree, Flower": {
                     title: "National Flag, Anthem, Emblem, Tree, Flower",
-                    content: `
-                        <h3>🇲🇻 National Flag</h3>
-                        <ul>
-                            <li>Rectangular, width = 2/3 of length</li>
-                            <li>Green rectangle with white crescent in centre, surrounded by red border</li>
-                            <li><strong>Red border:</strong> Blood of national heroes who sacrificed for independence</li>
-                            <li><strong>Green:</strong> Life, progress, prosperity</li>
-                            <li><strong>White crescent:</strong> Islamic faith of the nation</li>
-                        </ul>
-
-                        <h3>🎵 National Anthem — "Qaumii Salaam"</h3>
-                        <ul>
-                            <li>Lyrics by <strong>Muhammad Jameel Didi</strong> (1948)</li>
-                            <li>Melody by <strong>Pandith Amaradeva</strong> (1972)</li>
-                            <li>Theme: national unity, Islamic faith, victory of historic battles, honouring heroes, development, respect for leaders</li>
-                        </ul>
-
-                        <h3>🛡️ National Emblem</h3>
-                        <ul>
-                            <li>Coconut palm, crescent, star, two criss-crossed National Flags, traditional title</li>
-                            <li><strong>Coconut palm:</strong> Livelihood of the nation</li>
-                            <li><strong>Crescent and star:</strong> Islamic faith and state authority</li>
-                            <li>Traditional title: <strong>"Al-Dawlat Al-Mahaldheebiyya"</strong> (State of The Maldives) — first used by Sultan Mohamed Thakurufaanu</li>
-                        </ul>
-
-                        <h3>🌴 National Tree — Dhivehi Ruh (Coconut Palm)</h3>
-                        <ul>
-                            <li>Declared: <strong>25th July 1985</strong></li>
-                            <li>Economic importance, incorporated in National Emblem</li>
-                        </ul>
-
-                        <h3>🌸 National Flower — Finifenmaa (Pink Rose)</h3>
-                        <ul>
-                            <li>Declared: <strong>25th July 1985</strong></li>
-                            <li>Easily grown in Maldivian soil</li>
-                        </ul>
-
-                        <h3>🐦 Other National Symbols</h3>
-                        <ul>
-                            <li><strong>National Bird:</strong> White-breasted waterhen</li>
-                            <li><strong>National Animal:</strong> Tuna (yellowfin)</li>
-                            <li><strong>National Currency:</strong> Rufiyaa (introduced 26th July 2015, ISO code MVR)</li>
-                            <li><strong>National Religion:</strong> Islam (100% Muslim community)</li>
-                        </ul>
-                    `
+                    content: `<h3>🇲🇻 National Flag</h3><ul><li>Rectangular, width = 2/3 of length</li><li>Green rectangle with white crescent in centre, surrounded by red border</li><li><strong>Red border:</strong> Blood of national heroes who sacrificed for independence</li><li><strong>Green:</strong> Life, progress, prosperity</li><li><strong>White crescent:</strong> Islamic faith of the nation</li></ul><h3>🎵 National Anthem — "Qaumii Salaam"</h3><ul><li>Lyrics by <strong>Muhammad Jameel Didi</strong> (1948)</li><li>Melody by <strong>Pandith Amaradeva</strong> (1972)</li><li>Theme: national unity, Islamic faith, victory of historic battles, honouring heroes, development, respect for leaders</li></ul><h3>🛡️ National Emblem</h3><ul><li>Coconut palm, crescent, star, two criss-crossed National Flags, traditional title</li><li><strong>Coconut palm:</strong> Livelihood of the nation</li><li><strong>Crescent and star:</strong> Islamic faith and state authority</li><li>Traditional title: <strong>"Al-Dawlat Al-Mahaldheebiyya"</strong> (State of The Maldives) — first used by Sultan Mohamed Thakurufaanu</li></ul><h3>🌴 National Tree — Dhivehi Ruh (Coconut Palm)</h3><ul><li>Declared: <strong>25th July 1985</strong></li><li>Economic importance, incorporated in National Emblem</li></ul><h3>🌸 National Flower — Finifenmaa (Pink Rose)</h3><ul><li>Declared: <strong>25th July 1985</strong></li><li>Easily grown in Maldivian soil</li></ul><h3>🐦 Other National Symbols</h3><ul><li><strong>National Bird:</strong> White-breasted waterhen</li><li><strong>National Animal:</strong> Tuna (yellowfin)</li><li><strong>National Currency:</strong> Rufiyaa (introduced 26th July 2015, ISO code MVR)</li><li><strong>National Religion:</strong> Islam (100% Muslim community)</li></ul>`
                 },
-
                 "Scouting History": {
                     title: "Scouting History",
-                    content: `
-                        <h3>👤 Founder — Robert Baden-Powell (B-P)</h3>
-                        <ul>
-                            <li>Born: <strong>22nd February 1857</strong>, London</li>
-                            <li>Died: <strong>8th January 1941</strong>, Nyeri, Kenya (buried there with Lady Olave)</li>
-                            <li>Army officer, specialised in scouting, map-making, reconnaissance</li>
-                            <li>Defended Mafeking (217-day siege) — boys' courage there inspired him</li>
-                            <li>Wrote "Aids to Scouting" (for soldiers) → boys used it → rewrote as "Scouting for Boys" (1908)</li>
-                        </ul>
-
-                        <h3>🌍 Beginning of Scouting</h3>
-                        <ul>
-                            <li><strong>1907:</strong> Experimental camp on Brownsea Island, Poole, Dorset (20 boys)</li>
-                            <li><strong>1908:</strong> "Scouting for Boys" published in six fortnightly parts</li>
-                            <li><strong>1909:</strong> First Scout Rally at Crystal Palace (girls attended → Girl Guides started)</li>
-                            <li><strong>1910:</strong> B-P retired from army to focus on Scouting</li>
-                            <li><strong>1920:</strong> First World Jamboree, Olympia, London — B-P acclaimed "Chief Scout of the World"</li>
-                            <li><strong>1929:</strong> Arrowe Park Jamboree — B-P given peerage as Lord Baden-Powell of Gilwell</li>
-                        </ul>
-
-                        <h3>🇲🇻 Scouting in Maldives</h3>
-                        <ul>
-                            <li>Registered: <strong>30th May 1956</strong> (19th Shawwal 1375 H)</li>
-                            <li>First Chief Scout Commissioner: <strong>Mr. Hassan Ali Didi</strong></li>
-                            <li><strong>1961:</strong> Cub Scouting began at Majeedhiyaa (under Principal J.V. Hill)</li>
-                            <li><strong>1963:</strong> Majeedhiyaa registered as first male Scout Group at Imperial Headquarters, London (by Mr. Dymoke Green)</li>
-                            <li>First investiture: <strong>26th February 1963</strong> (Cub Scouts)</li>
-                            <li>First camp: Hulhule, 4 days from <strong>28th April 1965</strong></li>
-                            <li><strong>1984 (28th January):</strong> Maldives Boy Scouts Association established</li>
-                            <li><strong>23rd July 1990:</strong> Maldives became member of World Scout Movement</li>
-                        </ul>
-
-                        <h3>🏕️ National Jamborees (1986–2007)</h3>
-                        <ul>
-                            <li>1st: Kuda Bandos, 1986</li>
-                            <li>2nd: Kaafu Hura, 1988</li>
-                            <li>3rd: Kaafu Hura, 1990</li>
-                            <li>4th: Kaafu Villingili, 1992</li>
-                            <li>5th: Kaafu Villingili, 1995</li>
-                            <li>6th: Kuda Bandos, 1998</li>
-                            <li>7th: Male Artificial Beach, 2002</li>
-                            <li>8th (Golden Jubilee): Hulhumale, 2007</li>
-                        </ul>
-                    `
+                    content: `<h3>👤 Founder — Robert Baden-Powell (B-P)</h3><ul><li>Born: <strong>22nd February 1857</strong>, London</li><li>Died: <strong>8th January 1941</strong>, Nyeri, Kenya (buried there with Lady Olave)</li><li>Army officer, specialised in scouting, map-making, reconnaissance</li><li>Defended Mafeking (217-day siege) — boys' courage there inspired him</li><li>Wrote "Aids to Scouting" (for soldiers) → boys used it → rewrote as "Scouting for Boys" (1908)</li></ul><h3>🌍 Beginning of Scouting</h3><ul><li><strong>1907:</strong> Experimental camp on Brownsea Island, Poole, Dorset (20 boys)</li><li><strong>1908:</strong> "Scouting for Boys" published in six fortnightly parts</li><li><strong>1909:</strong> First Scout Rally at Crystal Palace (girls attended → Girl Guides started)</li><li><strong>1910:</strong> B-P retired from army to focus on Scouting</li><li><strong>1920:</strong> First World Jamboree, Olympia, London — B-P acclaimed "Chief Scout of the World"</li><li><strong>1929:</strong> Arrowe Park Jamboree — B-P given peerage as Lord Baden-Powell of Gilwell</li></ul><h3>🇲🇻 Scouting in Maldives</h3><ul><li>Registered: <strong>30th May 1956</strong> (19th Shawwal 1375 H)</li><li>First Chief Scout Commissioner: <strong>Mr. Hassan Ali Didi</strong></li><li><strong>1961:</strong> Cub Scouting began at Majeedhiyaa (under Principal J.V. Hill)</li><li><strong>1963:</strong> Majeedhiyaa registered as first male Scout Group at Imperial Headquarters, London (by Mr. Dymoke Green)</li><li>First investiture: <strong>26th February 1963</strong> (Cub Scouts)</li><li>First camp: Hulhule, 4 days from <strong>28th April 1965</strong></li><li><strong>1984 (28th January):</strong> Maldives Boy Scouts Association established</li><li><strong>23rd July 1990:</strong> Maldives became member of World Scout Movement</li></ul><h3>🏕️ National Jamborees (1986–2007)</h3><ul><li>1st: Kuda Bandos, 1986</li><li>2nd: Kaafu Hura, 1988</li><li>3rd: Kaafu Hura, 1990</li><li>4th: Kaafu Villingili, 1992</li><li>5th: Kaafu Villingili, 1995</li><li>6th: Kuda Bandos, 1998</li><li>7th: Male Artificial Beach, 2002</li><li>8th (Golden Jubilee): Hulhumale, 2007</li></ul>`
                 },
-
                 "Salutes, Signs, Handshake, Scout Staff": {
                     title: "Salutes, Signs, Handshake, Scout Staff",
-                    content: `
-                        <h3>✋ Scout Sign</h3>
-                        <p>Three-finger sign (right hand, palm face out, thumb holding down little finger). Used when greeting Scouts, making/re-affirming the Promise.</p>
-                        <p><strong>Three fingers represent:</strong></p>
-                        <ul>
-                            <li>1. Honour God and Country</li>
-                            <li>2. Help Others</li>
-                            <li>3. Obey the Scout Law</li>
-                        </ul>
-
-                        <h3>🫡 Scout Salute</h3>
-                        <p>Same as sign but fingertips on brow of head. Given on:</p>
-                        <ul>
-                            <li>Greeting Scouts/Scouters (first time in the day, in uniform)</li>
-                            <li>Hoisting flag, national anthem, scout flags, funerals</li>
-                            <li>Making or re-affirming the Promise</li>
-                        </ul>
-
-                        <h3>🤝 Scout Handshake</h3>
-                        <p>Maldivian Scouts use <strong>right hand</strong> (international use left hand at international events).</p>
-
-                        <h3>🏑 Scout Staff</h3>
-                        <p>Useful for:</p>
-                        <ul>
-                            <li>Balancing while walking rough terrain</li>
-                            <li>Making stretchers, bridges, flagpoles</li>
-                            <li>Testing depth of water</li>
-                            <li>Marking and measuring</li>
-                        </ul>
-                    `
+                    content: `<h3>✋ Scout Sign</h3><p>Three-finger sign (right hand, palm face out, thumb holding down little finger). Used when greeting Scouts, making/re-affirming the Promise.</p><p><strong>Three fingers represent:</strong></p><ul><li>1. Honour God and Country</li><li>2. Help Others</li><li>3. Obey the Scout Law</li></ul><h3>🫡 Scout Salute</h3><p>Same as sign but fingertips on brow of head. Given on:</p><ul><li>Greeting Scouts/Scouters (first time in the day, in uniform)</li><li>Hoisting flag, national anthem, scout flags, funerals</li><li>Making or re-affirming the Promise</li></ul><h3>🤝 Scout Handshake</h3><p>Maldivian Scouts use <strong>right hand</strong> (international use left hand at international events).</p><h3>🏑 Scout Staff</h3><p>Useful for:</p><ul><li>Balancing while walking rough terrain</li><li>Making stretchers, bridges, flagpoles</li><li>Testing depth of water</li><li>Marking and measuring</li></ul>`
                 },
-
                 "Dress a Wound": {
                     title: "Dress a Wound",
-                    content: `
-                        <h3>🩹 Steps to Clean and Dress a Minor Cut/Wound</h3>
-                        <ol>
-                            <li>Clean the cut using any available sterile clothing</li>
-                            <li>Cover it to keep out germs</li>
-                            <li>Rest the injured area</li>
-                            <li>Consult a doctor if needed</li>
-                        </ol>
-
-                        <h3>⚠️ When to See a Doctor</h3>
-                        <ul>
-                            <li>Punctured wounds (tetanus risk)</li>
-                            <li>Severe bleeding</li>
-                            <li>Wounds on chest or face</li>
-                            <li>Possibility of dirt or broken glass still present</li>
-                        </ul>
-                    `
+                    content: `<h3>🩹 Steps to Clean and Dress a Minor Cut/Wound</h3><ol><li>Clean the cut using any available sterile clothing</li><li>Cover it to keep out germs</li><li>Rest the injured area</li><li>Consult a doctor if needed</li></ol><h3>⚠️ When to See a Doctor</h3><ul><li>Punctured wounds (tetanus risk)</li><li>Severe bleeding</li><li>Wounds on chest or face</li><li>Possibility of dirt or broken glass still present</li></ul>`
                 },
-
                 "Whistle Calls, Silent Signs, Formations": {
                     title: "Whistle Calls, Silent Signs, Formations",
-                    content: `
-                        <h3>🎵 Whistle Calls</h3>
-                        <table>
-                            <tr><th>Signal</th><th>Meaning</th></tr>
-                            <tr><td>Long blast</td><td>Attention / Silence / Alert</td></tr>
-                            <tr><td>2 long blasts</td><td>Finish / Break</td></tr>
-                            <tr><td>1 long, 3-4 short</td><td>Assemble all / Fall in</td></tr>
-                            <tr><td>1 long, 2 short, 1 long</td><td>Patrol Leaders</td></tr>
-                            <tr><td>1 long, 2 short</td><td>Duty Patrol Leader</td></tr>
-                            <tr><td>Long, Short, Long, Short...</td><td>Emergency / Danger</td></tr>
-                        </table>
-
-                        <h3>🤫 Silent Signs (Hand Signals)</h3>
-                        <table>
-                            <tr><th>Sign</th><th>Action</th></tr>
-                            <tr><td>Forward</td><td>Arm(s) pointing forward</td></tr>
-                            <tr><td>Halt</td><td>Arm raised up</td></tr>
-                            <tr><td>Hurry</td><td>Clenched fist moved up and down</td></tr>
-                            <tr><td>Down</td><td>Arm pointing down</td></tr>
-                            <tr><td>Spread out</td><td>Arms extended sideways</td></tr>
-                            <tr><td>Assemble</td><td>Arms raised and brought together</td></tr>
-                            <tr><td>Close up</td><td>Arms extended forward with fists closed</td></tr>
-                            <tr><td>Turn This Way</td><td>Arm pointing direction</td></tr>
-                        </table>
-
-                        <h3>🏗️ Formations</h3>
-                        <ul>
-                            <li><strong>Single Rank:</strong> Arms horizontal, palms turned front/back</li>
-                            <li><strong>Closed Single Rank:</strong> Arms horizontal, fists closed</li>
-                            <li><strong>Parallel Files:</strong> Arms forward, palms inward</li>
-                            <li><strong>Council "U":</strong> Arms oblique upward, palms inward</li>
-                            <li><strong>Horseshoe:</strong> Arms oblique downward, palms inward</li>
-                            <li><strong>Troop Circle:</strong> Arms oblique downward, swing front to rear</li>
-                            <li><strong>Open Column:</strong> Arms forward, bent at elbows, palms open</li>
-                            <li><strong>Close Column:</strong> Arms forward, bent at elbows, fists closed</li>
-                            <li><strong>Dismiss:</strong> Arms crossed and swung downward repeatedly</li>
-                        </ul>
-                    `
+                    content: `<h3>🎵 Whistle Calls</h3><table><tr><th>Signal</th><th>Meaning</th></tr><tr><td>Long blast</td><td>Attention / Silence / Alert</td></tr><tr><td>2 long blasts</td><td>Finish / Break</td></tr><tr><td>1 long, 3-4 short</td><td>Assemble all / Fall in</td></tr><tr><td>1 long, 2 short, 1 long</td><td>Patrol Leaders</td></tr><tr><td>1 long, 2 short</td><td>Duty Patrol Leader</td></tr><tr><td>Long, Short, Long, Short...</td><td>Emergency / Danger</td></tr></table><h3>🤫 Silent Signs (Hand Signals)</h3><table><tr><th>Sign</th><th>Action</th></tr><tr><td>Forward</td><td>Arm(s) pointing forward</td></tr><tr><td>Halt</td><td>Arm raised up</td></tr><tr><td>Hurry</td><td>Clenched fist moved up and down</td></tr><tr><td>Down</td><td>Arm pointing down</td></tr><tr><td>Spread out</td><td>Arms extended sideways</td></tr><tr><td>Assemble</td><td>Arms raised and brought together</td></tr><tr><td>Close up</td><td>Arms extended forward with fists closed</td></tr><tr><td>Turn This Way</td><td>Arm pointing direction</td></tr></table><h3>🏗️ Formations</h3><ul><li><strong>Single Rank:</strong> Arms horizontal, palms turned front/back</li><li><strong>Closed Single Rank:</strong> Arms horizontal, fists closed</li><li><strong>Parallel Files:</strong> Arms forward, palms inward</li><li><strong>Council "U":</strong> Arms oblique upward, palms inward</li><li><strong>Horseshoe:</strong> Arms oblique downward, palms inward</li><li><strong>Troop Circle:</strong> Arms oblique downward, swing front to rear</li><li><strong>Open Column:</strong> Arms forward, bent at elbows, palms open</li><li><strong>Close Column:</strong> Arms forward, bent at elbows, fists closed</li><li><strong>Dismiss:</strong> Arms crossed and swung downward repeatedly</li></ul>`
                 },
-
                 "Re-test Membership": {
                     title: "Re-test Membership",
-                    content: `
-                        <h3>📋 What This Means</h3>
-                        <p>The Scouter should make sure the scout is ready for investiture and knows the basic knowledge required for the Membership Badge.</p>
-
-                        <h3>📝 What to Do</h3>
-                        <ul>
-                            <li>Review all 1–10 above</li>
-                            <li>The leader will check your understanding</li>
-                            <li>Be honest about what you need more practice on</li>
-                        </ul>
-                    `
+                    content: `<h3>📋 What This Means</h3><p>The Scouter should make sure the scout is ready for investiture and knows the basic knowledge required for the Membership Badge.</p><h3>📝 What to Do</h3><ul><li>Review all 1–10 above</li><li>The leader will check your understanding</li><li>Be honest about what you need more practice on</li></ul>`
                 },
-
                 "Interview by Scouter": {
                     title: "Interview by Scouter",
-                    content: `
-                        <h3>🗣️ What This Means</h3>
-                        <p>The Scouter, knowing your habits, character and capabilities, talks to you and advises you on the importance of what you are being trained for — and when you make the most solemn promise to keep the Scout Promise and practice it in your daily life.</p>
-
-                        <h3>📝 What to Prepare</h3>
-                        <ul>
-                            <li>Think about how Scouting has changed you</li>
-                            <li>Be ready to share your goals</li>
-                            <li>Listen carefully to your leader's advice</li>
-                        </ul>
-                    `
+                    content: `<h3>🗣️ What This Means</h3><p>The Scouter, knowing your habits, character and capabilities, talks to you and advises you on the importance of what you are being trained for — and when you make the most solemn promise to keep the Scout Promise and practice it in your daily life.</p><h3>📝 What to Prepare</h3><ul><li>Think about how Scouting has changed you</li><li>Be ready to share your goals</li><li>Listen carefully to your leader's advice</li></ul>`
                 },
-
                 "Investiture": {
                     title: "Investiture",
-                    content: `
-                        <h3>🎓 What This Means</h3>
-                        <p>This is the most important day in a Scout's life. You promise in front of your parents, school administration, troop, and well-wishers to keep the Scout Promise and practice it in your daily life.</p>
-                        <p>The oath should be taken loudly so that all can hear.</p>
-
-                        <h3>📝 How to Prepare</h3>
-                        <ul>
-                            <li>Prepare what you will say</li>
-                            <li>Invite your family</li>
-                            <li>Remember this moment — it's the start of your Scout journey</li>
-                        </ul>
-                    `
+                    content: `<h3>🎓 What This Means</h3><p>This is the most important day in a Scout's life. You promise in front of your parents, school administration, troop, and well-wishers to keep the Scout Promise and practice it in your daily life.</p><p>The oath should be taken loudly so that all can hear.</p><h3>📝 How to Prepare</h3><ul><li>Prepare what you will say</li><li>Invite your family</li><li>Remember this moment — it's the start of your Scout journey</li></ul>`
                 }
             }
         };
