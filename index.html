@@ -114,27 +114,17 @@
     </div>
 
     <script type="module">
-       // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
-  authDomain: "gis-scout-tracker.firebaseapp.com",
-  projectId: "gis-scout-tracker",
-  storageBucket: "gis-scout-tracker.firebasestorage.app",
-  messagingSenderId: "592952880381",
-  appId: "1:592952880381:web:be5989bc062b7b26cb6294"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-            apiKey: "YOUR_API_KEY_HERE",
-            authDomain: "YOUR_AUTH_DOMAIN_HERE",
-            projectId: "YOUR_PROJECT_ID_HERE",
-            storageBucket: "YOUR_STORAGE_BUCKET_HERE",
-            messagingSenderId: "YOUR_SENDER_ID_HERE",
-            appId: "YOUR_APP_ID_HERE"
+        // Your REAL Firebase config (fixed API key)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
+            authDomain: "gis-scout-tracker.firebaseapp.com",
+            projectId: "gis-scout-tracker",
+            storageBucket: "gis-scout-tracker.firebasestorage.app",
+            messagingSenderId: "592952880381",
+            appId: "1:592952880381:web:be5989bc062b7b26cb6294"
         };
 
-        // Import Firebase (using CDN)
+        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -144,7 +134,7 @@ const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Login button handler
+        // Login button click handler
         document.getElementById('login-btn').addEventListener('click', async () => {
             const role = document.getElementById('role-select').value;
             const username = document.getElementById('username').value;
@@ -157,17 +147,14 @@ const app = initializeApp(firebaseConfig);
             }
 
             try {
-                // Convert username to email format for Firebase
                 const email = `${username}@gis-scout.local`;
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
-
-                // Get user role from Firestore
                 const userDoc = await getDoc(doc(db, 'users', email));
                 const userData = userDoc.data();
 
                 if (!userData) {
-                    errorDiv.innerText = 'User not found. Please contact your leader.';
+                    errorDiv.innerText = 'User not found. Contact your leader.';
                     return;
                 }
 
@@ -181,14 +168,12 @@ const app = initializeApp(firebaseConfig);
                     return;
                 }
 
-                // Store current user info
                 localStorage.setItem('currentUser', JSON.stringify({
                     uid: user.uid,
                     username: username,
                     role: userData.role
                 }));
 
-                // Redirect based on role
                 if (userData.role === 'leader') {
                     window.location.href = 'leader-dashboard.html';
                 } else {
