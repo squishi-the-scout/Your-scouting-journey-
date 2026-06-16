@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GIS Scouting Progress Tracker</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
@@ -20,7 +15,6 @@
             align-items: center;
             padding: 20px;
         }
-
         .login-card {
             background: white;
             border-radius: 32px;
@@ -29,29 +23,9 @@
             width: 100%;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-
-        h1 {
-            color: #2d5a4a;
-            font-size: 28px;
-            margin-bottom: 12px;
-            text-align: center;
-        }
-
-        .description {
-            color: #5a7c6e;
-            text-align: center;
-            margin-bottom: 32px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        label {
-            display: block;
-            color: #2d5a4a;
-            font-weight: 500;
-            margin-bottom: 6px;
-        }
-
+        h1 { color: #2d5a4a; font-size: 28px; margin-bottom: 12px; text-align: center; }
+        .description { color: #5a7c6e; text-align: center; margin-bottom: 32px; font-size: 14px; line-height: 1.5; }
+        label { display: block; color: #2d5a4a; font-weight: 500; margin-bottom: 6px; }
         select, input {
             width: 100%;
             padding: 12px;
@@ -61,7 +35,6 @@
             font-size: 16px;
             background: #f9fbfa;
         }
-
         button {
             width: 100%;
             padding: 14px;
@@ -72,64 +45,34 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
         }
-
-        button:hover {
-            background: #7da8a7;
-        }
-
-        .error {
-            color: #d45a7a;
-            text-align: center;
-            margin-top: 16px;
-            font-size: 14px;
-        }
+        button:hover { background: #7da8a7; }
+        .error { color: #d45a7a; text-align: center; margin-top: 16px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="login-card">
         <h1>Welcome to your Scouting Tracker</h1>
-        <div class="description">
-            This is an info hub and tracker for your journey through scouting.<br>
-            Currently designed for GIS Scouts.
-        </div>
-
+        <div class="description">This is an info hub and tracker for your journey through scouting.<br>Currently designed for GIS Scouts.</div>
         <div id="login-section">
             <label>Role</label>
             <select id="role-select">
                 <option value="scout">Scout</option>
                 <option value="leader">Leader</option>
             </select>
-
             <label>Username</label>
             <input type="text" id="username" placeholder="Enter your username">
-
             <label>Password</label>
             <input type="password" id="password" placeholder="Enter your password">
-
             <button id="login-btn">Log in</button>
             <div id="error-message" class="error"></div>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
-            authDomain: "gis-scout-tracker.firebaseapp.com",
-            projectId: "gis-scout-tracker",
-            storageBucket: "gis-scout-tracker.firebasestorage.app",
-            messagingSenderId: "592952880381",
-            appId: "1:592952880381:web:be5989bc062b7b26cb6294"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        import { auth, db } from './firebase-config.js';
+        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         document.getElementById('login-btn').addEventListener('click', async () => {
             const role = document.getElementById('role-select').value;
