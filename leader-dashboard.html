@@ -4,79 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leader Dashboard</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 32px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        h1 { color: #2d5a4a; margin-bottom: 20px; }
-        .logout-btn { background: #8fbcbb; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; margin-bottom: 30px; }
-        .scout-card {
-            background: #f9fbfa;
-            border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 30px;
-            border: 1px solid #e0f0e8;
-        }
-        .scout-name { font-size: 22px; font-weight: 600; color: #2d5a4a; margin-bottom: 16px; }
-        .requirement-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .approve-btn {
-            background: #8fbcbb;
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        .no-pending { color: #5a7c6e; padding: 12px 0; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>👋 Leader Dashboard</h1>
-        <button id="logout-btn" class="logout-btn">Logout</button>
-        <div id="scouts-list">Loading...</div>
+        <div class="header-card">
+            <h1>👋 Leader Dashboard</h1>
+            <div class="subtitle">Manage scout progress</div>
+            <button id="logout-btn" class="logout-btn">Log out</button>
+        </div>
+        <div id="scouts-list" class="requirements-grid">Loading scouts...</div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
-            authDomain: "gis-scout-tracker.firebaseapp.com",
-            projectId: "gis-scout-tracker",
-            storageBucket: "gis-scout-tracker.firebasestorage.app",
-            messagingSenderId: "592952880381",
-            appId: "1:592952880381:web:be5989bc062b7b26cb6294"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        import { auth, db } from './firebase-config.js';
+        import { collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser || currentUser.role !== 'leader') {
-            window.location.href = 'index.html';
-        }
+        if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
 
         document.getElementById('logout-btn').onclick = () => {
             localStorage.removeItem('currentUser');
@@ -108,7 +53,7 @@
             const container = document.getElementById('scouts-list');
             
             if (scouts.length === 0) {
-                container.innerHTML = '<p>No scouts found.</p>';
+                container.innerHTML = '<div class="req-card"><div class="req-name">No scouts found.</div></div>';
                 return;
             }
 
@@ -126,26 +71,28 @@
                 }
                 
                 const card = document.createElement('div');
-                card.className = 'scout-card';
-                card.innerHTML = `<div class="scout-name">📋 ${scout.username}</div>`;
+                card.className = 'req-card';
+                card.innerHTML = `<div class="req-name">📋 ${scout.username}</div>`;
                 
                 if (pending.length === 0) {
-                    card.innerHTML += '<div class="no-pending">✅ No pending approvals</div>';
+                    card.innerHTML += '<div class="req-footer" style="margin-top: 12px;"><span class="done-text">✅ No pending approvals</span></div>';
                 } else {
                     pending.forEach(req => {
-                        const row = document.createElement('div');
-                        row.className = 'requirement-row';
-                        row.innerHTML = `
+                        const reqDiv = document.createElement('div');
+                        reqDiv.className = 'req-footer';
+                        reqDiv.style.marginTop = '12px';
+                        reqDiv.style.justifyContent = 'space-between';
+                        reqDiv.innerHTML = `
                             <span>✋ ${req}</span>
-                            <button class="approve-btn" data-scout="${scout.id}" data-req="${req}">Approve</button>
+                            <button class="ready-btn" data-scout="${scout.id}" data-req="${req}">Approve</button>
                         `;
-                        card.appendChild(row);
+                        card.appendChild(reqDiv);
                     });
                 }
                 container.appendChild(card);
             }
             
-            document.querySelectorAll('.approve-btn').forEach(btn => {
+            document.querySelectorAll('.ready-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const scoutId = btn.dataset.scout;
                     const reqName = btn.dataset.req;
@@ -153,7 +100,7 @@
                     const current = (await getDoc(statusRef)).data() || {};
                     current[`membership_${reqName}`] = 'approved';
                     await setDoc(statusRef, current);
-                    render(); // refresh
+                    render();
                 });
             });
         }
