@@ -114,60 +114,73 @@
     </div>
 
     <script type="module">
-    import { auth, db } from './firebase-config.js';
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    document.getElementById('login-btn').addEventListener('click', async () => {
-        const role = document.getElementById('role-select').value;
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const errorDiv = document.getElementById('error-message');
+        const firebaseConfig = {
+            apiKey: "AIzaSyDskMiIM-XQX1oGAxpJT4Se9w-dTBZ1AZs",
+            authDomain: "gis-scout-tracker.firebaseapp.com",
+            projectId: "gis-scout-tracker",
+            storageBucket: "gis-scout-tracker.firebasestorage.app",
+            messagingSenderId: "592952880381",
+            appId: "1:592952880381:web:be5989bc062b7b26cb6294"
+        };
 
-        if (!username || !password) {
-            errorDiv.innerText = 'Please enter username and password';
-            return;
-        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        try {
-            const email = `${username}@gis-scout.local`;
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
-            const userDoc = await getDoc(doc(db, 'users', email));
-            const userData = userDoc.data();
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const role = document.getElementById('role-select').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
 
-            if (!userData) {
-                errorDiv.innerText = 'User not found. Contact your leader.';
+            if (!username || !password) {
+                errorDiv.innerText = 'Please enter username and password';
                 return;
             }
 
-            if (role === 'leader' && userData.role !== 'leader') {
-                errorDiv.innerText = 'Not authorized as leader';
-                return;
+            try {
+                const email = `${username}@gis-scout.local`;
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const userDoc = await getDoc(doc(db, 'users', email));
+                const userData = userDoc.data();
+
+                if (!userData) {
+                    errorDiv.innerText = 'User not found. Contact your leader.';
+                    return;
+                }
+
+                if (role === 'leader' && userData.role !== 'leader') {
+                    errorDiv.innerText = 'Not authorized as leader';
+                    return;
+                }
+
+                if (role === 'scout' && userData.role !== 'scout') {
+                    errorDiv.innerText = 'Not authorized as scout';
+                    return;
+                }
+
+                localStorage.setItem('currentUser', JSON.stringify({
+                    uid: user.uid,
+                    username: username,
+                    role: userData.role
+                }));
+
+                if (userData.role === 'leader') {
+                    window.location.href = 'leader-dashboard.html';
+                } else {
+                    window.location.href = 'scout-dashboard.html';
+                }
+
+            } catch (error) {
+                errorDiv.innerText = 'Login failed: ' + error.message;
+                console.error(error);
             }
-
-            if (role === 'scout' && userData.role !== 'scout') {
-                errorDiv.innerText = 'Not authorized as scout';
-                return;
-            }
-
-            localStorage.setItem('currentUser', JSON.stringify({
-                uid: user.uid,
-                username: username,
-                role: userData.role
-            }));
-
-            if (userData.role === 'leader') {
-                window.location.href = 'leader-dashboard.html';
-            } else {
-                window.location.href = 'scout-dashboard.html';
-            }
-
-        } catch (error) {
-            errorDiv.innerText = 'Login failed: ' + error.message;
-            console.error(error);
-        }
-    });
-</script>
+        });
+    </script>
 </body>
 </html>
