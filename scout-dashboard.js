@@ -43,10 +43,22 @@ async function saveStatus() {
     await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
 }
 
-function getIcon(status) {
-    if (status === 'approved') return '🟢';
-    if (status === 'pending') return '✋';
-    return '⭕';
+function getRequirementIcon(reqName) {
+    const iconMap = {
+        "Law and Promise": "📜",
+        "Scout Uniform, Badges and Positions": "🎽",
+        "Knots and Whipping": "🪢",
+        "Woodcraft Signs": "🌲",
+        "National Flag, Anthem, Emblem, Tree, Flower": "🇲🇻",
+        "Scouting History": "📖",
+        "Salutes, Signs, Handshake, Scout Staff": "🫡",
+        "Dress a Wound": "🩹",
+        "Whistle Calls, Silent Signs, Formations": "🎵",
+        "Re-test Membership": "🔁",
+        "Interview by Scouter": "🗣️",
+        "Investiture": "🎓"
+    };
+    return iconMap[reqName] || "⭐";
 }
 
 function updateProgress() {
@@ -78,30 +90,36 @@ function renderRequirements() {
     const reqs = requirementsData[currentTab];
     
     if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-        container.innerHTML = `<div class="req-card"><span class="req-icon">📅</span><span class="req-name">More requirements coming soon!</span></div>`;
+        container.innerHTML = `<div class="req-card"><div class="req-name">More requirements coming soon!</div></div>`;
         updateProgress();
         return;
     }
 
     container.innerHTML = reqs.map(req => {
         const status = scoutStatus[`${currentTab}_${req}`] || 'todo';
-        const icon = getIcon(status);
+        const leftIcon = getRequirementIcon(req);
+        let statusIcon = '';
         let actionHtml = '';
         
-        if (status === 'todo') {
-            actionHtml = `<button class="ready-btn" data-req="${req}">Ready</button>`;
+        if (status === 'approved') {
+            statusIcon = '🏁';
+            actionHtml = `<span class="done-text">✓ Completed</span>`;
         } else if (status === 'pending') {
-            actionHtml = `<span class="waiting-badge">✋ Waiting</span>`;
-        } else if (status === 'approved') {
-            actionHtml = `<span class="done-badge">✓ Done</span>`;
+            statusIcon = '✋';
+            actionHtml = `<span class="waiting-text">⏳ Waiting for leader</span>`;
+        } else {
+            statusIcon = '🚩';
+            actionHtml = `<button class="ready-btn" data-req="${req}">Mark Ready</button>`;
         }
         
         return `
             <div class="req-card">
-                <span class="req-icon">${icon}</span>
-                <span class="req-name">${req}</span>
-                <div class="req-buttons">
-                    <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 Notes</a>
+                <div class="req-header">
+                    <span class="req-name"><span style="margin-right: 10px;">${leftIcon}</span>${req}</span>
+                    <span class="req-status-icon">${statusIcon}</span>
+                </div>
+                <div class="req-footer">
+                    <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 View Notes</a>
                     ${actionHtml}
                 </div>
             </div>
