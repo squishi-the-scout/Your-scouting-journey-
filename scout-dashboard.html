@@ -108,8 +108,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
         }
         .notes-link {
             background: #f0f4f2;
@@ -129,18 +127,13 @@
             font-weight: 500;
             cursor: pointer;
         }
-        .waiting-badge {
+        .waiting-text {
             color: #c28b3e;
             font-size: 13px;
             font-weight: 500;
             background: #f5e6d3;
             padding: 6px 16px;
             border-radius: 30px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .waiting-badge:hover {
-            background: #ecd5b0;
         }
         .done-text {
             color: #2d5a4a;
@@ -150,11 +143,16 @@
             padding: 6px 16px;
             border-radius: 30px;
         }
-        .approval-info {
+        .undo-btn {
+            background: none;
+            border: none;
+            color: #8baa9a;
+            cursor: pointer;
             font-size: 12px;
-            color: #5a7c6e;
-            margin-top: 4px;
+            padding: 4px 8px;
+            border-radius: 20px;
         }
+        .undo-btn:hover { background: #eef3f0; }
     </style>
 </head>
 <body>
@@ -251,18 +249,6 @@
             return iconMap[reqName] || "⭐";
         }
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-GB', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-            }) + ', ' + date.toLocaleTimeString('en-GB', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        }
-
         function updateProgress() {
             const reqs = requirementsData[currentTab];
             if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
@@ -272,8 +258,7 @@
             }
             let completed = 0;
             reqs.forEach(req => {
-                const key = `${currentTab}_${req}`;
-                if (scoutStatus[key] && scoutStatus[key].status === 'approved') completed++;
+                if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
             });
             const percent = (completed / reqs.length) * 100;
             document.getElementById('progress-count').innerText = `${completed}/${reqs.length}`;
@@ -282,19 +267,10 @@
 
         async function markAsReady(reqName) {
             const key = `${currentTab}_${reqName}`;
-            if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
-            scoutStatus[key] = { status: 'pending' };
+            if (scoutStatus[key] === 'approved') return;
+            scoutStatus[key] = 'pending';
             await saveStatus();
             renderRequirements();
-        }
-
-        async function undoPending(reqName) {
-            const key = `${currentTab}_${reqName}`;
-            if (scoutStatus[key] && scoutStatus[key].status === 'pending') {
-                delete scoutStatus[key];
-                await saveStatus();
-                renderRequirements();
-            }
         }
 
         function renderRequirements() {
@@ -308,23 +284,22 @@
             }
 
             container.innerHTML = reqs.map(req => {
-                const key = `${currentTab}_${req}`;
-                const data = scoutStatus[key];
-                const status = data ? data.status : 'todo';
+                const status = scoutStatus[`${currentTab}_${req}`] || 'todo';
                 const leftIcon = getRequirementIcon(req);
                 let statusIcon = '';
                 let actionHtml = '';
-                let infoHtml = '';
                 
                 if (status === 'approved') {
                     statusIcon = '🏁';
-                    const approvedBy = data.approvedBy || 'leader';
-                    const approvedAt = data.approvedAt ? formatDate(data.approvedAt) : 'recently';
                     actionHtml = `<span class="done-text">✓ Completed</span>`;
-                    infoHtml = `<div class="approval-info">Approved by ${approvedBy} — ${approvedAt}</div>`;
                 } else if (status === 'pending') {
                     statusIcon = '✋';
-                    actionHtml = `<span class="waiting-badge" data-req="${req}">⏳ Waiting (click to undo)</span>`;
+                    actionHtml = `
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="waiting-text">⏳ Waiting</span>
+                            <button class="undo-btn" data-req="${req}">↩️ Undo</button>
+                        </div>
+                    `;
                 } else {
                     statusIcon = '🚩';
                     actionHtml = `<button class="ready-btn" data-req="${req}">Ready</button>`;
@@ -340,7 +315,6 @@
                             <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">Notes</a>
                             ${actionHtml}
                         </div>
-                        ${infoHtml}
                     </div>
                 `;
             }).join('');
@@ -349,8 +323,14 @@
                 btn.addEventListener('click', () => markAsReady(btn.dataset.req));
             });
 
-            document.querySelectorAll('.waiting-badge').forEach(badge => {
-                badge.addEventListener('click', () => undoPending(badge.dataset.req));
+            document.querySelectorAll('.undo-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const reqName = btn.dataset.req;
+                    const key = `${currentTab}_${reqName}`;
+                    delete scoutStatus[key];
+                    await saveStatus();
+                    renderRequirements();
+                });
             });
             
             updateProgress();
