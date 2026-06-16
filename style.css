@@ -1,0 +1,193 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 32px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+h1 {
+    color: #2d5a4a;
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #7a9e8a;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #e8f0ec;
+    padding-bottom: 16px;
+}
+
+.button {
+    background: #8fbcbb;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.button:hover {
+    background: #7da8a7;
+}
+
+/* Tab bar */
+.tab-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    background: #f0f6f2;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #5a7c6e;
+    transition: all 0.2s;
+}
+
+.tab.active {
+    background: #2d5a4a;
+    color: white;
+}
+
+/* Progress bar */
+.progress-section {
+    margin-bottom: 30px;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #2d5a4a;
+    font-weight: 500;
+}
+
+.progress-bar-container {
+    background: #e8f0ec;
+    border-radius: 20px;
+    height: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: #8fbcbb;
+    height: 100%;
+    width: 0%;
+    border-radius: 20px;
+    transition: width 0.3s;
+}
+
+/* Requirements list */
+.requirements-list {
+    margin-top: 20px;
+}
+
+.requirement-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid #e8f0ec;
+    flex-wrap: wrap;
+}
+
+.requirement-item:last-child {
+    border-bottom: none;
+}
+
+.req-icon {
+    font-size: 24px;
+    min-width: 40px;
+}
+
+.req-name {
+    flex: 1;
+    font-weight: 500;
+    color: #2d5a4a;
+}
+
+.req-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.notes-btn {
+    background: none;
+    border: 1px solid #cde0d6;
+    padding: 6px 14px;
+    border-radius: 40px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #5a7c6e;
+    text-decoration: none;
+}
+
+.notes-btn:hover {
+    background: #e8f0ec;
+}
+
+.mark-ready-btn {
+    background: #8fbcbb;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 40px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.pending-badge {
+    background: #f0e0c0;
+    color: #8a6e3a;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 12px;
+}
+
+.approved-badge {
+    background: #d4e4dc;
+    color: #2d5a4a;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 12px;
+}
+
+.logout-btn {
+    background: #e8f0ec;
+    color: #2d5a4a;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+    .container { padding: 24px; }
+    .requirement-item { flex-direction: column; align-items: flex-start; }
+    .req-actions { align-self: flex-end; }
+}
