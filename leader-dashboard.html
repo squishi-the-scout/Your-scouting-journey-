@@ -28,12 +28,20 @@
             window.location.href = 'index.html';
         };
 
+        // Must match EXACTLY what scout uses (membership_ + requirement name)
         const membershipReqs = [
-            "Law and Promise", "Scout Uniform, Badges and Positions", "Knots and Whipping",
-            "Woodcraft Signs", "National Flag, Anthem, Emblem, Tree, Flower", "Scouting History",
-            "Salutes, Signs, Handshake, Scout Staff", "Dress a Wound",
-            "Whistle Calls, Silent Signs, Formations", "Re-test Membership",
-            "Interview by Scouter", "Investiture"
+            "Law and Promise",
+            "Scout Uniform, Badges and Positions",
+            "Knots and Whipping",
+            "Woodcraft Signs",
+            "National Flag, Anthem, Emblem, Tree, Flower",
+            "Scouting History",
+            "Salutes, Signs, Handshake, Scout Staff",
+            "Dress a Wound",
+            "Whistle Calls, Silent Signs, Formations",
+            "Re-test Membership",
+            "Interview by Scouter",
+            "Investiture"
         ];
 
         async function loadScouts() {
@@ -65,30 +73,31 @@
                 
                 const pending = [];
                 for (const req of membershipReqs) {
-                    if (status[`membership_${req}`] === 'pending') {
+                    const key = `membership_${req}`;
+                    if (status[key] === 'pending') {
                         pending.push(req);
                     }
                 }
                 
                 const card = document.createElement('div');
                 card.className = 'req-card';
-                card.innerHTML = `<div class="req-name">📋 ${scout.username}</div>`;
+                
+                let html = `<div class="req-name">📋 ${scout.username}</div>`;
                 
                 if (pending.length === 0) {
-                    card.innerHTML += '<div class="req-footer" style="margin-top: 12px;"><span class="done-text">✅ No pending approvals</span></div>';
+                    html += '<div class="req-footer" style="margin-top: 12px;"><span class="done-text">✅ No pending approvals</span></div>';
                 } else {
                     pending.forEach(req => {
-                        const reqDiv = document.createElement('div');
-                        reqDiv.className = 'req-footer';
-                        reqDiv.style.marginTop = '12px';
-                        reqDiv.style.justifyContent = 'space-between';
-                        reqDiv.innerHTML = `
-                            <span>✋ ${req}</span>
-                            <button class="ready-btn" data-scout="${scout.id}" data-req="${req}">Approve</button>
+                        html += `
+                            <div class="req-footer" style="margin-top: 12px; justify-content: space-between; display: flex; align-items: center;">
+                                <span>✋ ${req}</span>
+                                <button class="ready-btn" data-scout="${scout.id}" data-req="${req}" style="background: #8fbcbb; border: none; padding: 6px 16px; border-radius: 30px; color: white; cursor: pointer;">Approve</button>
+                            </div>
                         `;
-                        card.appendChild(reqDiv);
                     });
                 }
+                
+                card.innerHTML = html;
                 container.appendChild(card);
             }
             
