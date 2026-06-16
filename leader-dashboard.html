@@ -73,7 +73,7 @@
                 const pending = [];
                 for (const req of membershipReqs) {
                     const key = `membership_${req}`;
-                    if (status[key] && status[key].status === 'pending') {
+                    if (status[key] === 'pending') {
                         pending.push(req);
                     }
                 }
@@ -106,14 +106,7 @@
                     const reqName = btn.dataset.req;
                     const statusRef = doc(db, 'scoutStatus', scoutId);
                     const current = (await getDoc(statusRef)).data() || {};
-                    
-                    // Save approval with leader name + timestamp
-                    current[`membership_${reqName}`] = {
-                        status: 'approved',
-                        approvedBy: currentUser.username,
-                        approvedAt: new Date().toISOString()
-                    };
-                    
+                    current[`membership_${reqName}`] = 'approved';
                     await setDoc(statusRef, current);
                     render();
                 });
