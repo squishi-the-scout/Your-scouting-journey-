@@ -117,29 +117,32 @@
             color: #5a7c6e;
             text-decoration: none;
         }
-        .ready-btn {
-            background: #8fbcbb;
+
+        /* ----- TOGGLE BUTTON (Ready / Pending test) ----- */
+        .toggle-btn {
             border: none;
             padding: 8px 20px;
             border-radius: 30px;
             font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-ready {
+            background: #8fbcbb;
             color: white;
-            font-weight: 500;
-            cursor: pointer;
         }
-        .waiting-badge {
-            color: #c28b3e;
-            font-size: 13px;
-            font-weight: 500;
+        .toggle-ready:hover {
+            background: #7da8a7;
+        }
+        .toggle-pending {
             background: #f5e6d3;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background 0.2s;
+            color: #c28b3e;
         }
-        .waiting-badge:hover {
+        .toggle-pending:hover {
             background: #ecd5b0;
         }
+
         .done-text {
             color: #2d5a4a;
             font-size: 13px;
@@ -278,21 +281,23 @@
             document.getElementById('progress-bar').style.width = `${percent}%`;
         }
 
-        async function markAsReady(reqName) {
+        async function toggleStatus(reqName) {
             const key = `${currentTab}_${reqName}`;
-            if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
-            scoutStatus[key] = { status: 'pending' };
+            const current = scoutStatus[key];
+
+            // If approved, do nothing (can't toggle)
+            if (current && current.status === 'approved') return;
+
+            // If pending, remove it (back to Ready)
+            if (current && current.status === 'pending') {
+                delete scoutStatus[key];
+            } else {
+                // If todo or doesn't exist, set to pending
+                scoutStatus[key] = { status: 'pending' };
+            }
+
             await saveStatus();
             renderRequirements();
-        }
-
-        async function undoPending(reqName) {
-            const key = `${currentTab}_${reqName}`;
-            if (scoutStatus[key] && scoutStatus[key].status === 'pending') {
-                delete scoutStatus[key];
-                await saveStatus();
-                renderRequirements();
-            }
         }
 
         function renderRequirements() {
@@ -322,10 +327,10 @@
                     infoHtml = `<div class="approval-info">Approved by ${approvedBy} — ${approvedAt}</div>`;
                 } else if (status === 'pending') {
                     statusIcon = '✋';
-                    actionHtml = `<span class="waiting-badge" data-req="${req}">⏳ Waiting (click to undo)</span>`;
+                    actionHtml = `<button class="toggle-btn toggle-pending" data-req="${req}">Pending test</button>`;
                 } else {
                     statusIcon = '🚩';
-                    actionHtml = `<button class="ready-btn" data-req="${req}">Ready</button>`;
+                    actionHtml = `<button class="toggle-btn toggle-ready" data-req="${req}">Ready</button>`;
                 }
                 
                 return `
@@ -343,12 +348,9 @@
                 `;
             }).join('');
 
-            document.querySelectorAll('.ready-btn').forEach(btn => {
-                btn.addEventListener('click', () => markAsReady(btn.dataset.req));
-            });
-
-            document.querySelectorAll('.waiting-badge').forEach(badge => {
-                badge.addEventListener('click', () => undoPending(badge.dataset.req));
+            // Add click listeners to all toggle buttons
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => toggleStatus(btn.dataset.req));
             });
             
             updateProgress();
