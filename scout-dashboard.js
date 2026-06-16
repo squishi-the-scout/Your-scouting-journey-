@@ -1,136 +1,86 @@
 import { auth, db } from './firebase-config.js';
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// Check if user is logged in
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-if (!currentUser || currentUser.role !== 'scout') window.location.href = 'index.html';
+if (!currentUser) {
+    window.location.href = 'index.html';
+}
+
 document.getElementById('scout-name').innerText = currentUser.username;
 
-document.getElementById('logout-btn').onclick = () => {
+// Logout
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    await signOut(auth);
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
-};
-
-const requirementsData = {
-    membership: [
-        "Law and Promise",
-        "Scout Uniform, Badges and Positions",
-        "Knots and Whipping",
-        "Woodcraft Signs",
-        "National Flag, Anthem, Emblem, Tree, Flower",
-        "Scouting History",
-        "Salutes, Signs, Handshake, Scout Staff",
-        "Dress a Wound",
-        "Whistle Calls, Silent Signs, Formations",
-        "Re-test Membership",
-        "Interview by Scouter",
-        "Investiture"
-    ],
-    second: ["Second Class requirements coming soon"],
-    first: ["First Class requirements coming soon"],
-    badges: ["Proficiency badges coming soon"]
-};
-
-let currentTab = 'membership';
-let scoutStatus = {};
-
-async function loadStatus() {
-    const docRef = doc(db, 'scoutStatus', currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    scoutStatus = docSnap.exists() ? docSnap.data() : {};
-}
-
-async function saveStatus() {
-    await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
-}
-
-function getIcon(status) {
-    if (status === 'approved') return '🟢';
-    if (status === 'pending') return '✋';
-    return '⭕';
-}
-
-function updateProgress() {
-    const reqs = requirementsData[currentTab];
-    if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-        document.getElementById('progress-count').innerText = '0/0 completed';
-        document.getElementById('progress-bar').style.width = '0%';
-        return;
-    }
-    let completed = 0;
-    reqs.forEach(req => {
-        if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
-    });
-    const percent = (completed / reqs.length) * 100;
-    document.getElementById('progress-count').innerText = `${completed}/${reqs.length} completed`;
-    document.getElementById('progress-bar').style.width = `${percent}%`;
-}
-
-async function markAsReady(reqName) {
-    const key = `${currentTab}_${reqName}`;
-    if (scoutStatus[key] === 'approved') return;
-    scoutStatus[key] = 'pending';
-    await saveStatus();
-    renderRequirements();
-}
-
-function renderRequirements() {
-    const container = document.getElementById('requirements-list');
-    const reqs = requirementsData[currentTab];
-    
-    if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-        container.innerHTML = `<div class="requirement-item"><span class="req-icon">📅</span><span class="req-name">More requirements coming soon!</span></div>`;
-        updateProgress();
-        return;
-    }
-
-    container.innerHTML = reqs.map(req => {
-        const status = scoutStatus[`${currentTab}_${req}`] || 'todo';
-        const icon = getIcon(status);
-        let actionHtml = '';
-        
-        if (status === 'todo') {
-            actionHtml = `<button class="mark-ready-btn" data-req="${req}">Ready</button>`;
-        } else if (status === 'pending') {
-            actionHtml = `<span class="pending-badge">Waiting</span>`;
-        } else if (status === 'approved') {
-            actionHtml = `<span class="approved-badge">✓ Done</span>`;
-        }
-        
-        return `
-            <div class="requirement-item">
-                <span class="req-icon">${icon}</span>
-                <span class="req-name">${req}</span>
-                <div class="req-actions">
-                    <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-btn">📖 Notes</a>
-                    ${actionHtml}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    document.querySelectorAll('.mark-ready-btn').forEach(btn => {
-        btn.addEventListener('click', () => markAsReady(btn.dataset.req));
-    });
-    
-    updateProgress();
-}
-
-async function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach(t => {
-        if (t.dataset.tab === tab) t.classList.add('active');
-        else t.classList.remove('active');
-    });
-    await loadStatus();
-    renderRequirements();
-}
-
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
 });
 
-async function init() {
-    await loadStatus();
-    renderRequirements();
+// Requirements (same 12 from before)
+const requirements = [
+    { id: 1, name: "Law and Promise" },
+    { id: 2, name: "Scout Uniform, Badges and Positions" },
+    { id: 3, name: "Knots and Whipping" },
+    { id: 4, name: "Woodcraft Signs" },
+    { id: 5, name: "National Flag, Anthem, Emblem, Tree, Flower" },
+    { id: 6, name: "Scouting History" },
+    { id: 7, name: "Salutes, Signs, Handshake, Scout Staff" },
+    { id: 8, name: "Dress a Wound" },
+    { id: 9, name: "Whistle Calls, Silent Signs, Formations" },
+    { id: 10, name: "Re-test Membership" },
+    { id: 11, name: "Interview by Scouter" },
+    { id: 12, name: "Investiture" }
+];
+
+// Load scout's progress
+async function loadProgress() {
+    const container = document.getElementById('requirements-list');
+    container.innerHTML = 'Loading your progress...';
+
+    try {
+        const progressRef = doc(db, 'progress', currentUser.uid);
+        const progressDoc = await getDoc(progressRef);
+        
+        let progress = {};
+        if (progressDoc.exists()) {
+            progress = progressDoc.data();
+        }
+
+        container.innerHTML = requirements.map(req => {
+            const isChecked = progress[req.id] || false;
+            return `
+                <div class="requirement-item">
+                    <div class="requirement-header">
+                        <input type="checkbox" class="requirement-checkbox" data-id="${req.id}" ${isChecked ? 'checked' : ''}>
+                        <div class="requirement-title">${req.name}</div>
+                    </div>
+                    <div class="requirement-summary">
+                        <a href="requirement-detail.html?id=${req.id}" style="color: #d45a7a; text-decoration: none; font-size: 14px;">📖 View notes →</a>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.requirement-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', async (e) => {
+                const reqId = parseInt(e.target.dataset.id);
+                const newProgress = { ...progress };
+                newProgress[reqId] = e.target.checked;
+                
+                // Save to Firestore
+                await updateDoc(progressRef, newProgress);
+                
+                if (e.target.checked) {
+                    alert('✓ Request sent to leader for approval!');
+                }
+            });
+        });
+
+    } catch (error) {
+        container.innerHTML = `<p>Error loading progress: ${error.message}</p>`;
+    }
 }
-init();
+
+loadProgress();
