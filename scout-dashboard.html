@@ -3,59 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Dashboard</title>
+    <title>My Dashboard — GIS Scouting</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
         }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
+        }
+
+        /* Header card */
+        .header-card {
             background: white;
             border-radius: 32px;
-            padding: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
         }
-        h1 { color: #2d5a4a; font-size: 28px; margin-bottom: 12px; }
-        .subtitle { color: #5a7c6e; margin-bottom: 20px; }
-        .logout-btn { background: #8fbcbb; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; margin-bottom: 30px; }
-        
+
+        h1 {
+            color: #2d5a4a;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #7a9e8a;
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+
+        .logout-btn {
+            background: #e8f0ec;
+            color: #2d5a4a;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #d4e4dc;
+        }
+
         /* Tab bar */
         .tab-bar {
             display: flex;
             gap: 8px;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e0f0e8;
+            margin-bottom: 24px;
             flex-wrap: wrap;
         }
+
         .tab {
-            padding: 10px 20px;
-            background: none;
+            background: white;
             border: none;
-            font-size: 16px;
-            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            color: #5a7c6e;
-            border-radius: 20px 20px 0 0;
+            color: #7a9e8a;
             transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
         }
+
         .tab.active {
-            color: #2d5a4a;
-            background: #e0f0e8;
+            background: #2d5a4a;
+            color: white;
+            box-shadow: 0 4px 12px rgba(45,90,74,0.2);
         }
-        
-        /* Progress bar */
+
+        /* Progress card */
+        .progress-card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #2d5a4a;
+            font-weight: 500;
+        }
+
         .progress-bar-container {
-            background: #e0e0e0;
+            background: #e8f0ec;
             border-radius: 20px;
-            height: 20px;
-            margin-bottom: 30px;
+            height: 12px;
             overflow: hidden;
         }
+
         .progress-bar {
             background: #8fbcbb;
             height: 100%;
@@ -63,80 +119,114 @@
             border-radius: 20px;
             transition: width 0.3s;
         }
-        .progress-text {
-            text-align: center;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #5a7c6e;
-            margin-bottom: 30px;
+
+        /* Requirements card */
+        .requirements-card {
+            background: white;
+            border-radius: 28px;
+            padding: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
         }
-        
-        /* Requirement items */
+
         .requirement-item {
-            background: #f9fbfa;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
+            padding: 16px;
+            border-bottom: 1px solid #edf3ef;
             flex-wrap: wrap;
         }
-        .req-icon {
-            font-size: 24px;
-            min-width: 40px;
+
+        .requirement-item:last-child {
+            border-bottom: none;
         }
+
+        .req-icon {
+            font-size: 28px;
+            min-width: 44px;
+            text-align: center;
+        }
+
         .req-name {
             flex: 1;
             font-weight: 500;
             color: #2d5a4a;
+            font-size: 15px;
         }
+
+        .req-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .notes-btn {
+            background: none;
+            border: 1px solid #cde0d6;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #5a7c6e;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .notes-btn:hover {
+            background: #e8f0ec;
+            border-color: #8fbcbb;
+        }
+
         .mark-ready-btn {
             background: #8fbcbb;
             color: white;
             border: none;
-            padding: 6px 14px;
-            border-radius: 20px;
-            cursor: pointer;
+            padding: 6px 16px;
+            border-radius: 40px;
             font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
         }
+
         .mark-ready-btn:hover {
             background: #7da8a7;
         }
+
         .pending-badge {
-            background: #f0b27a;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
+            background: #f0e0c0;
+            color: #8a6e3a;
+            padding: 4px 14px;
+            border-radius: 40px;
             font-size: 12px;
+            font-weight: 500;
         }
+
         .approved-badge {
-            background: #8fbcbb;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
+            background: #d4e4dc;
+            color: #2d5a4a;
+            padding: 4px 14px;
+            border-radius: 40px;
             font-size: 12px;
+            font-weight: 500;
         }
-        .view-notes {
-            color: #8fbcbb;
-            text-decoration: none;
-            font-size: 14px;
-            padding: 4px 8px;
-            border-radius: 16px;
-            transition: background 0.2s;
-        }
-        .view-notes:hover {
-            background: #e0f0e8;
+
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .header-card { padding: 24px; }
+            .requirement-item { flex-direction: column; align-items: flex-start; }
+            .req-actions { align-self: flex-end; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌸 Welcome, <span id="scout-name">Scout</span>!</h1>
-        <div class="subtitle">Your Scouting Journey</div>
-        <button id="logout-btn" class="logout-btn">Logout</button>
+        <div class="header-card">
+            <h1>🌸 Welcome, <span id="scout-name">Scout</span>!</h1>
+            <div class="subtitle">Your Scouting Journey — GIS Scouts</div>
+            <button id="logout-btn" class="logout-btn">Log out</button>
+        </div>
 
-        <!-- Tabs -->
         <div class="tab-bar">
             <button class="tab active" data-tab="membership">🏕️ Membership</button>
             <button class="tab" data-tab="second">⭐ Second Class</button>
@@ -144,9 +234,17 @@
             <button class="tab" data-tab="badges">🏅 Badges</button>
         </div>
 
-        <!-- Progress section -->
-        <div id="progress-section"></div>
-        <div id="requirements-list"></div>
+        <div class="progress-card" id="progress-section">
+            <div class="progress-label">
+                <span>Progress</span>
+                <span id="progress-count">0/0 completed</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progress-bar" class="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="requirements-card" id="requirements-list"></div>
     </div>
 
     <script type="module">
@@ -176,7 +274,6 @@
             window.location.href = 'index.html';
         };
 
-        // Requirement data
         const requirementsData = {
             membership: [
                 "Law and Promise",
@@ -192,140 +289,117 @@
                 "Interview by Scouter",
                 "Investiture"
             ],
-            second: [
-                "Second Class Requirement 1",
-                "Second Class Requirement 2",
-                "Second Class Requirement 3"
-            ],
-            first: [
-                "First Class Requirement 1",
-                "First Class Requirement 2",
-                "First Class Requirement 3"
-            ],
-            badges: [
-                "Coming Soon: Proficiency Badges"
-            ]
+            second: ["Second Class requirements coming soon"],
+            first: ["First Class requirements coming soon"],
+            badges: ["Proficiency badges coming soon"]
         };
 
         let currentTab = 'membership';
         let scoutStatus = {};
 
-        async function loadScoutStatus() {
-            const statusDoc = await getDoc(doc(db, 'scoutStatus', currentUser.uid));
-            if (statusDoc.exists()) {
-                scoutStatus = statusDoc.data();
-            } else {
-                scoutStatus = {};
-            }
+        async function loadStatus() {
+            const docRef = doc(db, 'scoutStatus', currentUser.uid);
+            const docSnap = await getDoc(docRef);
+            scoutStatus = docSnap.exists() ? docSnap.data() : {};
         }
 
-        async function saveScoutStatus() {
+        async function saveStatus() {
             await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
         }
 
-        function getIconForStatus(status) {
+        function getIcon(status) {
             if (status === 'approved') return '🟢';
             if (status === 'pending') return '✋';
             return '⭕';
         }
 
-        function updateProgressBar() {
-            const requirements = requirementsData[currentTab];
-            const total = requirements.length;
+        function updateProgress() {
+            const reqs = requirementsData[currentTab];
+            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
+                document.getElementById('progress-count').innerText = `0/0 completed`;
+                document.getElementById('progress-bar').style.width = '0%';
+                return;
+            }
             let completed = 0;
-            requirements.forEach(req => {
+            reqs.forEach(req => {
                 if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
             });
-            const percent = total > 0 ? (completed / total) * 100 : 0;
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-            if (progressBar) progressBar.style.width = `${percent}%`;
-            if (progressText) progressText.innerHTML = `${completed} of ${total} completed`;
+            const percent = (completed / reqs.length) * 100;
+            document.getElementById('progress-count').innerText = `${completed}/${reqs.length} completed`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
         }
 
         async function markAsReady(reqName) {
             const key = `${currentTab}_${reqName}`;
             if (scoutStatus[key] === 'approved') return;
             scoutStatus[key] = 'pending';
-            await saveScoutStatus();
+            await saveStatus();
             renderRequirements();
         }
 
         function renderRequirements() {
             const container = document.getElementById('requirements-list');
-            const requirements = requirementsData[currentTab];
+            const reqs = requirementsData[currentTab];
             
-            if (!container) return;
-            
-            container.innerHTML = requirements.map(req => {
-                const key = `${currentTab}_${req}`;
-                const status = scoutStatus[key] || 'todo';
-                const icon = getIconForStatus(status);
-                let actionButton = '';
+            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
+                container.innerHTML = `
+                    <div class="requirement-item">
+                        <span class="req-icon">📅</span>
+                        <span class="req-name">More requirements coming soon!</span>
+                    </div>
+                `;
+                updateProgress();
+                return;
+            }
+
+            container.innerHTML = reqs.map(req => {
+                const status = scoutStatus[`${currentTab}_${req}`] || 'todo';
+                const icon = getIcon(status);
+                let actionHtml = '';
                 
                 if (status === 'todo') {
-                    actionButton = `<button class="mark-ready-btn" data-req="${req}">Mark as ready</button>`;
+                    actionHtml = `<button class="mark-ready-btn" data-req="${req}">Ready</button>`;
                 } else if (status === 'pending') {
-                    actionButton = `<span class="pending-badge">Waiting for leader</span>`;
+                    actionHtml = `<span class="pending-badge">Waiting</span>`;
                 } else if (status === 'approved') {
-                    actionButton = `<span class="approved-badge">✓ Completed!</span>`;
+                    actionHtml = `<span class="approved-badge">✓ Done</span>`;
                 }
                 
                 return `
                     <div class="requirement-item">
                         <span class="req-icon">${icon}</span>
                         <span class="req-name">${req}</span>
-                        <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="view-notes">📖 Notes</a>
-                        ${actionButton}
+                        <div class="req-actions">
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-btn">📖 Notes</a>
+                            ${actionHtml}
+                        </div>
                     </div>
                 `;
             }).join('');
 
             document.querySelectorAll('.mark-ready-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const reqName = btn.getAttribute('data-req');
-                    markAsReady(reqName);
-                });
+                btn.addEventListener('click', () => markAsReady(btn.dataset.req));
             });
             
-            updateProgressBar();
+            updateProgress();
         }
 
         async function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => {
-                if (t.getAttribute('data-tab') === tab) {
-                    t.classList.add('active');
-                } else {
-                    t.classList.remove('active');
-                }
+                if (t.dataset.tab === tab) t.classList.add('active');
+                else t.classList.remove('active');
             });
-            
-            await loadScoutStatus();
+            await loadStatus();
             renderRequirements();
         }
 
-        // Tab click listeners
         document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                switchTab(tab.getAttribute('data-tab'));
-            });
+            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        // Add progress bar HTML
-        const progressSection = document.getElementById('progress-section');
-        if (progressSection) {
-            progressSection.innerHTML = `
-                <div class="progress-bar-container">
-                    <div id="progress-bar" class="progress-bar"></div>
-                </div>
-                <div id="progress-text" class="progress-text">Loading...</div>
-            `;
-        }
-
-        // Initialize
         async function init() {
-            await loadScoutStatus();
+            await loadStatus();
             renderRequirements();
         }
         init();
