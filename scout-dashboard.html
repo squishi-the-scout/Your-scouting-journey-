@@ -180,6 +180,20 @@
             padding: 6px 16px;
             border-radius: 30px;
         }
+
+        .undo-btn {
+            background: none;
+            border: none;
+            color: #8baa9a;
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+
+        .undo-btn:hover {
+            background: #eef3f0;
+        }
     </style>
 </head>
 <body>
@@ -333,10 +347,15 @@
                     actionHtml = `<span class="done-text">✓ Completed</span>`;
                 } else if (status === 'pending') {
                     statusIcon = '✋';
-                    actionHtml = `<span class="waiting-text">⏳ Waiting for leader</span>`;
+                    actionHtml = `
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span class="waiting-text">⏳ Waiting</span>
+                            <button class="undo-btn" data-req="${req}">↩️ Undo</button>
+                        </div>
+                    `;
                 } else {
                     statusIcon = '🚩';
-                    actionHtml = `<button class="ready-btn" data-req="${req}">Mark Ready</button>`;
+                    actionHtml = `<button class="ready-btn" data-req="${req}">Ready</button>`;
                 }
                 
                 return `
@@ -346,7 +365,7 @@
                             <span class="req-status-icon">${statusIcon}</span>
                         </div>
                         <div class="req-footer">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 View Notes</a>
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 Notes</a>
                             ${actionHtml}
                         </div>
                     </div>
@@ -355,6 +374,16 @@
 
             document.querySelectorAll('.ready-btn').forEach(btn => {
                 btn.addEventListener('click', () => markAsReady(btn.dataset.req));
+            });
+
+            document.querySelectorAll('.undo-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const reqName = btn.dataset.req;
+                    const key = `${currentTab}_${reqName}`;
+                    delete scoutStatus[key];
+                    await saveStatus();
+                    renderRequirements();
+                });
             });
             
             updateProgress();
