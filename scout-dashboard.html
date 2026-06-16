@@ -117,6 +117,17 @@
             border-radius: 20px;
             font-size: 12px;
         }
+        .view-notes {
+            color: #8fbcbb;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 16px;
+            transition: background 0.2s;
+        }
+        .view-notes:hover {
+            background: #e0f0e8;
+        }
     </style>
 </head>
 <body>
@@ -197,7 +208,7 @@
         };
 
         let currentTab = 'membership';
-        let scoutStatus = {}; // { "requirementName": "approved" | "pending" | "todo" }
+        let scoutStatus = {};
 
         async function loadScoutStatus() {
             const statusDoc = await getDoc(doc(db, 'scoutStatus', currentUser.uid));
@@ -226,8 +237,10 @@
                 if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
             });
             const percent = total > 0 ? (completed / total) * 100 : 0;
-            document.getElementById('progress-bar').style.width = `${percent}%`;
-            document.getElementById('progress-text').innerHTML = `${completed} of ${total} completed`;
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            if (progressBar) progressBar.style.width = `${percent}%`;
+            if (progressText) progressText.innerHTML = `${completed} of ${total} completed`;
         }
 
         async function markAsReady(reqName) {
@@ -241,6 +254,8 @@
         function renderRequirements() {
             const container = document.getElementById('requirements-list');
             const requirements = requirementsData[currentTab];
+            
+            if (!container) return;
             
             container.innerHTML = requirements.map(req => {
                 const key = `${currentTab}_${req}`;
@@ -260,12 +275,12 @@
                     <div class="requirement-item">
                         <span class="req-icon">${icon}</span>
                         <span class="req-name">${req}</span>
+                        <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="view-notes">📖 Notes</a>
                         ${actionButton}
                     </div>
                 `;
             }).join('');
 
-            // Add event listeners for "Mark as ready" buttons
             document.querySelectorAll('.mark-ready-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const reqName = btn.getAttribute('data-req');
@@ -299,12 +314,14 @@
 
         // Add progress bar HTML
         const progressSection = document.getElementById('progress-section');
-        progressSection.innerHTML = `
-            <div class="progress-bar-container">
-                <div id="progress-bar" class="progress-bar"></div>
-            </div>
-            <div id="progress-text" class="progress-text">Loading...</div>
-        `;
+        if (progressSection) {
+            progressSection.innerHTML = `
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Loading...</div>
+            `;
+        }
 
         // Initialize
         async function init() {
