@@ -16,7 +16,7 @@ body {
     margin: 0 auto;
 }
 
-/* Header */
+/* Header card */
 .header-card {
     background: white;
     border-radius: 32px;
@@ -112,37 +112,37 @@ h1 {
 
 .req-card {
     background: white;
-    border-radius: 20px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    border-radius: 24px;
+    padding: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.2s;
 }
 
-.req-icon {
-    font-size: 28px;
-    width: 44px;
-    text-align: center;
+.req-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
 }
 
 .req-name {
-    flex: 1;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 16px;
     color: #2d5a4a;
-    font-size: 15px;
 }
 
-.req-buttons {
+.req-status-icon {
+    font-size: 28px;
+}
+
+.req-footer {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
     align-items: center;
 }
 
 .notes-link {
     background: #f0f4f2;
-    padding: 6px 14px;
+    padding: 8px 16px;
     border-radius: 30px;
     font-size: 13px;
     color: #5a7c6e;
@@ -152,7 +152,7 @@ h1 {
 .ready-btn {
     background: #8fbcbb;
     border: none;
-    padding: 6px 16px;
+    padding: 8px 20px;
     border-radius: 30px;
     font-size: 13px;
     color: white;
@@ -160,26 +160,26 @@ h1 {
     cursor: pointer;
 }
 
-.waiting-badge {
-    background: #f5e6d3;
-    padding: 4px 14px;
-    border-radius: 30px;
-    font-size: 12px;
+.waiting-text {
     color: #c28b3e;
+    font-size: 13px;
     font-weight: 500;
+    background: #f5e6d3;
+    padding: 6px 16px;
+    border-radius: 30px;
 }
 
-.done-badge {
-    background: #d4e4dc;
-    padding: 4px 14px;
-    border-radius: 30px;
-    font-size: 12px;
+.done-text {
     color: #2d5a4a;
+    font-size: 13px;
     font-weight: 500;
+    background: #d4e4dc;
+    padding: 6px 16px;
+    border-radius: 30px;
 }
 
 @media (max-width: 550px) {
     body { padding: 16px; }
-    .req-card { flex-wrap: wrap; }
-    .req-buttons { margin-left: 44px; }
+    .req-card { padding: 16px; }
+    .req-footer { flex-wrap: wrap; gap: 10px; }
 }
