@@ -36,6 +36,15 @@
         .btn-absent.active { background: #c47a7a; color: white; }
         .edit-toggle { background: #a8c4d4; color: #2d5a4a; border: none; padding: 8px 20px; border-radius: 40px; font-weight: 500; cursor: pointer; }
         .edit-toggle:hover { background: #8fb8cc; }
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .section-title h3 { color: #2d5a4a; margin: 0; }
     </style>
 </head>
 <body>
@@ -88,15 +97,22 @@
 
         let sessionData = null;
         let allScouts = [];
+        let allLeaders = [];
 
-        async function loadScouts() {
+        async function loadUsers() {
             const snapshot = await getDocs(collection(db, 'users'));
             const scouts = [];
+            const leaders = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.role === 'scout') scouts.push({ id: doc.id, username: data.username });
+                if (data.role === 'scout') {
+                    scouts.push({ id: doc.id, username: data.username });
+                } else if (data.role === 'leader') {
+                    leaders.push({ id: doc.id, username: data.username });
+                }
             });
             allScouts = scouts;
+            allLeaders = leaders;
         }
 
         async function loadSession() {
@@ -113,19 +129,29 @@
         function renderDetail() {
             const container = document.getElementById('session-detail');
             const s = sessionData;
+            const attendance = s.attendance || {};
 
             document.getElementById('session-title').textContent = s.name;
             document.getElementById('session-meta').textContent = `${s.date} · ${s.time} · 📍 ${s.location || 'TBD'}`;
 
+            // Scout stats
             const scoutCount = allScouts.length;
-            let attended = 0;
-            const attendance = s.attendance || {};
-            for (const key in attendance) {
-                if (attendance[key] === true) attended++;
-            }
-            const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
+            let attendedScouts = 0;
+            allScouts.forEach(scout => {
+                if (attendance[scout.id] === true) attendedScouts++;
+            });
+            const scoutPercent = scoutCount > 0 ? Math.round((attendedScouts / scoutCount) * 100) : 0;
 
-            container.innerHTML = `
+            // Leader stats
+            const leaderCount = allLeaders.length;
+            let attendedLeaders = 0;
+            allLeaders.forEach(leader => {
+                if (attendance[leader.id] === true) attendedLeaders++;
+            });
+            const leaderPercent = leaderCount > 0 ? Math.round((attendedLeaders / leaderCount) * 100) : 0;
+
+            let html = `
+                <!-- Session Info -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
                         <div>
@@ -142,17 +168,20 @@
                         </div>
                     </div>
                 </div>
+            `;
 
-                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-                        <h3 style="color:#2d5a4a;">👥 Attendance (${attended}/${scoutCount} scouts · ${percent}%)</h3>
-                        <button class="btn-save" id="mark-all-btn" style="background:#8fbcbb;color:white;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
+            // ─── SCOUTS ATTENDANCE ───
+            html += `
+                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+                    <div class="section-title">
+                        <h3>👥 Scouts (${attendedScouts}/${scoutCount} · ${scoutPercent}%)</h3>
+                        <button class="btn-save" id="mark-all-scouts" style="background:#8fbcbb;color:white;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
                     </div>
-                    <div class="attendance-grid" id="attendance-grid">
+                    <div class="attendance-grid" id="attendance-scouts">
                         ${allScouts.map(scout => {
                             const isAttended = attendance[scout.id] === true;
                             return `
-                                <div class="attendance-row" data-scout="${scout.id}">
+                                <div class="attendance-row" data-id="${scout.id}" data-type="scout">
                                     <span class="scout-name">${scout.username}</span>
                                     <div class="attendance-toggle">
                                         <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
@@ -163,7 +192,36 @@
                         }).join('')}
                     </div>
                 </div>
+            `;
 
+            // ─── LEADERS ATTENDANCE ───
+            if (allLeaders.length > 0) {
+                html += `
+                    <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+                        <div class="section-title">
+                            <h3>👤 Leaders (${attendedLeaders}/${leaderCount} · ${leaderPercent}%)</h3>
+                            <button class="btn-save" id="mark-all-leaders" style="background:#a8c4d4;color:#2d5a4a;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
+                        </div>
+                        <div class="attendance-grid" id="attendance-leaders">
+                            ${allLeaders.map(leader => {
+                                const isAttended = attendance[leader.id] === true;
+                                return `
+                                    <div class="attendance-row" data-id="${leader.id}" data-type="leader">
+                                        <span class="scout-name">${leader.username}</span>
+                                        <div class="attendance-toggle">
+                                            <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
+                                            <button class="btn-absent ${!isAttended ? 'active' : ''}" data-attend="false">❌ Absent</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // ─── EDIT SECTION ───
+            html += `
                 <div id="edit-section" style="display:none;background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-top:16px;">
                     <h3 style="color:#2d5a4a;margin-bottom:16px;">✏️ Edit Session</h3>
                     <div class="form-group">
@@ -194,27 +252,65 @@
                 </div>
             `;
 
-            document.querySelectorAll('.attendance-toggle button').forEach(btn => {
-                btn.addEventListener('click', async () => {
+            container.innerHTML = html;
+
+            // ─── EVENT LISTENERS ───
+
+            // Toggle attendance for scouts
+            document.querySelectorAll('#attendance-scouts .attendance-toggle button').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
                     const row = btn.closest('.attendance-row');
-                    const scoutId = row.dataset.scout;
+                    const userId = row.dataset.id;
                     const attend = btn.dataset.attend === 'true';
                     await updateDoc(doc(db, 'sessions', sessionId), {
-                        [`attendance.${scoutId}`]: attend
+                        [`attendance.${userId}`]: attend
                     });
                     loadSession();
                 });
             });
 
-            document.getElementById('mark-all-btn').addEventListener('click', async () => {
-                const update = {};
-                for (const scout of allScouts) {
-                    update[`attendance.${scout.id}`] = true;
-                }
-                await updateDoc(doc(db, 'sessions', sessionId), update);
-                loadSession();
+            // Toggle attendance for leaders
+            document.querySelectorAll('#attendance-leaders .attendance-toggle button').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const row = btn.closest('.attendance-row');
+                    const userId = row.dataset.id;
+                    const attend = btn.dataset.attend === 'true';
+                    await updateDoc(doc(db, 'sessions', sessionId), {
+                        [`attendance.${userId}`]: attend
+                    });
+                    loadSession();
+                });
             });
 
+            // Mark all scouts attended
+            const markAllScouts = document.getElementById('mark-all-scouts');
+            if (markAllScouts) {
+                markAllScouts.addEventListener('click', async () => {
+                    const update = {};
+                    for (const scout of allScouts) {
+                        update[`attendance.${scout.id}`] = true;
+                    }
+                    await updateDoc(doc(db, 'sessions', sessionId), update);
+                    loadSession();
+                });
+            }
+
+            // Mark all leaders attended
+            const markAllLeaders = document.getElementById('mark-all-leaders');
+            if (markAllLeaders) {
+                markAllLeaders.addEventListener('click', async () => {
+                    const update = {};
+                    for (const leader of allLeaders) {
+                        update[`attendance.${leader.id}`] = true;
+                    }
+                    await updateDoc(doc(db, 'sessions', sessionId), update);
+                    loadSession();
+                });
+            }
+
+            // Delete session
             document.getElementById('delete-session-btn').addEventListener('click', async () => {
                 if (confirm(`Delete "${s.name}"? This cannot be undone.`)) {
                     await deleteDoc(doc(db, 'sessions', sessionId));
@@ -222,6 +318,7 @@
                 }
             });
 
+            // Edit toggle
             let editVisible = false;
             document.getElementById('toggle-edit-btn').addEventListener('click', () => {
                 editVisible = !editVisible;
@@ -267,7 +364,7 @@
         }
 
         async function init() {
-            await loadScouts();
+            await loadUsers();
             await loadSession();
         }
         init();
