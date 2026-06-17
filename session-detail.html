@@ -195,30 +195,28 @@
             `;
 
             // ─── LEADERS ATTENDANCE ───
-            if (allLeaders.length > 0) {
-                html += `
-                    <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
-                        <div class="section-title">
-                            <h3>👤 Leaders (${attendedLeaders}/${leaderCount} · ${leaderPercent}%)</h3>
-                            <button class="btn-save" id="mark-all-leaders" style="background:#a8c4d4;color:#2d5a4a;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
-                        </div>
-                        <div class="attendance-grid" id="attendance-leaders">
-                            ${allLeaders.map(leader => {
-                                const isAttended = attendance[leader.id] === true;
-                                return `
-                                    <div class="attendance-row" data-id="${leader.id}" data-type="leader">
-                                        <span class="scout-name">${leader.username}</span>
-                                        <div class="attendance-toggle">
-                                            <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
-                                            <button class="btn-absent ${!isAttended ? 'active' : ''}" data-attend="false">❌ Absent</button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
+            html += `
+                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+                    <div class="section-title">
+                        <h3>👤 Leaders (${attendedLeaders}/${leaderCount} · ${leaderPercent}%)</h3>
+                        <button class="btn-save" id="mark-all-leaders" style="background:#a8c4d4;color:#2d5a4a;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
                     </div>
-                `;
-            }
+                    <div class="attendance-grid" id="attendance-leaders">
+                        ${allLeaders.map(leader => {
+                            const isAttended = attendance[leader.id] === true;
+                            return `
+                                <div class="attendance-row" data-id="${leader.id}" data-type="leader">
+                                    <span class="scout-name">${leader.username}</span>
+                                    <div class="attendance-toggle">
+                                        <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
+                                        <button class="btn-absent ${!isAttended ? 'active' : ''}" data-attend="false">❌ Absent</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
 
             // ─── EDIT SECTION ───
             html += `
@@ -285,30 +283,24 @@
             });
 
             // Mark all scouts attended
-            const markAllScouts = document.getElementById('mark-all-scouts');
-            if (markAllScouts) {
-                markAllScouts.addEventListener('click', async () => {
-                    const update = {};
-                    for (const scout of allScouts) {
-                        update[`attendance.${scout.id}`] = true;
-                    }
-                    await updateDoc(doc(db, 'sessions', sessionId), update);
-                    loadSession();
-                });
-            }
+            document.getElementById('mark-all-scouts').addEventListener('click', async () => {
+                const update = {};
+                for (const scout of allScouts) {
+                    update[`attendance.${scout.id}`] = true;
+                }
+                await updateDoc(doc(db, 'sessions', sessionId), update);
+                loadSession();
+            });
 
             // Mark all leaders attended
-            const markAllLeaders = document.getElementById('mark-all-leaders');
-            if (markAllLeaders) {
-                markAllLeaders.addEventListener('click', async () => {
-                    const update = {};
-                    for (const leader of allLeaders) {
-                        update[`attendance.${leader.id}`] = true;
-                    }
-                    await updateDoc(doc(db, 'sessions', sessionId), update);
-                    loadSession();
-                });
-            }
+            document.getElementById('mark-all-leaders').addEventListener('click', async () => {
+                const update = {};
+                for (const leader of allLeaders) {
+                    update[`attendance.${leader.id}`] = true;
+                }
+                await updateDoc(doc(db, 'sessions', sessionId), update);
+                loadSession();
+            });
 
             // Delete session
             document.getElementById('delete-session-btn').addEventListener('click', async () => {
