@@ -295,7 +295,7 @@
                 
                 if (status === 'approved') {
                     statusIcon = '🏁';
-                    const approvedBy = data.approvedBy || 'leader'<leader>;
+                    const approvedBy = data.approvedBy || 'leader';
                     const approvedAt = data.approvedAt ? formatDate(data.approvedAt) : 'recently';
                     actionHtml = `<span class="done-text">✓ Completed</span>`;
                     infoHtml = `<div class="approval-info">Approved by ${approvedBy} — ${approvedAt}</div>`;
