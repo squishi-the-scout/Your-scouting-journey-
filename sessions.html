@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sessions — GIS Scouts</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+    <nav class="sidebar-nav">
+        <a href="leader-dashboard.html">📊 <span>Dashboard</span></a>
+        <a href="leader-dashboard.html">👥 <span>All Scouts</span></a>
+        <a href="leader-dashboard.html">✋ <span>Pending</span> <span class="badge" id="pending-badge">0</span></a>
+        <a href="#" class="active">📋 <span>Sessions</span></a>
+        <a href="leader-dashboard.html">📤 <span>Export</span></a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="#" id="logout-btn">🚪 <span>Logout</span></a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div class="header-left">
+            <h1>📋 Sessions</h1>
+            <p>Manage your scout activities and attendance</p>
+        </div>
+        <div class="header-right">
+            <button class="export-btn" id="new-session-btn" style="background:#8fbcbb;color:white;">➕ New Session</button>
+            <span class="avatar" id="leader-avatar">H</span>
+        </div>
+    </div>
+    <div id="sessions-list"></div>
+</div>
+
+<script type="module" src="sessions.js"></script>
+</body>
+</html>
