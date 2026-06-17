@@ -118,7 +118,6 @@
             text-decoration: none;
         }
 
-        /* ----- TOGGLE BUTTON (Ready / Pending test) ----- */
         .toggle-btn {
             border: none;
             padding: 8px 20px;
@@ -188,7 +187,7 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser || currentUser.role !== 'scout') window.location.href = 'index.html';
@@ -223,16 +222,7 @@
 
         let currentTab = 'membership';
         let scoutStatus = {};
-
-        async function loadStatus() {
-            const docRef = doc(db, 'scoutStatus', userEmail);
-            const docSnap = await getDoc(docRef);
-            scoutStatus = docSnap.exists() ? docSnap.data() : {};
-        }
-
-        async function saveStatus() {
-            await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
-        }
+        let unsubscribe = null;
 
         function getRequirementIcon(reqName) {
             const iconMap = {
@@ -264,40 +254,24 @@
             });
         }
 
-        function updateProgress() {
-            const reqs = requirementsData[currentTab];
-            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-                document.getElementById('progress-count').innerText = '0/0';
-                document.getElementById('progress-bar').style.width = '0%';
-                return;
-            }
-            let completed = 0;
-            reqs.forEach(req => {
-                const key = `${currentTab}_${req}`;
-                if (scoutStatus[key] && scoutStatus[key].status === 'approved') completed++;
-            });
-            const percent = (completed / reqs.length) * 100;
-            document.getElementById('progress-count').innerText = `${completed}/${reqs.length}`;
-            document.getElementById('progress-bar').style.width = `${percent}%`;
+        async function saveStatus() {
+            await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
         }
 
         async function toggleStatus(reqName) {
             const key = `${currentTab}_${reqName}`;
             const current = scoutStatus[key];
 
-            // If approved, do nothing (can't toggle)
             if (current && current.status === 'approved') return;
 
-            // If pending, remove it (back to Ready)
             if (current && current.status === 'pending') {
                 delete scoutStatus[key];
             } else {
-                // If todo or doesn't exist, set to pending
                 scoutStatus[key] = { status: 'pending' };
             }
 
             await saveStatus();
-            renderRequirements();
+            // No need to render — onSnapshot will update
         }
 
         function renderRequirements() {
@@ -348,7 +322,6 @@
                 `;
             }).join('');
 
-            // Add click listeners to all toggle buttons
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.addEventListener('click', () => toggleStatus(btn.dataset.req));
             });
@@ -356,13 +329,29 @@
             updateProgress();
         }
 
-        async function switchTab(tab) {
+        function updateProgress() {
+            const reqs = requirementsData[currentTab];
+            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
+                document.getElementById('progress-count').innerText = '0/0';
+                document.getElementById('progress-bar').style.width = '0%';
+                return;
+            }
+            let completed = 0;
+            reqs.forEach(req => {
+                const key = `${currentTab}_${req}`;
+                if (scoutStatus[key] && scoutStatus[key].status === 'approved') completed++;
+            });
+            const percent = (completed / reqs.length) * 100;
+            document.getElementById('progress-count').innerText = `${completed}/${reqs.length}`;
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        }
+
+        function switchTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab').forEach(t => {
                 if (t.dataset.tab === tab) t.classList.add('active');
                 else t.classList.remove('active');
             });
-            await loadStatus();
             renderRequirements();
         }
 
@@ -370,9 +359,20 @@
             tab.addEventListener('click', () => switchTab(tab.dataset.tab));
         });
 
-        async function init() {
-            await loadStatus();
-            renderRequirements();
+        // Listen for real-time updates
+        function listenToStatus() {
+            const docRef = doc(db, 'scoutStatus', userEmail);
+            unsubscribe = onSnapshot(docRef, (docSnap) => {
+                scoutStatus = docSnap.exists() ? docSnap.data() : {};
+                renderRequirements();
+            }, (error) => {
+                console.error("Error listening to status updates:", error);
+            });
+        }
+
+        function init() {
+            // Start listening to real-time updates
+            listenToStatus();
         }
         init();
     </script>
