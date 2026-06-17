@@ -8,34 +8,63 @@ document.getElementById('leader-avatar').textContent = currentUser.username.char
 
 let allSessions = [];
 let allScouts = [];
+let attendanceCache = {};
 
+// ─── LOAD SCOUTS ──────────────────────────────────────────
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
-    const scouts = [];
+    allScouts = [];
     snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.role === 'scout') scouts.push({ id: doc.id, username: data.username });
+        if (data.role === 'scout') allScouts.push({ id: doc.id, username: data.username });
     });
-    allScouts = scouts;
 }
 
+// ─── LISTEN TO SESSIONS + ATTENDANCE ─────────────────────
 function listenToSessions() {
     const container = document.getElementById('sessions-list');
     container.innerHTML = 'Loading sessions...';
 
-    const unsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+    // Listen to sessions
+    const unsubscribeSessions = onSnapshot(collection(db, 'sessions'), (snapshot) => {
         allSessions = [];
         snapshot.forEach(doc => {
             allSessions.push({ id: doc.id, ...doc.data() });
         });
-        renderSessions();
+        // After sessions load, listen to attendance
+        listenToAttendance();
     }, (error) => {
         container.innerHTML = `<p style="color:#c47a7a;">❌ Error loading sessions: ${error.message}</p>`;
         console.error(error);
     });
-    return unsubscribe;
+
+    return unsubscribeSessions;
 }
 
+// ─── LISTEN TO ATTENDANCE ──────────────────────────────────
+function listenToAttendance() {
+    const container = document.getElementById('sessions-list');
+    
+    // Listen to ALL attendance records
+    const unsubscribeAttendance = onSnapshot(collection(db, 'attendance'), (snapshot) => {
+        attendanceCache = {};
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const sessionId = data.sessionId;
+            if (!attendanceCache[sessionId]) {
+                attendanceCache[sessionId] = {};
+            }
+            attendanceCache[sessionId][data.userId] = data.attended;
+        });
+        renderSessions();
+    }, (error) => {
+        console.error("Error loading attendance:", error);
+    });
+
+    return unsubscribeAttendance;
+}
+
+// ─── RENDER SESSIONS ────────────────────────────────────────
 function renderSessions() {
     const container = document.getElementById('sessions-list');
 
@@ -62,10 +91,9 @@ function renderSessions() {
             ${sorted.map(session => {
                 const scoutCount = allScouts.length;
                 let attended = 0;
-                if (session.attendance) {
-                    for (const key in session.attendance) {
-                        if (session.attendance[key] === true) attended++;
-                    }
+                const sessionAttendance = attendanceCache[session.id] || {};
+                for (const scout of allScouts) {
+                    if (sessionAttendance[scout.id] === true) attended++;
                 }
                 const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
 
@@ -99,15 +127,18 @@ function renderSessions() {
     });
 }
 
+// ─── LOGOUT ──────────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
 
+// ─── NEW SESSION ─────────────────────────────────────────────
 document.getElementById('new-session-btn').addEventListener('click', () => {
     window.location.href = 'new-session.html';
 });
 
+// ─── INIT ─────────────────────────────────────────────────────
 async function init() {
     await loadScouts();
     listenToSessions();
