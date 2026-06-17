@@ -10,7 +10,7 @@
     <div class="container">
         <div class="header-card">
             <h1>👋 Leader Dashboard</h1>
-            <div class="subtitle">Manage scout progress</div>
+            <div class="subtitle">Manage scout progress — live updates</div>
             <button id="logout-btn" class="logout-btn">Log out</button>
         </div>
         <div id="scouts-list" class="requirements-grid">Loading scouts...</div>
@@ -18,7 +18,7 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, getDocs, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
@@ -43,6 +43,9 @@
             "Investiture"
         ];
 
+        let scoutsCache = [];
+        let statusCache = {};
+
         async function loadScouts() {
             const usersSnapshot = await getDocs(collection(db, 'users'));
             const scouts = [];
@@ -52,28 +55,45 @@
                     scouts.push({ id: doc.id, username: data.username });
                 }
             });
+            scoutsCache = scouts;
             return scouts;
         }
 
-        async function render() {
-            const scouts = await loadScouts();
+        // Real-time listener for ALL scout statuses
+        function listenToStatusUpdates() {
+            // Listen to the entire scoutStatus collection
+            const unsubscribe = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+                statusCache = {};
+                snapshot.forEach(doc => {
+                    statusCache[doc.id] = doc.data();
+                });
+                renderDashboard();
+            }, (error) => {
+                console.error("Error listening to status updates:", error);
+            });
+            
+            // Return unsubscribe function for cleanup
+            return unsubscribe;
+        }
+
+        async function renderDashboard() {
             const container = document.getElementById('scouts-list');
             
-            if (scouts.length === 0) {
+            if (scoutsCache.length === 0) {
                 container.innerHTML = '<div class="req-card"><div class="req-name">No scouts found.</div></div>';
                 return;
             }
 
             container.innerHTML = '';
             
-            for (const scout of scouts) {
-                const statusDoc = await getDoc(doc(db, 'scoutStatus', scout.id));
-                const status = statusDoc.exists() ? statusDoc.data() : {};
+            for (const scout of scoutsCache) {
+                const status = statusCache[scout.id] || {};
                 
                 const pending = [];
                 for (const req of membershipReqs) {
                     const key = `membership_${req}`;
-                    if (status[key] && status[key].status === 'pending') {
+                    const value = status[key];
+                    if (value === 'pending' || (value && value.status === 'pending')) {
                         pending.push(req);
                     }
                 }
@@ -100,6 +120,7 @@
                 container.appendChild(card);
             }
             
+            // Add approve listeners
             document.querySelectorAll('.ready-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const scoutId = btn.dataset.scout;
@@ -114,12 +135,18 @@
                     };
                     
                     await setDoc(statusRef, current);
-                    render();
+                    // No need to render — real-time listener will update automatically
                 });
             });
         }
+
+        async function init() {
+            await loadScouts();
+            // Start listening to real-time updates
+            listenToStatusUpdates();
+        }
         
-        render();
+        init();
     </script>
 </body>
 </html>
