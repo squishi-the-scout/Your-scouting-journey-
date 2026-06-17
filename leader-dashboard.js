@@ -15,6 +15,8 @@ let allStatus = {};
 let currentView = 'dashboard';
 let selectedScoutId = null;
 let unsubscribeStatus = null;
+let allSessions = [];
+let sessionsUnsubscribe = null;
 
 const membershipReqs = [
     "Law and Promise",
@@ -97,6 +99,7 @@ function renderView() {
     if (currentView === 'dashboard') renderDashboard(container);
     else if (currentView === 'scouts') renderAllScouts(container);
     else if (currentView === 'pending') renderPending(container);
+    else if (currentView === 'sessions') renderSessions(container);
     else if (currentView === 'export') renderExport(container);
     else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
 }
@@ -236,6 +239,101 @@ function renderPending(container) {
             const scoutId = item.dataset.scout;
             const reqName = item.dataset.req;
             await approveRequirement(scoutId, reqName);
+        });
+    });
+}
+
+// ─── Sessions ──────────────────────────────────────────────
+function renderSessions(container) {
+    container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h2 style="color:#2d5a4a;">📋 Sessions</h2>
+                <p style="color:#5a7c6e;">Manage your scout activities and attendance</p>
+            </div>
+            <button class="export-btn" id="sessions-new-btn" style="background:#8fbcbb;color:white;">➕ New Session</button>
+        </div>
+        <div id="sessions-list-container">
+            <p style="color:#5a7c6e;">Loading sessions...</p>
+        </div>
+    `;
+
+    document.getElementById('sessions-new-btn').addEventListener('click', () => {
+        window.location.href = 'new-session.html';
+    });
+
+    if (sessionsUnsubscribe) sessionsUnsubscribe();
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+        allSessions = [];
+        snapshot.forEach(doc => {
+            allSessions.push({ id: doc.id, ...doc.data() });
+        });
+        renderSessionsList();
+    }, (error) => {
+        document.getElementById('sessions-list-container').innerHTML = `<p style="color:#c47a7a;">❌ Error: ${error.message}</p>`;
+        console.error(error);
+    });
+}
+
+function renderSessionsList() {
+    const container = document.getElementById('sessions-list-container');
+
+    if (allSessions.length === 0) {
+        container.innerHTML = `
+            <div style="background:white;border-radius:20px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <p style="color:#5a7c6e;font-size:18px;">📋 No sessions yet.</p>
+                <p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const sorted = [...allSessions].sort((a, b) => {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        if (a.time > b.time) return -1;
+        if (a.time < b.time) return 1;
+        return 0;
+    });
+
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            ${sorted.map(session => {
+                const scoutCount = allScouts.length;
+                let attended = 0;
+                if (session.attendance) {
+                    for (const key in session.attendance) {
+                        if (session.attendance[key] === true) attended++;
+                    }
+                }
+                const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
+
+                return `
+                    <div class="scout-card" style="cursor:pointer;" data-id="${session.id}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div style="font-weight:600;font-size:18px;color:#2d5a4a;">${session.name}</div>
+                                <div style="color:#5a7c6e;font-size:14px;">
+                                    📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                                </div>
+                                <div style="color:#5a7c6e;font-size:14px;margin-top:4px;">
+                                    👥 ${attended}/${scoutCount} scouts attended (${percent}%)
+                                </div>
+                            </div>
+                            <div style="font-size:14px;color:#5a7c6e;text-align:right;">
+                                ${session.purpose ? `<div style="max-width:200px;font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
+                                <div style="font-size:12px;color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    document.querySelectorAll('.scout-card[data-id]').forEach(card => {
+        card.addEventListener('click', () => {
+            window.location.href = `session-detail.html?id=${card.dataset.id}`;
         });
     });
 }
