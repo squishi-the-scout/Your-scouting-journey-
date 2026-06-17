@@ -84,7 +84,10 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { 
+            doc, getDoc, updateDoc, deleteDoc, collection, getDocs, 
+            query, where, setDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
@@ -113,31 +116,36 @@
             });
         }
 
-        // 🔥 FIX: Force fresh fetch from Firestore every time
+        async function getAttendance() {
+            const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
+            const snapshot = await getDocs(q);
+            const attendance = {};
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                attendance[data.userId] = data.attended;
+            });
+            return attendance;
+        }
+
         async function renderPage() {
             const docRef = doc(db, 'sessions', sessionId);
             const docSnap = await getDoc(docRef);
-            
             if (!docSnap.exists()) {
                 document.getElementById('session-title').textContent = 'Session not found';
                 return;
             }
-            
-            // ✅ Use the FRESH data from Firestore
             const session = { id: docSnap.id, ...docSnap.data() };
-            const attendance = session.attendance || {};
+            const attendance = await getAttendance();
 
             document.getElementById('session-title').textContent = session.name;
             document.getElementById('session-meta').textContent = `${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}`;
 
-            // Count attendance
             let attendedScouts = 0;
             allScouts.forEach(s => { if (attendance[s.id] === true) attendedScouts++; });
             let attendedLeaders = 0;
             allLeaders.forEach(s => { if (attendance[s.id] === true) attendedLeaders++; });
 
             let html = `
-                <!-- Session Info -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                         <div>
@@ -155,7 +163,6 @@
                     </div>
                 </div>
 
-                <!-- Scouts -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👥 Scouts (${attendedScouts}/${allScouts.length} attended)</h3>
@@ -165,7 +172,7 @@
                         ${allScouts.map(scout => {
                             const isAttended = attendance[scout.id] === true;
                             return `
-                                <div class="attendance-row" data-id="${scout.id}">
+                                <div class="attendance-row" data-id="${scout.id}" data-type="scout">
                                     <span class="scout-name">${scout.username}</span>
                                     <div class="attendance-toggle">
                                         <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
@@ -177,7 +184,6 @@
                     </div>
                 </div>
 
-                <!-- Leaders -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👤 Leaders (${attendedLeaders}/${allLeaders.length} attended)</h3>
@@ -187,7 +193,7 @@
                         ${allLeaders.map(leader => {
                             const isAttended = attendance[leader.id] === true;
                             return `
-                                <div class="attendance-row" data-id="${leader.id}">
+                                <div class="attendance-row" data-id="${leader.id}" data-type="leader">
                                     <span class="scout-name">${leader.username}</span>
                                     <div class="attendance-toggle">
                                         <button class="btn-attend ${isAttended ? 'active' : ''}" data-attend="true">✅ Attend</button>
@@ -199,7 +205,6 @@
                     </div>
                 </div>
 
-                <!-- Edit Section -->
                 <div id="edit-section" style="display:none;background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-top:16px;">
                     <h3 style="color:#2d5a4a;margin-bottom:16px;">✏️ Edit Session</h3>
                     <div class="form-group">
@@ -235,47 +240,66 @@
         }
 
         function attachEvents(session) {
-            // Attendance toggle
             document.querySelectorAll('#attendance-scouts .attendance-toggle button, #attendance-leaders .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const row = this.closest('.attendance-row');
                     const userId = row.dataset.id;
+                    const userType = row.dataset.type;
                     const attend = this.dataset.attend === 'true';
                     
-                    await updateDoc(doc(db, 'sessions', sessionId), {
-                        [`attendance.${userId}`]: attend
+                    const docId = `${sessionId}_${userId}`;
+                    const docRef = doc(db, 'attendance', docId);
+                    
+                    await setDoc(docRef, {
+                        sessionId: sessionId,
+                        userId: userId,
+                        userType: userType,
+                        attended: attend
                     });
                     
-                    // 🔥 Force fresh re-render
                     await renderPage();
                 });
             });
 
-            // Mark all scouts
             document.getElementById('mark-all-scouts')?.addEventListener('click', async () => {
-                const update = {};
-                allScouts.forEach(s => { update[`attendance.${s.id}`] = true; });
-                await updateDoc(doc(db, 'sessions', sessionId), update);
+                for (const scout of allScouts) {
+                    const docId = `${sessionId}_${scout.id}`;
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: scout.id,
+                        userType: 'scout',
+                        attended: true
+                    });
+                }
                 await renderPage();
             });
 
-            // Mark all leaders
             document.getElementById('mark-all-leaders')?.addEventListener('click', async () => {
-                const update = {};
-                allLeaders.forEach(s => { update[`attendance.${s.id}`] = true; });
-                await updateDoc(doc(db, 'sessions', sessionId), update);
+                for (const leader of allLeaders) {
+                    const docId = `${sessionId}_${leader.id}`;
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: leader.id,
+                        userType: 'leader',
+                        attended: true
+                    });
+                }
                 await renderPage();
             });
 
-            // Delete
             document.getElementById('delete-session-btn')?.addEventListener('click', async () => {
                 if (confirm(`Delete "${session.name}"? This cannot be undone.`)) {
+                    // Delete all attendance records for this session
+                    const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
+                    const snapshot = await getDocs(q);
+                    for (const doc of snapshot.docs) {
+                        await deleteDoc(doc.ref);
+                    }
                     await deleteDoc(doc(db, 'sessions', sessionId));
                     window.location.href = 'sessions.html';
                 }
             });
 
-            // Edit toggle
             let editVisible = false;
             document.getElementById('toggle-edit-btn')?.addEventListener('click', () => {
                 editVisible = !editVisible;
@@ -286,7 +310,6 @@
                 document.getElementById('edit-section').style.display = 'none';
             });
 
-            // Save edit
             document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('edit-name').value.trim();
                 const date = document.getElementById('edit-date').value;
