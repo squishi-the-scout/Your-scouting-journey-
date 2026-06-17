@@ -29,6 +29,7 @@
         .attendance-toggle button {
             padding: 4px 16px; border-radius: 30px; border: none; font-size: 13px;
             cursor: pointer; font-weight: 500;
+            transition: all 0.2s;
         }
         .btn-attend { background: #e8f0ec; color: #5a7c6e; }
         .btn-attend.active { background: #2d5a4a; color: white; }
@@ -252,9 +253,12 @@
 
             container.innerHTML = html;
 
-            // ─── EVENT LISTENERS ───
+            // ─── ATTACH EVENT LISTENERS AFTER RENDER ───
+            attachEventListeners();
+        }
 
-            // Toggle attendance for scouts
+        function attachEventListeners() {
+            // Scout attendance buttons
             document.querySelectorAll('#attendance-scouts .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -264,11 +268,11 @@
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
-                    loadSession();
+                    await loadSession(); // Re-render with fresh data
                 });
             });
 
-            // Toggle attendance for leaders
+            // Leader attendance buttons
             document.querySelectorAll('#attendance-leaders .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
@@ -278,81 +282,101 @@
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
-                    loadSession();
+                    await loadSession(); // Re-render with fresh data
                 });
             });
 
-            // Mark all scouts attended
-            document.getElementById('mark-all-scouts').addEventListener('click', async () => {
-                const update = {};
-                for (const scout of allScouts) {
-                    update[`attendance.${scout.id}`] = true;
-                }
-                await updateDoc(doc(db, 'sessions', sessionId), update);
-                loadSession();
-            });
+            // Mark all scouts
+            const markAllScouts = document.getElementById('mark-all-scouts');
+            if (markAllScouts) {
+                markAllScouts.addEventListener('click', async () => {
+                    const update = {};
+                    for (const scout of allScouts) {
+                        update[`attendance.${scout.id}`] = true;
+                    }
+                    await updateDoc(doc(db, 'sessions', sessionId), update);
+                    await loadSession();
+                });
+            }
 
-            // Mark all leaders attended
-            document.getElementById('mark-all-leaders').addEventListener('click', async () => {
-                const update = {};
-                for (const leader of allLeaders) {
-                    update[`attendance.${leader.id}`] = true;
-                }
-                await updateDoc(doc(db, 'sessions', sessionId), update);
-                loadSession();
-            });
+            // Mark all leaders
+            const markAllLeaders = document.getElementById('mark-all-leaders');
+            if (markAllLeaders) {
+                markAllLeaders.addEventListener('click', async () => {
+                    const update = {};
+                    for (const leader of allLeaders) {
+                        update[`attendance.${leader.id}`] = true;
+                    }
+                    await updateDoc(doc(db, 'sessions', sessionId), update);
+                    await loadSession();
+                });
+            }
 
             // Delete session
-            document.getElementById('delete-session-btn').addEventListener('click', async () => {
-                if (confirm(`Delete "${s.name}"? This cannot be undone.`)) {
-                    await deleteDoc(doc(db, 'sessions', sessionId));
-                    window.location.href = 'sessions.html';
-                }
-            });
+            const deleteBtn = document.getElementById('delete-session-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    if (confirm(`Delete "${sessionData.name}"? This cannot be undone.`)) {
+                        await deleteDoc(doc(db, 'sessions', sessionId));
+                        window.location.href = 'sessions.html';
+                    }
+                });
+            }
 
             // Edit toggle
-            let editVisible = false;
-            document.getElementById('toggle-edit-btn').addEventListener('click', () => {
-                editVisible = !editVisible;
-                document.getElementById('edit-section').style.display = editVisible ? 'block' : 'none';
-            });
+            const toggleEdit = document.getElementById('toggle-edit-btn');
+            if (toggleEdit) {
+                let editVisible = false;
+                toggleEdit.addEventListener('click', () => {
+                    editVisible = !editVisible;
+                    document.getElementById('edit-section').style.display = editVisible ? 'block' : 'none';
+                });
+            }
 
-            document.getElementById('cancel-edit-btn').addEventListener('click', () => {
-                document.getElementById('edit-section').style.display = 'none';
-                editVisible = false;
-            });
+            // Cancel edit
+            const cancelEdit = document.getElementById('cancel-edit-btn');
+            if (cancelEdit) {
+                cancelEdit.addEventListener('click', () => {
+                    document.getElementById('edit-section').style.display = 'none';
+                });
+            }
 
-            document.getElementById('save-edit-btn').addEventListener('click', async () => {
-                const name = document.getElementById('edit-name').value.trim();
-                const date = document.getElementById('edit-date').value;
-                const time = document.getElementById('edit-time').value;
-                const location = document.getElementById('edit-location').value.trim();
-                const purpose = document.getElementById('edit-purpose').value.trim();
-                const msg = document.getElementById('edit-message');
+            // Save edit
+            const saveEdit = document.getElementById('save-edit-btn');
+            if (saveEdit) {
+                saveEdit.addEventListener('click', async () => {
+                    const name = document.getElementById('edit-name').value.trim();
+                    const date = document.getElementById('edit-date').value;
+                    const time = document.getElementById('edit-time').value;
+                    const location = document.getElementById('edit-location').value.trim();
+                    const purpose = document.getElementById('edit-purpose').value.trim();
+                    const msg = document.getElementById('edit-message');
 
-                if (!name || !date || !time) {
-                    msg.textContent = '⚠️ Name, Date, and Time are required.';
-                    msg.style.color = '#c47a7a';
-                    return;
-                }
+                    if (!name || !date || !time) {
+                        msg.textContent = '⚠️ Name, Date, and Time are required.';
+                        msg.style.color = '#c47a7a';
+                        return;
+                    }
 
-                try {
-                    await updateDoc(doc(db, 'sessions', sessionId), {
-                        name, date, time,
-                        location: location || 'TBD',
-                        purpose: purpose || '',
-                        lastEditedBy: currentUser.username,
-                        lastEditedAt: new Date().toISOString()
-                    });
-                    msg.textContent = '✅ Session updated!';
-                    msg.style.color = '#8fbcbb';
-                    setTimeout(() => loadSession(), 800);
-                } catch (error) {
-                    msg.textContent = '❌ Error: ' + error.message;
-                    msg.style.color = '#c47a7a';
-                    console.error(error);
-                }
-            });
+                    try {
+                        await updateDoc(doc(db, 'sessions', sessionId), {
+                            name, date, time,
+                            location: location || 'TBD',
+                            purpose: purpose || '',
+                            lastEditedBy: currentUser.username,
+                            lastEditedAt: new Date().toISOString()
+                        });
+                        msg.textContent = '✅ Session updated!';
+                        msg.style.color = '#8fbcbb';
+                        document.getElementById('edit-section').style.display = 'none';
+                        await loadSession();
+                    } catch (error) {
+                        msg.textContent = '❌ Error: ' + error.message;
+                        msg.style.color = '#c47a7a';
+                        console.error(error);
+                    }
+                });
+            }
         }
 
         async function init() {
