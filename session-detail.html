@@ -46,6 +46,18 @@
             margin-bottom: 16px;
         }
         .section-title h3 { color: #2d5a4a; margin: 0; }
+        .mark-btn-scouts {
+            background: #8fbcbb; color: white; border: none;
+            padding: 6px 16px; border-radius: 30px;
+            font-weight: 500; cursor: pointer;
+        }
+        .mark-btn-leaders {
+            background: #a8c4d4; color: #2d5a4a; border: none;
+            padding: 6px 16px; border-radius: 30px;
+            font-weight: 500; cursor: pointer;
+        }
+        .mark-btn-scouts:hover { background: #7da8a7; }
+        .mark-btn-leaders:hover { background: #8fb8cc; }
     </style>
 </head>
 <body>
@@ -141,7 +153,6 @@
             allScouts.forEach(scout => {
                 if (attendance[scout.id] === true) attendedScouts++;
             });
-            const scoutPercent = scoutCount > 0 ? Math.round((attendedScouts / scoutCount) * 100) : 0;
 
             // Leader stats
             const leaderCount = allLeaders.length;
@@ -149,7 +160,6 @@
             allLeaders.forEach(leader => {
                 if (attendance[leader.id] === true) attendedLeaders++;
             });
-            const leaderPercent = leaderCount > 0 ? Math.round((attendedLeaders / leaderCount) * 100) : 0;
 
             let html = `
                 <!-- Session Info -->
@@ -175,8 +185,8 @@
             html += `
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
-                        <h3>👥 Scouts (${attendedScouts}/${scoutCount} · ${scoutPercent}%)</h3>
-                        <button class="btn-save" id="mark-all-scouts" style="background:#8fbcbb;color:white;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
+                        <h3>👥 Scouts (${attendedScouts}/${scoutCount} attended)</h3>
+                        <button class="mark-btn-scouts" id="mark-all-scouts">✅ Mark All Attended</button>
                     </div>
                     <div class="attendance-grid" id="attendance-scouts">
                         ${allScouts.map(scout => {
@@ -199,8 +209,8 @@
             html += `
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
-                        <h3>👤 Leaders (${attendedLeaders}/${leaderCount} · ${leaderPercent}%)</h3>
-                        <button class="btn-save" id="mark-all-leaders" style="background:#a8c4d4;color:#2d5a4a;border:none;padding:6px 16px;border-radius:30px;font-weight:500;cursor:pointer;">✅ Mark All Attended</button>
+                        <h3>👤 Leaders (${attendedLeaders}/${leaderCount} attended)</h3>
+                        <button class="mark-btn-leaders" id="mark-all-leaders">✅ Mark All Attended</button>
                     </div>
                     <div class="attendance-grid" id="attendance-leaders">
                         ${allLeaders.map(leader => {
@@ -252,8 +262,6 @@
             `;
 
             container.innerHTML = html;
-
-            // ─── ATTACH EVENT LISTENERS AFTER RENDER ───
             attachEventListeners();
         }
 
@@ -268,7 +276,7 @@
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
-                    await loadSession(); // Re-render with fresh data
+                    await loadSession();
                 });
             });
 
@@ -282,7 +290,7 @@
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
-                    await loadSession(); // Re-render with fresh data
+                    await loadSession();
                 });
             });
 
