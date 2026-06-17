@@ -46,16 +46,10 @@
             margin-bottom: 16px;
         }
         .section-title h3 { color: #2d5a4a; margin: 0; }
-        .mark-btn-scouts {
-            background: #8fbcbb; color: white; border: none;
-            padding: 6px 16px; border-radius: 30px;
-            font-weight: 500; cursor: pointer;
-        }
-        .mark-btn-leaders {
-            background: #a8c4d4; color: #2d5a4a; border: none;
-            padding: 6px 16px; border-radius: 30px;
-            font-weight: 500; cursor: pointer;
-        }
+        .mark-btn-scouts { background: #8fbcbb; color: white; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 500; cursor: pointer; }
+        .mark-btn-leaders { background: #a8c4d4; color: #2d5a4a; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 500; cursor: pointer; }
+        .mark-btn-scouts:hover { background: #7da8a7; }
+        .mark-btn-leaders:hover { background: #8fb8cc; }
     </style>
 </head>
 <body>
@@ -132,12 +126,14 @@
             document.getElementById('session-title').textContent = session.name;
             document.getElementById('session-meta').textContent = `${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}`;
 
+            // ─── COUNT ATTENDANCE ───
             let attendedScouts = 0;
             allScouts.forEach(s => { if (attendance[s.id] === true) attendedScouts++; });
             let attendedLeaders = 0;
             allLeaders.forEach(s => { if (attendance[s.id] === true) attendedLeaders++; });
 
             let html = `
+                <!-- Session Info -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                         <div>
@@ -155,6 +151,7 @@
                     </div>
                 </div>
 
+                <!-- ─── SCOUTS ─── -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👥 Scouts (${attendedScouts}/${allScouts.length} attended)</h3>
@@ -176,6 +173,7 @@
                     </div>
                 </div>
 
+                <!-- ─── LEADERS ─── -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👤 Leaders (${attendedLeaders}/${allLeaders.length} attended)</h3>
@@ -197,6 +195,7 @@
                     </div>
                 </div>
 
+                <!-- ─── EDIT SECTION ─── -->
                 <div id="edit-section" style="display:none;background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-top:16px;">
                     <h3 style="color:#2d5a4a;margin-bottom:16px;">✏️ Edit Session</h3>
                     <div class="form-group">
@@ -228,8 +227,11 @@
             `;
 
             document.getElementById('session-detail').innerHTML = html;
+            attachEvents(session);
+        }
 
-            // ─── ATTACH EVENTS ───
+        function attachEvents(session) {
+            // ─── ATTENDANCE TOGGLE ───
             document.querySelectorAll('#attendance-scouts .attendance-toggle button, #attendance-leaders .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const row = this.closest('.attendance-row');
@@ -238,10 +240,11 @@
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
-                    await renderPage(); // Re-render the whole page
+                    await renderPage();
                 });
             });
 
+            // ─── MARK ALL SCOUTS ───
             document.getElementById('mark-all-scouts')?.addEventListener('click', async () => {
                 const update = {};
                 allScouts.forEach(s => { update[`attendance.${s.id}`] = true; });
@@ -249,6 +252,7 @@
                 await renderPage();
             });
 
+            // ─── MARK ALL LEADERS ───
             document.getElementById('mark-all-leaders')?.addEventListener('click', async () => {
                 const update = {};
                 allLeaders.forEach(s => { update[`attendance.${s.id}`] = true; });
@@ -256,6 +260,7 @@
                 await renderPage();
             });
 
+            // ─── DELETE ───
             document.getElementById('delete-session-btn')?.addEventListener('click', async () => {
                 if (confirm(`Delete "${session.name}"? This cannot be undone.`)) {
                     await deleteDoc(doc(db, 'sessions', sessionId));
@@ -263,6 +268,7 @@
                 }
             });
 
+            // ─── EDIT TOGGLE ───
             let editVisible = false;
             document.getElementById('toggle-edit-btn')?.addEventListener('click', () => {
                 editVisible = !editVisible;
@@ -273,6 +279,7 @@
                 document.getElementById('edit-section').style.display = 'none';
             });
 
+            // ─── SAVE EDIT ───
             document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('edit-name').value.trim();
                 const date = document.getElementById('edit-date').value;
