@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Session — GIS Scouts</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-weight: 600; color: #2d5a4a; margin-bottom: 6px; }
+        .form-group input, .form-group textarea {
+            width: 100%; padding: 12px; border: 1px solid #e0ece4; border-radius: 16px;
+            font-family: inherit; font-size: 14px; background: white;
+        }
+        .form-group textarea { min-height: 80px; resize: vertical; }
+        .form-actions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+        .form-actions button { padding: 10px 24px; border-radius: 40px; border: none; font-weight: 500; cursor: pointer; }
+        .btn-save { background: #8fbcbb; color: white; }
+        .btn-cancel { background: #e8f0ec; color: #2d5a4a; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+        <nav class="sidebar-nav">
+            <a href="leader-dashboard.html">📊 <span>Dashboard</span></a>
+            <a href="leader-dashboard.html">👥 <span>All Scouts</span></a>
+            <a href="leader-dashboard.html">✋ <span>Pending</span></a>
+            <a href="sessions.html" class="active">📋 <span>Sessions</span></a>
+            <a href="leader-dashboard.html">📤 <span>Export</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="#" id="logout-btn">🚪 <span>Logout</span></a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <h1>➕ New Session</h1>
+                <p>Create a new activity or meeting</p>
+            </div>
+            <div class="header-right">
+                <span class="avatar" id="leader-avatar">H</span>
+            </div>
+        </div>
+
+        <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div class="form-group">
+                <label>Session Name *</label>
+                <input type="text" id="session-name" placeholder="e.g., Knots Practice">
+            </div>
+            <div class="form-group">
+                <label>Date *</label>
+                <input type="date" id="session-date">
+            </div>
+            <div class="form-group">
+                <label>Time *</label>
+                <input type="time" id="session-time">
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="session-location" placeholder="e.g., School Hall">
+            </div>
+            <div class="form-group">
+                <label>Purpose / Notes</label>
+                <textarea id="session-purpose" placeholder="What will you be covering?"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-save" id="save-session-btn">💾 Save Session</button>
+                <button class="btn-cancel" id="cancel-btn">Cancel</button>
+            </div>
+            <div id="form-message" style="margin-top:16px;color:#5a7c6e;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
+
+        document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            window.location.href = 'sessions.html';
+        });
+
+        document.getElementById('save-session-btn').addEventListener('click', async () => {
+            const name = document.getElementById('session-name').value.trim();
+            const date = document.getElementById('session-date').value;
+            const time = document.getElementById('session-time').value;
+            const location = document.getElementById('session-location').value.trim();
+            const purpose = document.getElementById('session-purpose').value.trim();
+            const message = document.getElementById('form-message');
+
+            if (!name || !date || !time) {
+                message.textContent = '⚠️ Please fill in Name, Date, and Time.';
+                message.style.color = '#c47a7a';
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'sessions'), {
+                    name,
+                    date,
+                    time,
+                    location: location || 'TBD',
+                    purpose: purpose || '',
+                    createdBy: currentUser.username,
+                    createdAt: serverTimestamp(),
+                    lastEditedBy: currentUser.username,
+                    lastEditedAt: serverTimestamp(),
+                    attendance: {}
+                });
+
+                message.textContent = '✅ Session created successfully! Redirecting...';
+                message.style.color = '#8fbcbb';
+                setTimeout(() => {
+                    window.location.href = 'sessions.html';
+                }, 1200);
+
+            } catch (error) {
+                message.textContent = '❌ Error: ' + error.message;
+                message.style.color = '#c47a7a';
+                console.error(error);
+            }
+        });
+
+        const today = new Date().toISOString().slice(0, 10);
+        document.getElementById('session-date').value = today;
+    </script>
+</body>
+</html>
