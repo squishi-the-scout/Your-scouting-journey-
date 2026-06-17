@@ -1,154 +1,146 @@
 import { auth, db } from './firebase-config.js';
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-if (!currentUser || currentUser.role !== 'scout') window.location.href = 'index.html';
-document.getElementById('scout-name').innerText = currentUser.username;
+if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
 
-document.getElementById('logout-btn').onclick = () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
-};
+document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
 
-const requirementsData = {
-    membership: [
-        "Law and Promise",
-        "Scout Uniform, Badges and Positions",
-        "Knots and Whipping",
-        "Woodcraft Signs",
-        "National Flag, Anthem, Emblem, Tree, Flower",
-        "Scouting History",
-        "Salutes, Signs, Handshake, Scout Staff",
-        "Dress a Wound",
-        "Whistle Calls, Silent Signs, Formations",
-        "Re-test Membership",
-        "Interview by Scouter",
-        "Investiture"
-    ],
-    second: ["Second Class requirements coming soon"],
-    first: ["First Class requirements coming soon"],
-    badges: ["Proficiency badges coming soon"]
-};
+let allSessions = [];
+let allScouts = [];
+let attendanceCache = {};
 
-let currentTab = 'membership';
-let scoutStatus = {};
-
-async function loadStatus() {
-    const docRef = doc(db, 'scoutStatus', currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    scoutStatus = docSnap.exists() ? docSnap.data() : {};
-}
-
-async function saveStatus() {
-    await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
-}
-
-function getRequirementIcon(reqName) {
-    const iconMap = {
-        "Law and Promise": "📜",
-        "Scout Uniform, Badges and Positions": "🎽",
-        "Knots and Whipping": "🪢",
-        "Woodcraft Signs": "🌲",
-        "National Flag, Anthem, Emblem, Tree, Flower": "🇲🇻",
-        "Scouting History": "📖",
-        "Salutes, Signs, Handshake, Scout Staff": "🫡",
-        "Dress a Wound": "🩹",
-        "Whistle Calls, Silent Signs, Formations": "🎵",
-        "Re-test Membership": "🔁",
-        "Interview by Scouter": "🗣️",
-        "Investiture": "🎓"
-    };
-    return iconMap[reqName] || "⭐";
-}
-
-function updateProgress() {
-    const reqs = requirementsData[currentTab];
-    if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-        document.getElementById('progress-count').innerText = '0/0';
-        document.getElementById('progress-bar').style.width = '0%';
-        return;
-    }
-    let completed = 0;
-    reqs.forEach(req => {
-        if (scoutStatus[`${currentTab}_${req}`] === 'approved') completed++;
+// ─── LOAD SCOUTS ──────────────────────────────────────────
+async function loadScouts() {
+    const snapshot = await getDocs(collection(db, 'users'));
+    allScouts = [];
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.role === 'scout') allScouts.push({ id: doc.id, username: data.username });
     });
-    const percent = (completed / reqs.length) * 100;
-    document.getElementById('progress-count').innerText = `${completed}/${reqs.length}`;
-    document.getElementById('progress-bar').style.width = `${percent}%`;
 }
 
-async function markAsReady(reqName) {
-    const key = `${currentTab}_${reqName}`;
-    if (scoutStatus[key] === 'approved') return;
-    scoutStatus[key] = 'pending';
-    await saveStatus();
-    renderRequirements();
+// ─── LISTEN TO SESSIONS + ATTENDANCE ─────────────────────
+function listenToSessions() {
+    const container = document.getElementById('sessions-list');
+    container.innerHTML = 'Loading sessions...';
+
+    // Listen to sessions
+    const unsubscribeSessions = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+        allSessions = [];
+        snapshot.forEach(doc => {
+            allSessions.push({ id: doc.id, ...doc.data() });
+        });
+        // After sessions load, listen to attendance
+        listenToAttendance();
+    }, (error) => {
+        container.innerHTML = `<p style="color:#c47a7a;">❌ Error loading sessions: ${error.message}</p>`;
+        console.error(error);
+    });
+
+    return unsubscribeSessions;
 }
 
-function renderRequirements() {
-    const container = document.getElementById('requirements-grid');
-    const reqs = requirementsData[currentTab];
+// ─── LISTEN TO ATTENDANCE ──────────────────────────────────
+function listenToAttendance() {
+    const container = document.getElementById('sessions-list');
     
-    if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-        container.innerHTML = `<div class="req-card"><div class="req-name">More requirements coming soon!</div></div>`;
-        updateProgress();
-        return;
-    }
+    // Listen to ALL attendance records
+    const unsubscribeAttendance = onSnapshot(collection(db, 'attendance'), (snapshot) => {
+        attendanceCache = {};
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const sessionId = data.sessionId;
+            if (!attendanceCache[sessionId]) {
+                attendanceCache[sessionId] = {};
+            }
+            attendanceCache[sessionId][data.userId] = data.attended;
+        });
+        renderSessions();
+    }, (error) => {
+        console.error("Error loading attendance:", error);
+    });
 
-    container.innerHTML = reqs.map(req => {
-        const status = scoutStatus[`${currentTab}_${req}`] || 'todo';
-        const leftIcon = getRequirementIcon(req);
-        let statusIcon = '';
-        let actionHtml = '';
-        
-        if (status === 'approved') {
-            statusIcon = '🏁';
-            actionHtml = `<span class="done-text">✓ Completed</span>`;
-        } else if (status === 'pending') {
-            statusIcon = '✋';
-            actionHtml = `<span class="waiting-text">⏳ Waiting for leader</span>`;
-        } else {
-            statusIcon = '🚩';
-            actionHtml = `<button class="ready-btn" data-req="${req}">Mark Ready</button>`;
-        }
-        
-        return `
-            <div class="req-card">
-                <div class="req-header">
-                    <span class="req-name"><span style="margin-right: 10px;">${leftIcon}</span>${req}</span>
-                    <span class="req-status-icon">${statusIcon}</span>
-                </div>
-                <div class="req-footer">
-                    <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">📖 View Notes</a>
-                    ${actionHtml}
-                </div>
+    return unsubscribeAttendance;
+}
+
+// ─── RENDER SESSIONS ────────────────────────────────────────
+function renderSessions() {
+    const container = document.getElementById('sessions-list');
+
+    if (allSessions.length === 0) {
+        container.innerHTML = `
+            <div style="background:white;border-radius:20px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <p style="color:#5a7c6e;font-size:18px;">📋 No sessions yet.</p>
+                <p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p>
             </div>
         `;
-    }).join('');
+        return;
+    }
 
-    document.querySelectorAll('.ready-btn').forEach(btn => {
-        btn.addEventListener('click', () => markAsReady(btn.dataset.req));
+    const sorted = [...allSessions].sort((a, b) => {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        if (a.time > b.time) return -1;
+        if (a.time < b.time) return 1;
+        return 0;
     });
-    
-    updateProgress();
+
+    container.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+            ${sorted.map(session => {
+                const scoutCount = allScouts.length;
+                let attended = 0;
+                const sessionAttendance = attendanceCache[session.id] || {};
+                for (const scout of allScouts) {
+                    if (sessionAttendance[scout.id] === true) attended++;
+                }
+                const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
+
+                return `
+                    <div class="scout-card" style="cursor:pointer;" data-id="${session.id}">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div style="font-weight:600;font-size:18px;color:#2d5a4a;">${session.name}</div>
+                                <div style="color:#5a7c6e;font-size:14px;">
+                                    📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                                </div>
+                                <div style="color:#5a7c6e;font-size:14px;margin-top:4px;">
+                                    👥 ${attended}/${scoutCount} scouts attended (${percent}%)
+                                </div>
+                            </div>
+                            <div style="font-size:14px;color:#5a7c6e;text-align:right;">
+                                ${session.purpose ? `<div style="max-width:200px;font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
+                                <div style="font-size:12px;color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    document.querySelectorAll('.scout-card[data-id]').forEach(card => {
+        card.addEventListener('click', () => {
+            window.location.href = `session-detail.html?id=${card.dataset.id}`;
+        });
+    });
 }
 
-async function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab').forEach(t => {
-        if (t.dataset.tab === tab) t.classList.add('active');
-        else t.classList.remove('active');
-    });
-    await loadStatus();
-    renderRequirements();
-}
-
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+// ─── LOGOUT ──────────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
 });
 
+// ─── NEW SESSION ─────────────────────────────────────────────
+document.getElementById('new-session-btn').addEventListener('click', () => {
+    window.location.href = 'new-session.html';
+});
+
+// ─── INIT ─────────────────────────────────────────────────────
 async function init() {
-    await loadStatus();
-    renderRequirements();
+    await loadScouts();
+    listenToSessions();
 }
 init();
