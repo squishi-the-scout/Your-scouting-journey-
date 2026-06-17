@@ -1,0 +1,397 @@
+import { auth, db } from './firebase-config.js';
+import { 
+    collection, getDocs, doc, getDoc, setDoc, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// ─── State ──────────────────────────────────────────────
+const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
+
+document.getElementById('leader-name').textContent = currentUser.username;
+document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+
+let allScouts = [];
+let allStatus = {};
+let currentView = 'dashboard';
+let selectedScoutId = null;
+let unsubscribeStatus = null;
+
+const membershipReqs = [
+    "Law and Promise",
+    "Scout Uniform, Badges and Positions",
+    "Knots and Whipping",
+    "Woodcraft Signs",
+    "National Flag, Anthem, Emblem, Tree, Flower",
+    "Scouting History",
+    "Salutes, Signs, Handshake, Scout Staff",
+    "Dress a Wound",
+    "Whistle Calls, Silent Signs, Formations",
+    "Re-test Membership",
+    "Interview by Scouter",
+    "Investiture"
+];
+
+// ─── Logout ──────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+});
+
+// ─── Navigation ──────────────────────────────────────────
+document.querySelectorAll('.sidebar-nav a').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+        currentView = link.dataset.view;
+        renderView();
+    });
+});
+
+// ─── Load Scouts ─────────────────────────────────────────
+async function loadScouts() {
+    const snapshot = await getDocs(collection(db, 'users'));
+    const scouts = [];
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.role === 'scout') {
+            scouts.push({ id: doc.id, username: data.username });
+        }
+    });
+    allScouts = scouts;
+    return scouts;
+}
+
+// ─── Live Status Listener ────────────────────────────────
+function listenToStatus() {
+    if (unsubscribeStatus) unsubscribeStatus();
+    unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+        allStatus = {};
+        snapshot.forEach(doc => {
+            allStatus[doc.id] = doc.data();
+        });
+        renderView();
+        updatePendingBadge();
+    });
+}
+
+function updatePendingBadge() {
+    let count = 0;
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value === 'pending' || (value && value.status === 'pending')) {
+                count++;
+                break;
+            }
+        }
+    }
+    document.getElementById('pending-badge').textContent = count;
+}
+
+// ─── Render Views ─────────────────────────────────────────
+function renderView() {
+    const container = document.getElementById('page-content');
+    if (currentView === 'dashboard') renderDashboard(container);
+    else if (currentView === 'scouts') renderAllScouts(container);
+    else if (currentView === 'pending') renderPending(container);
+    else if (currentView === 'export') renderExport(container);
+    else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+}
+
+// ─── Dashboard ────────────────────────────────────────────
+function renderDashboard(container) {
+    const total = allScouts.length;
+    let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
+
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        let done = 0;
+        let pending = 0;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value === 'pending' || (value && value.status === 'pending')) pending++;
+            else if (value && value.status === 'approved') done++;
+        }
+        const progress = done / membershipReqs.length;
+        if (progress === 1) completed++;
+        else if (progress >= 0.5) onTrack++;
+        else needsHelp++;
+        if (pending > 0) pendingCount++;
+    }
+
+    container.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card green"><div class="number">${completed}</div><div class="label">✅ Completed</div></div>
+            <div class="stat-card yellow"><div class="number">${onTrack}</div><div class="label">🟡 On Track</div></div>
+            <div class="stat-card red"><div class="number">${needsHelp}</div><div class="label">🔴 Needs Help</div></div>
+            <div class="stat-card blue"><div class="number">${pendingCount}</div><div class="label">✋ Pending</div></div>
+        </div>
+        <div class="scout-grid">
+            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
+        </div>
+    `;
+
+    container.querySelectorAll('.scout-card').forEach(card => {
+        card.addEventListener('click', () => {
+            selectedScoutId = card.dataset.id;
+            currentView = 'scout-detail';
+            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
+        });
+    });
+}
+
+// ─── All Scouts ──────────────────────────────────────────
+function renderAllScouts(container) {
+    container.innerHTML = `
+        <div class="toolbar">
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="search-input" placeholder="Search scouts...">
+            </div>
+            <select class="filter-select" id="filter-select">
+                <option value="all">All</option>
+                <option value="completed">Completed</option>
+                <option value="on-track">On Track</option>
+                <option value="needs-help">Needs Help</option>
+            </select>
+        </div>
+        <div class="scout-grid" id="scout-grid">
+            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
+        </div>
+    `;
+
+    document.getElementById('search-input').addEventListener('input', filterScouts);
+    document.getElementById('filter-select').addEventListener('change', filterScouts);
+
+    document.querySelectorAll('.scout-card').forEach(card => {
+        card.addEventListener('click', () => {
+            selectedScoutId = card.dataset.id;
+            currentView = 'scout-detail';
+            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
+        });
+    });
+}
+
+function filterScouts() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const filter = document.getElementById('filter-select').value;
+    const grid = document.getElementById('scout-grid');
+    const cards = grid.querySelectorAll('.scout-card');
+    cards.forEach(card => {
+        const name = card.dataset.name.toLowerCase();
+        const progress = parseFloat(card.dataset.progress);
+        let show = true;
+        if (query && !name.includes(query)) show = false;
+        if (filter === 'completed' && progress < 1) show = false;
+        if (filter === 'on-track' && (progress < 0.5 || progress === 1)) show = false;
+        if (filter === 'needs-help' && progress >= 0.5) show = false;
+        card.style.display = show ? '' : 'none';
+    });
+}
+
+// ─── Pending ──────────────────────────────────────────────
+function renderPending(container) {
+    const pendingItems = [];
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value === 'pending' || (value && value.status === 'pending')) {
+                pendingItems.push({ scout, req, key });
+            }
+        }
+    }
+
+    if (pendingItems.length === 0) {
+        container.innerHTML = `<p style="color:#5a7c6e;">✅ No pending approvals — you're all caught up!</p>`;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="pending-list">
+            ${pendingItems.map(({ scout, req }) => `
+                <div class="pending-item" data-scout="${scout.id}" data-req="${req}">
+                    <div class="pending-info">
+                        <div class="avatar-small" style="background:${getColor(scout.username)}">${scout.username.charAt(0).toUpperCase()}</div>
+                        <span class="pending-name">${scout.username}</span>
+                        <span class="pending-req">— ${req}</span>
+                    </div>
+                    <button class="approve-btn">Approve</button>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    container.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const item = btn.closest('.pending-item');
+            const scoutId = item.dataset.scout;
+            const reqName = item.dataset.req;
+            await approveRequirement(scoutId, reqName);
+        });
+    });
+}
+
+// ─── Scout Detail ─────────────────────────────────────────
+function renderScoutDetail(container, scoutId) {
+    const scout = allScouts.find(s => s.id === scoutId);
+    if (!scout) { currentView = 'dashboard'; renderView(); return; }
+
+    const status = allStatus[scoutId] || {};
+    const done = membershipReqs.filter(r => status[`membership_${r}`] && status[`membership_${r}`].status === 'approved').length;
+    const progress = done / membershipReqs.length;
+
+    container.innerHTML = `
+        <div class="detail-header">
+            <span class="detail-back" id="detail-back">← Back</span>
+            <div class="detail-avatar" style="background:${getColor(scout.username)}">${scout.username.charAt(0).toUpperCase()}</div>
+            <div class="detail-name">
+                <h2>${scout.username}</h2>
+                <p>Membership Badge · ${done}/${membershipReqs.length} completed</p>
+            </div>
+        </div>
+        <div class="detail-progress">
+            <div class="progress-label"><span>Progress</span><span>${Math.round(progress * 100)}%</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress * 100}%"></div></div>
+        </div>
+        <div class="detail-notes">
+            <label><strong>📝 Private Note</strong> <span style="color:#5a7c6e;font-weight:400;">(only you can see this)</span></label>
+            <textarea id="note-textarea">${status.leaderNote || ''}</textarea>
+            <button id="save-note-btn">💾 Save Note</button>
+        </div>
+        <div class="detail-requirements">
+            <h3 style="margin-bottom:12px;color:#2d5a4a;">Requirements</h3>
+            ${membershipReqs.map(req => {
+                const data = status[`membership_${req}`];
+                const stat = data ? data.status : 'todo';
+                const icon = stat === 'approved' ? '✅' : stat === 'pending' ? '✋' : '⭕';
+                const label = stat === 'approved' ? 'Completed' : stat === 'pending' ? 'Pending' : 'Not started';
+                const meta = stat === 'approved' ? `Approved by ${data.approvedBy || 'leader'} · ${data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently'}` : '';
+                return `<div class="req-item"><span>${icon} ${req}</span><span class="req-status ${stat}">${label} ${meta ? `<span class="req-meta">— ${meta}</span>` : ''}</span></div>`;
+            }).join('')}
+        </div>
+    `;
+
+    document.getElementById('detail-back').addEventListener('click', () => {
+        currentView = 'dashboard';
+        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
+        renderView();
+    });
+
+    document.getElementById('save-note-btn').addEventListener('click', async () => {
+        const note = document.getElementById('note-textarea').value;
+        const ref = doc(db, 'scoutStatus', scoutId);
+        const current = (await getDoc(ref)).data() || {};
+        current.leaderNote = note;
+        await setDoc(ref, current);
+        alert('✅ Note saved!');
+    });
+}
+
+// ─── Export ────────────────────────────────────────────────
+function renderExport(container) {
+    container.innerHTML = `
+        <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <h2 style="color:#2d5a4a;margin-bottom:8px;">📤 Export Reports</h2>
+            <p style="color:#5a7c6e;margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
+            <button class="export-btn" id="export-all-btn">📥 Export All Scouts</button>
+            <button class="export-btn" style="margin-left:12px;" id="export-pending-btn">📥 Export Pending Only</button>
+            <div id="export-status" style="margin-top:16px;color:#5a7c6e;"></div>
+        </div>
+    `;
+
+    document.getElementById('export-all-btn').addEventListener('click', () => exportCSV('all'));
+    document.getElementById('export-pending-btn').addEventListener('click', () => exportCSV('pending'));
+}
+
+function exportCSV(type) {
+    const rows = [['Scout', 'Requirement', 'Status', 'Approved By', 'Approved At']];
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const data = status[key];
+            if (type === 'pending' && (!data || data.status !== 'pending')) continue;
+            const stat = data ? data.status : 'todo';
+            const by = data?.approvedBy || '';
+            const at = data?.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : '';
+            rows.push([scout.username, req, stat, by, at]);
+        }
+    }
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
+}
+
+// ─── Helpers ────────────────────────────────────────────────
+function getColor(name) {
+    const colors = ['#7a9e8a', '#a8c4d4', '#d4a86a', '#8fbcbb', '#c47a7a', '#b0a8c4'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function scoutCardHTML(scout) {
+    const status = allStatus[scout.id] || {};
+    let done = 0, pending = 0;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
+        const value = status[key];
+        if (value === 'pending' || (value && value.status === 'pending')) pending++;
+        else if (value && value.status === 'approved') done++;
+    }
+    const total = membershipReqs.length;
+    const progress = done / total;
+    const hasNote = !!status.leaderNote;
+    const color = getColor(scout.username);
+    return `
+        <div class="scout-card" data-id="${scout.id}" data-name="${scout.username.toLowerCase()}" data-progress="${progress}">
+            <div class="scout-top">
+                <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
+                <span class="scout-name">${scout.username}</span>
+            </div>
+            <div class="scout-progress-text">${done}/${total} done</div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress * 100}%"></div></div>
+            <div class="scout-status">
+                <span class="done">🟢 ${done} done</span>
+                ${pending > 0 ? `<span class="pending">✋ ${pending} pending</span>` : ''}
+                <span class="missing">⚠️ ${total - done - pending} missing</span>
+            </div>
+            ${hasNote ? '<div class="scout-note-indicator">📝 Has private note</div>' : ''}
+        </div>
+    `;
+}
+
+async function approveRequirement(scoutId, reqName) {
+    const ref = doc(db, 'scoutStatus', scoutId);
+    const current = (await getDoc(ref)).data() || {};
+    current[`membership_${reqName}`] = {
+        status: 'approved',
+        approvedBy: currentUser.username,
+        approvedAt: new Date().toISOString()
+    };
+    await setDoc(ref, current);
+}
+
+// ─── Init ──────────────────────────────────────────────────
+async function init() {
+    await loadScouts();
+    listenToStatus();
+    renderView();
+}
+
+init();
