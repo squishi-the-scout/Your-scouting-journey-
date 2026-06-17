@@ -113,20 +113,24 @@
             });
         }
 
+        // 🔥 FIX: Force fresh fetch from Firestore every time
         async function renderPage() {
             const docRef = doc(db, 'sessions', sessionId);
             const docSnap = await getDoc(docRef);
+            
             if (!docSnap.exists()) {
                 document.getElementById('session-title').textContent = 'Session not found';
                 return;
             }
+            
+            // ✅ Use the FRESH data from Firestore
             const session = { id: docSnap.id, ...docSnap.data() };
             const attendance = session.attendance || {};
 
             document.getElementById('session-title').textContent = session.name;
             document.getElementById('session-meta').textContent = `${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}`;
 
-            // ─── COUNT ATTENDANCE ───
+            // Count attendance
             let attendedScouts = 0;
             allScouts.forEach(s => { if (attendance[s.id] === true) attendedScouts++; });
             let attendedLeaders = 0;
@@ -151,7 +155,7 @@
                     </div>
                 </div>
 
-                <!-- ─── SCOUTS ─── -->
+                <!-- Scouts -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👥 Scouts (${attendedScouts}/${allScouts.length} attended)</h3>
@@ -173,7 +177,7 @@
                     </div>
                 </div>
 
-                <!-- ─── LEADERS ─── -->
+                <!-- Leaders -->
                 <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
                         <h3>👤 Leaders (${attendedLeaders}/${allLeaders.length} attended)</h3>
@@ -195,7 +199,7 @@
                     </div>
                 </div>
 
-                <!-- ─── EDIT SECTION ─── -->
+                <!-- Edit Section -->
                 <div id="edit-section" style="display:none;background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-top:16px;">
                     <h3 style="color:#2d5a4a;margin-bottom:16px;">✏️ Edit Session</h3>
                     <div class="form-group">
@@ -231,20 +235,23 @@
         }
 
         function attachEvents(session) {
-            // ─── ATTENDANCE TOGGLE ───
+            // Attendance toggle
             document.querySelectorAll('#attendance-scouts .attendance-toggle button, #attendance-leaders .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const row = this.closest('.attendance-row');
                     const userId = row.dataset.id;
                     const attend = this.dataset.attend === 'true';
+                    
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         [`attendance.${userId}`]: attend
                     });
+                    
+                    // 🔥 Force fresh re-render
                     await renderPage();
                 });
             });
 
-            // ─── MARK ALL SCOUTS ───
+            // Mark all scouts
             document.getElementById('mark-all-scouts')?.addEventListener('click', async () => {
                 const update = {};
                 allScouts.forEach(s => { update[`attendance.${s.id}`] = true; });
@@ -252,7 +259,7 @@
                 await renderPage();
             });
 
-            // ─── MARK ALL LEADERS ───
+            // Mark all leaders
             document.getElementById('mark-all-leaders')?.addEventListener('click', async () => {
                 const update = {};
                 allLeaders.forEach(s => { update[`attendance.${s.id}`] = true; });
@@ -260,7 +267,7 @@
                 await renderPage();
             });
 
-            // ─── DELETE ───
+            // Delete
             document.getElementById('delete-session-btn')?.addEventListener('click', async () => {
                 if (confirm(`Delete "${session.name}"? This cannot be undone.`)) {
                     await deleteDoc(doc(db, 'sessions', sessionId));
@@ -268,7 +275,7 @@
                 }
             });
 
-            // ─── EDIT TOGGLE ───
+            // Edit toggle
             let editVisible = false;
             document.getElementById('toggle-edit-btn')?.addEventListener('click', () => {
                 editVisible = !editVisible;
@@ -279,7 +286,7 @@
                 document.getElementById('edit-section').style.display = 'none';
             });
 
-            // ─── SAVE EDIT ───
+            // Save edit
             document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('edit-name').value.trim();
                 const date = document.getElementById('edit-date').value;
