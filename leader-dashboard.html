@@ -8,11 +8,11 @@
 </head>
 <body>
 
-<!-- ===== SIDEBAR ===== -->
+<!-- ===== SIDEBAR (desktop only) ===== -->
 <div class="sidebar">
     <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
 
-    <!-- Profile Section with Person Icon -->
+    <!-- Profile Section -->
     <div class="sidebar-profile">
         <div class="person-avatar" id="sidebar-avatar">
             <div class="head"></div>
@@ -37,6 +37,15 @@
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
     <div id="page-content"></div>
+</div>
+
+<!-- ===== BOTTOM NAV (mobile only) ===== -->
+<div class="bottom-nav">
+    <a href="#" class="active" data-view="dashboard">📊<span>Home</span></a>
+    <a href="#" data-view="scouts">👥<span>Scouts</span></a>
+    <a href="#" data-view="pending">✋<span>Pending</span> <span class="badge" id="bottom-pending-badge">0</span></a>
+    <a href="#" data-view="sessions">📋<span>Sessions</span></a>
+    <a href="#" data-view="export">📤<span>Export</span></a>
 </div>
 
 <script type="module" src="leader-dashboard.js"></script>
