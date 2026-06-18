@@ -526,11 +526,10 @@ a { text-decoration: none; }
 }
 
 /* ============================================================
-   📱 MOBILE RESPONSIVE — ONLY CHANGES ON PHONES
+   📱 MOBILE RESPONSIVE — FIXED (icons show, text hidden)
    ============================================================ */
 
 @media (max-width: 768px) {
-    /* ─── Sidebar collapses to icons only ─── */
     .sidebar {
         width: 72px;
         padding: 20px 12px;
@@ -538,22 +537,17 @@ a { text-decoration: none; }
     }
 
     .sidebar-brand {
-        font-size: 0;
+        font-size: 28px;
         margin-bottom: 24px;
     }
     .sidebar-brand span {
-        font-size: 0;
-    }
-    .sidebar-brand::before {
-        content: "🏕️";
-        font-size: 28px;
+        display: none;
     }
 
     .sidebar-nav a {
         padding: 12px;
         justify-content: center;
-        gap: 0;
-        font-size: 0;
+        font-size: 28px;
     }
     .sidebar-nav a span {
         display: none;
@@ -561,23 +555,21 @@ a { text-decoration: none; }
     .sidebar-nav .badge {
         display: none;
     }
+
     .sidebar-footer a {
         padding: 12px;
         justify-content: center;
-        gap: 0;
-        font-size: 0;
+        font-size: 28px;
     }
     .sidebar-footer a span {
         display: none;
     }
 
-    /* ─── Main content expands ─── */
     .main-content {
         max-width: 100%;
         padding: 20px;
     }
 
-    /* ─── Stats: 2 per row ─── */
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
@@ -589,12 +581,10 @@ a { text-decoration: none; }
         font-size: 13px;
     }
 
-    /* ─── Scout cards: full width ─── */
     .scout-grid {
         grid-template-columns: 1fr;
     }
 
-    /* ─── Header text smaller ─── */
     .header-left h1 {
         font-size: 22px;
     }
@@ -602,7 +592,6 @@ a { text-decoration: none; }
         font-size: 14px;
     }
 
-    /* ─── Toolbar stack on mobile ─── */
     .toolbar {
         flex-direction: column;
         align-items: stretch;
@@ -614,7 +603,6 @@ a { text-decoration: none; }
         width: 100%;
     }
 
-    /* ─── Pending items stack ─── */
     .pending-item {
         flex-direction: column;
         align-items: stretch;
@@ -628,7 +616,6 @@ a { text-decoration: none; }
         padding: 10px;
     }
 
-    /* ─── Detail view ─── */
     .detail-header {
         flex-wrap: wrap;
         justify-content: center;
@@ -638,7 +625,6 @@ a { text-decoration: none; }
         font-size: 20px;
     }
 
-    /* ─── Export buttons stack ─── */
     .export-btn {
         display: block;
         width: 100%;
@@ -647,7 +633,6 @@ a { text-decoration: none; }
     }
 }
 
-/* ===== VERY SMALL PHONES ===== */
 @media (max-width: 400px) {
     .sidebar {
         width: 56px;
