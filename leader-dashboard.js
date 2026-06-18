@@ -53,15 +53,14 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
 // ─── Load Scouts ─────────────────────────────────────────
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
-    const scouts = [];
+    allScouts = [];
     snapshot.forEach(doc => {
         const data = doc.data();
         if (data.role === 'scout') {
-            scouts.push({ id: doc.id, username: data.username });
+            allScouts.push({ id: doc.id, username: data.username });
         }
     });
-    allScouts = scouts;
-    return scouts;
+    return allScouts;
 }
 
 // ─── Live Status Listener ────────────────────────────────
@@ -90,12 +89,14 @@ function updatePendingBadge() {
             }
         }
     }
-    document.getElementById('pending-badge').textContent = count;
+    const badge = document.getElementById('pending-badge');
+    if (badge) badge.textContent = count;
 }
 
 // ─── Render Views ─────────────────────────────────────────
 function renderView() {
     const container = document.getElementById('page-content');
+    if (!container) return;
     if (currentView === 'dashboard') renderDashboard(container);
     else if (currentView === 'scouts') renderAllScouts(container);
     else if (currentView === 'pending') renderPending(container);
@@ -106,20 +107,18 @@ function renderView() {
 
 // ─── Dashboard ────────────────────────────────────────────
 function renderDashboard(container) {
-    const total = allScouts.length;
     let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
 
     for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
-        let done = 0;
-        let pending = 0;
+        let done = 0, pending = 0;
         for (const req of membershipReqs) {
             const key = `membership_${req}`;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) pending++;
             else if (value && value.status === 'approved') done++;
         }
-        const progress = done / membershipReqs.length;
+        const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
         if (progress === 1) completed++;
         else if (progress >= 0.5) onTrack++;
         else needsHelp++;
@@ -185,6 +184,7 @@ function filterScouts() {
     const query = document.getElementById('search-input').value.toLowerCase();
     const filter = document.getElementById('filter-select').value;
     const grid = document.getElementById('scout-grid');
+    if (!grid) return;
     const cards = grid.querySelectorAll('.scout-card');
     cards.forEach(card => {
         const name = card.dataset.name.toLowerCase();
@@ -277,6 +277,7 @@ function renderSessions(container) {
 
 function renderSessionsList() {
     const container = document.getElementById('sessions-list-container');
+    if (!container) return;
 
     if (allSessions.length === 0) {
         container.innerHTML = `
@@ -345,7 +346,7 @@ function renderScoutDetail(container, scoutId) {
 
     const status = allStatus[scoutId] || {};
     const done = membershipReqs.filter(r => status[`membership_${r}`] && status[`membership_${r}`].status === 'approved').length;
-    const progress = done / membershipReqs.length;
+    const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
 
     container.innerHTML = `
         <div class="detail-header">
@@ -453,7 +454,7 @@ function scoutCardHTML(scout) {
         else if (value && value.status === 'approved') done++;
     }
     const total = membershipReqs.length;
-    const progress = done / total;
+    const progress = total > 0 ? done / total : 0;
     const hasNote = !!status.leaderNote;
     const color = getColor(scout.username);
     return `
