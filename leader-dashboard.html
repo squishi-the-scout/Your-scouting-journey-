@@ -26,19 +26,40 @@
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
 
-    <!-- Header -->
-    <div class="header">
-        <div class="header-left">
-            <h1 id="page-title">📊 Dashboard</h1>
-            <p id="page-subtitle">Welcome back, <span id="leader-name">Hazfar</span> 👋</p>
+    <!-- ===== HEADER ===== -->
+    <div class="dashboard-header">
+        <div>
+            <h1 class="greeting">HELLO, <span id="leader-name">HAZFAR</span>! 👋</h1>
+            <p class="greeting-sub">Leader · GIS Scouts</p>
         </div>
         <div class="header-right">
             <span class="avatar" id="leader-avatar">H</span>
         </div>
     </div>
 
-    <!-- Dynamic content goes here -->
-    <div id="page-content"></div>
+    <!-- ===== STATS CARDS ===== -->
+    <div class="stats-grid" id="stats-grid">
+        <!-- Filled by JavaScript -->
+    </div>
+
+    <!-- ===== PENDING APPROVALS BANNER ===== -->
+    <div id="pending-banner" style="display:none; background:#fef9f0; border-left: 4px solid #d4a86a; border-radius:16px; padding:16px 20px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+                <span style="font-size:20px;">✋</span>
+                <strong id="pending-count-text" style="color:#2d5a4a;">0</strong>
+                <span style="color:#5a7c6e;">scout(s) need your approval</span>
+            </div>
+            <a href="#" id="pending-banner-link" style="background:#8fbcbb; color:white; padding:8px 20px; border-radius:40px; text-decoration:none; font-weight:500; font-size:14px;">Review Now →</a>
+        </div>
+    </div>
+
+    <!-- ===== QUICK VIEW — ALL SCOUTS ===== -->
+    <div style="margin-bottom:12px;">
+        <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
+        <div id="scout-grid" class="scout-grid"></div>
+        <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
+    </div>
 
 </div>
 
