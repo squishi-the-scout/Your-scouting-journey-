@@ -39,6 +39,13 @@ const membershipReqs = [
     "Investiture"
 ];
 
+function truncateName(name) {
+    if (!name) return '';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return name;
+    return parts[0] + ' ' + parts[1].charAt(0) + '.';
+}
+
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function() {
@@ -268,7 +275,7 @@ function renderDashboard() {
                         <div class="scout-card" data-id="${scout.id}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
                             <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
                                 <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
-                                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${scout.username}</span>
+                                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${truncateName(scout.username)}</span>
                             </div>
                             <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${progress}%</div>
                             <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;">
@@ -706,7 +713,7 @@ function scoutCardHTML(scout) {
     html += '<div class="scout-card" data-id="' + scout.id + '" data-name="' + scout.username.toLowerCase() + '" data-progress="' + progress + '" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">';
     html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">';
     html += '<div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:' + color + ';">' + scout.username.charAt(0).toUpperCase() + '</div>';
-    html += '<span style="font-weight:600; font-size:15px; color:#2d5a4a;">' + scout.username + '</span>';
+    html += '<span style="font-weight:600; font-size:15px; color:#2d5a4a;">' + truncateName(scout.username) + '</span>';
     html += '</div>';
     html += '<div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">' + done + '/' + total + ' done</div>';
     html += '<div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:' + (progress * 100) + '%; border-radius:20px;"></div></div>';
