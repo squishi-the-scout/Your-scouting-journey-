@@ -460,3 +460,71 @@ a {
         display: none;
     }
 }
+/* ============================================================
+   📱 MOBILE FIXES
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    .stat-card {
+        padding: 14px;
+    }
+    .stat-card .number {
+        font-size: 24px;
+    }
+    .stat-card .label {
+        font-size: 12px;
+    }
+    .scout-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .scout-card {
+        padding: 14px;
+    }
+    .scout-card .scout-name {
+        font-size: 14px;
+        max-width: 70%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .scout-card .scout-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+    .scout-card .scout-progress-text {
+        font-size: 12px;
+    }
+    .pending-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .pending-item .pending-info {
+        justify-content: center;
+    }
+    .pending-item .approve-btn {
+        width: 100%;
+        padding: 10px;
+        text-align: center;
+    }
+    .main-content {
+        padding: 16px;
+    }
+    .header-left h1 {
+        font-size: 20px;
+    }
+    .header-left p {
+        font-size: 13px;
+    }
+    .header-right .avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+}
