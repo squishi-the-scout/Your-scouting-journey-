@@ -123,6 +123,7 @@ function renderView() {
 }
 
 function renderDashboard() {
+    // ─── Calculate stats ──────────────────────────────────────
     let badgeEarned = 0, onTrail = 0, atTrailhead = 0;
     const pendingItems = [];
 
@@ -151,35 +152,36 @@ function renderDashboard() {
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
+    // ─── Build pending HTML ──────────────────────────────────
+    let pendingHTML = '';
     const showCount = 3;
     const visibleItems = pendingItems.slice(0, showCount);
     const remaining = pendingItems.length - showCount;
 
-    let pendingHtml = '';
     if (pendingItems.length > 0) {
-        pendingHtml = '<div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">';
-        for (let i = 0; i < visibleItems.length; i++) {
-            const item = visibleItems[i];
-            pendingHtml += `
-                <div style="display:flex; justify-content:space-between; align-items:center; background:white; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
-                    <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#2d5a4a;">
-                        <span style="font-weight:600;">${item.scout.username}</span>
-                        <span style="color:#5a7c6e;">— ${item.req}</span>
-                    </div>
-                    <button class="pending-approve-btn" data-scout="${item.scout.id}" data-req="${item.req}" style="background:#8fbcbb; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer;">Approve</button>
+        pendingHTML = `
+            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-weight:600; color:#2d5a4a; margin-bottom:10px;">✋ ${pendingItems.length} scout(s) need your approval</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    ${visibleItems.map(({ scout, req }) => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:white; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
+                            <span style="font-size:14px; color:#2d5a4a;"><strong>${scout.username}</strong> — ${req}</span>
+                            <button class="pending-approve-btn" data-scout="${scout.id}" data-req="${req}" style="background:#8fbcbb; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer;">Approve</button>
+                        </div>
+                    `).join('')}
+                    ${remaining > 0 ? `<div style="text-align:right; margin-top:4px;"><a href="#" id="pending-view-all" style="color:#8fbcbb; font-size:14px; font-weight:500; text-decoration:none;">View All ${remaining} more →</a></div>` : ''}
                 </div>
-            `;
-        }
-        if (remaining > 0) {
-            pendingHtml += `
-                <div style="text-align:right; margin-top:4px;">
-                    <a href="#" id="pending-view-all" style="color:#8fbcbb; font-size:14px; font-weight:500; text-decoration:none;">View All ${remaining} more →</a>
-                </div>
-            `;
-        }
-        pendingHtml += '</div>';
+            </div>
+        `;
+    } else {
+        pendingHTML = `
+            <div style="background:#e8f0ec; border-radius:16px; padding:16px 20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
+            </div>
+        `;
     }
 
+    // ─── Build full HTML ─────────────────────────────────────
     let html = `
         <div class="header">
             <div class="header-left">
@@ -190,6 +192,8 @@ function renderDashboard() {
                 <span class="avatar" id="leader-avatar">${currentUser.username.charAt(0).toUpperCase()}</span>
             </div>
         </div>
+
+        ${pendingHTML}
 
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
             <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -205,19 +209,6 @@ function renderDashboard() {
                 <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">🏕️ At the Trailhead</div>
             </div>
         </div>
-
-        ${pendingItems.length > 0 ? `
-            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:24px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:16px; font-weight:600; color:#2d5a4a;">✋ ${pendingItems.length} scout(s) need your approval</span>
-                </div>
-                ${pendingHtml}
-            </div>
-        ` : `
-            <div style="background:#e8f0ec; border-radius:16px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:24px;">
-                <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
-            </div>
-        `}
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:28px;">
             <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
@@ -288,6 +279,7 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
 
+    // ─── Event Listeners ──────────────────────────────────────
     document.querySelectorAll('.pending-approve-btn').forEach(function(btn) {
         btn.addEventListener('click', async function(e) {
             e.stopPropagation();
