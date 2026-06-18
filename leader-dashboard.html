@@ -24,9 +24,9 @@
 </div>
 
 <!-- ===== MAIN CONTENT ===== -->
-<div class="main-content" id="main-content">
+<div class="main-content">
 
-    <!-- ===== HEADER ===== -->
+    <!-- Header -->
     <div class="dashboard-header">
         <div>
             <h1 class="greeting">HELLO, <span id="leader-name">HAZFAR</span>! 👋</h1>
@@ -37,12 +37,10 @@
         </div>
     </div>
 
-    <!-- ===== STATS CARDS ===== -->
-    <div class="stats-grid" id="stats-grid">
-        <!-- Filled by JavaScript -->
-    </div>
+    <!-- Stats Cards -->
+    <div class="stats-grid" id="stats-grid"></div>
 
-    <!-- ===== PENDING APPROVALS BANNER ===== -->
+    <!-- Pending Banner -->
     <div id="pending-banner" style="display:none; background:#fef9f0; border-left: 4px solid #d4a86a; border-radius:16px; padding:16px 20px; margin-bottom:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
@@ -54,12 +52,15 @@
         </div>
     </div>
 
-    <!-- ===== QUICK VIEW — ALL SCOUTS ===== -->
+    <!-- Quick View - All Scouts -->
     <div style="margin-bottom:12px;">
         <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
         <div id="scout-grid" class="scout-grid"></div>
         <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
     </div>
+
+    <!-- Hidden container for other views -->
+    <div id="page-content" style="display:none;"></div>
 
 </div>
 
