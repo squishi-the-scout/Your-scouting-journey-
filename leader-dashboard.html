@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- ===== SIDEBAR ===== -->
 <div class="sidebar">
     <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
     <nav class="sidebar-nav">
@@ -22,16 +23,25 @@
     </div>
 </div>
 
+<!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
-    <h1 style="color:#2d5a4a;">Dashboard Loaded ✅</h1>
-    <p>If you see this, the page is working.</p>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1 id="page-title">📊 Dashboard</h1>
+            <p id="page-subtitle">Welcome back, <span id="leader-name">Hazfar</span> 👋</p>
+        </div>
+        <div class="header-right">
+            <span class="avatar" id="leader-avatar">H</span>
+        </div>
+    </div>
+
+    <!-- Dynamic content goes here -->
     <div id="page-content"></div>
+
 </div>
 
-<script type="module">
-    console.log("Hello from minimal dashboard");
-    document.getElementById('main-content').innerHTML += '<p style="color:green;">JavaScript is running.</p>';
-</script>
-
+<script type="module" src="leader-dashboard.js"></script>
 </body>
 </html>
