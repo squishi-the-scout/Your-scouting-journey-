@@ -41,12 +41,27 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 
 // ─── Navigation ──────────────────────────────────────────
 document.querySelectorAll('.sidebar-nav a').forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', function(e) {
         e.preventDefault();
         document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
-        currentView = link.dataset.view;
-        renderView();
+        this.classList.add('active');
+        const view = this.dataset.view;
+        if (view === 'dashboard') {
+            currentView = 'dashboard';
+            renderView();
+        } else if (view === 'scouts') {
+            currentView = 'scouts';
+            renderView();
+        } else if (view === 'pending') {
+            currentView = 'pending';
+            renderView();
+        } else if (view === 'sessions') {
+            currentView = 'sessions';
+            renderView();
+        } else if (view === 'export') {
+            currentView = 'export';
+            renderView();
+        }
     });
 });
 
@@ -96,18 +111,25 @@ function updatePendingBadge() {
 // ─── Render Views ─────────────────────────────────────────
 function renderView() {
     const container = document.getElementById('page-content');
-    if (!container) return;
-    if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'scouts') renderAllScouts(container);
-    else if (currentView === 'pending') renderPending(container);
-    else if (currentView === 'sessions') renderSessions(container);
-    else if (currentView === 'export') renderExport(container);
-    else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+    if (!container) {
+        console.error("page-content not found");
+        return;
+    }
+    if (currentView === 'dashboard') {
+        renderDashboard();
+        container.style.display = 'none';
+    } else {
+        container.style.display = 'block';
+        if (currentView === 'scouts') renderAllScouts(container);
+        else if (currentView === 'pending') renderPending(container);
+        else if (currentView === 'sessions') renderSessions(container);
+        else if (currentView === 'export') renderExport(container);
+        else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+    }
 }
 
 // ─── Dashboard ────────────────────────────────────────────
 function renderDashboard() {
-    // ─── Stats ──────────────────────────────────────────────
     let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
 
     for (const scout of allScouts) {
@@ -149,7 +171,6 @@ function renderDashboard() {
         </div>
     `;
 
-    // ─── Pending Banner ────────────────────────────────────
     const banner = document.getElementById('pending-banner');
     if (pendingCount > 0) {
         banner.style.display = 'block';
@@ -162,10 +183,8 @@ function renderDashboard() {
         banner.style.display = 'none';
     }
 
-    // ─── Attendance Ring ──────────────────────────────────
-    // For now, use dummy data — replace with real attendance later
     const totalScouts = allScouts.length;
-    const attendedThisWeek = Math.floor(totalScouts * 0.6); // dummy: 60%
+    const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const absentThisWeek = totalScouts - attendedThisWeek;
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
@@ -176,7 +195,6 @@ function renderDashboard() {
     document.getElementById('absent-count').textContent = absentThisWeek;
     document.getElementById('total-scouts-breakdown').textContent = totalScouts;
 
-    // Animate the ring
     const ring = document.getElementById('attendance-ring');
     if (ring) {
         const circumference = 314.16;
@@ -184,7 +202,6 @@ function renderDashboard() {
         ring.style.strokeDashoffset = offset;
     }
 
-    // ─── Scout Grid ────────────────────────────────────────
     const grid = document.getElementById('scout-grid');
     if (allScouts.length === 0) {
         grid.innerHTML = `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`;
