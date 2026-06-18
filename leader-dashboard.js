@@ -11,10 +11,16 @@ if (!currentUser || currentUser.role !== 'leader') {
 const leaderNameEl = document.getElementById('leader-name');
 const leaderAvatarEl = document.getElementById('leader-avatar');
 const pendingBadgeEl = document.getElementById('pending-badge');
+const bottomPendingBadgeEl = document.getElementById('bottom-pending-badge');
 const pageContent = document.getElementById('page-content');
 
 if (leaderNameEl) leaderNameEl.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 if (leaderAvatarEl) leaderAvatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
+
+// Sidebar profile
+const sidebarAvatar = document.getElementById('sidebar-avatar');
+const sidebarName = document.getElementById('sidebar-name');
+if (sidebarName) sidebarName.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 
 let allScouts = [];
 let allStatus = {};
@@ -46,6 +52,7 @@ function truncateName(name) {
     return parts[0] + ' ' + parts[1].charAt(0) + '.';
 }
 
+// ─── Logout ──────────────────────────────────────────────
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
     logoutBtn.addEventListener('click', function() {
@@ -54,18 +61,22 @@ if (logoutBtn) {
     });
 }
 
-document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
-            l.classList.remove('active');
+// ─── Navigation ──────────────────────────────────────────
+function setupNavigation() {
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
+                l.classList.remove('active');
+            });
+            this.classList.add('active');
+            currentView = this.dataset.view;
+            renderView();
         });
-        this.classList.add('active');
-        currentView = this.dataset.view;
-        renderView();
     });
-});
+}
 
+// ─── Load Scouts ─────────────────────────────────────────
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
     allScouts = [];
@@ -78,6 +89,7 @@ async function loadScouts() {
     return allScouts;
 }
 
+// ─── Live Status Listener ────────────────────────────────
 function listenToStatus() {
     if (unsubscribeStatus) unsubscribeStatus();
     unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), function(snapshot) {
@@ -106,8 +118,10 @@ function updatePendingBadge() {
         }
     }
     if (pendingBadgeEl) pendingBadgeEl.textContent = count;
+    if (bottomPendingBadgeEl) bottomPendingBadgeEl.textContent = count;
 }
 
+// ─── Render Views ─────────────────────────────────────────
 function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
@@ -129,6 +143,7 @@ function renderView() {
     }
 }
 
+// ─── Dashboard ────────────────────────────────────────────
 function renderDashboard() {
     // ─── Calculate stats ──────────────────────────────────────
     let totalScouts = allScouts.length;
@@ -315,7 +330,7 @@ function renderDashboard() {
         card.addEventListener('click', function() {
             selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
                 l.classList.remove('active');
             });
             renderView();
@@ -323,6 +338,7 @@ function renderDashboard() {
     });
 }
 
+// ─── All Scouts ──────────────────────────────────────────
 function renderAllScouts() {
     let html = `
         <div class="header">
@@ -358,7 +374,7 @@ function renderAllScouts() {
         card.addEventListener('click', function() {
             selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
                 l.classList.remove('active');
             });
             renderView();
@@ -384,6 +400,7 @@ function filterScouts() {
     });
 }
 
+// ─── Pending ──────────────────────────────────────────────
 function renderPending() {
     const pendingItems = [];
     for (let i = 0; i < allScouts.length; i++) {
@@ -441,6 +458,7 @@ function renderPending() {
     });
 }
 
+// ─── Sessions ──────────────────────────────────────────────
 function renderSessions() {
     let html = `
         <div class="header">
@@ -542,6 +560,7 @@ function renderSessionsList() {
     });
 }
 
+// ─── Scout Detail ─────────────────────────────────────────
 function renderScoutDetail(scoutId) {
     let scout = null;
     for (let i = 0; i < allScouts.length; i++) {
@@ -629,6 +648,7 @@ function renderScoutDetail(scoutId) {
     }
 }
 
+// ─── Export ────────────────────────────────────────────────
 function renderExport() {
     let html = `
         <div class="header">
@@ -740,9 +760,11 @@ async function approveRequirement(scoutId, reqName) {
     renderView();
 }
 
+// ─── Init ──────────────────────────────────────────────────
 async function init() {
     await loadScouts();
     listenToStatus();
+    setupNavigation();
     renderView();
 }
 
