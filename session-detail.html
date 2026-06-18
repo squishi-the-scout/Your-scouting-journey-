@@ -84,11 +84,13 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { doc, getDoc, updateDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { 
+            doc, getDoc, updateDoc, deleteDoc, collection, getDocs, 
+            query, where, setDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
-
         document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
 
         document.getElementById('logout-btn').addEventListener('click', () => {
@@ -100,7 +102,6 @@
         const sessionId = urlParams.get('id');
         if (!sessionId) window.location.href = 'sessions.html';
 
-        let sessionData = null;
         let allScouts = [];
         let allLeaders = [];
 
@@ -110,74 +111,61 @@
             allLeaders = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if (data.role === 'scout') {
-                    allScouts.push({ id: doc.id, username: data.username });
-                } else if (data.role === 'leader') {
-                    allLeaders.push({ id: doc.id, username: data.username });
-                }
+                if (data.role === 'scout') allScouts.push({ id: doc.id, username: data.username });
+                else if (data.role === 'leader') allLeaders.push({ id: doc.id, username: data.username });
             });
         }
 
-        async function loadSession() {
+        async function getAttendance() {
+            const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
+            const snapshot = await getDocs(q);
+            const attendance = {};
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                attendance[data.userId] = data.attended;
+            });
+            return attendance;
+        }
+
+        async function renderPage() {
             const docRef = doc(db, 'sessions', sessionId);
             const docSnap = await getDoc(docRef);
             if (!docSnap.exists()) {
                 document.getElementById('session-title').textContent = 'Session not found';
                 return;
             }
-            sessionData = { id: docSnap.id, ...docSnap.data() };
-            renderDetail();
-        }
+            const session = { id: docSnap.id, ...docSnap.data() };
+            const attendance = await getAttendance();
 
-        function renderDetail() {
-            const container = document.getElementById('session-detail');
-            const s = sessionData;
-            const attendance = s.attendance || {};
+            document.getElementById('session-title').textContent = session.name;
+            document.getElementById('session-meta').textContent = `${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}`;
 
-            document.getElementById('session-title').textContent = s.name;
-            document.getElementById('session-meta').textContent = `${s.date} · ${s.time} · 📍 ${s.location || 'TBD'}`;
-
-            // Scout stats
-            const scoutCount = allScouts.length;
             let attendedScouts = 0;
-            allScouts.forEach(scout => {
-                if (attendance[scout.id] === true) attendedScouts++;
-            });
-            const scoutPercent = scoutCount > 0 ? Math.round((attendedScouts / scoutCount) * 100) : 0;
-
-            // Leader stats
-            const leaderCount = allLeaders.length;
+            allScouts.forEach(s => { if (attendance[s.id] === true) attendedScouts++; });
             let attendedLeaders = 0;
-            allLeaders.forEach(leader => {
-                if (attendance[leader.id] === true) attendedLeaders++;
-            });
-            const leaderPercent = leaderCount > 0 ? Math.round((attendedLeaders / leaderCount) * 100) : 0;
+            allLeaders.forEach(s => { if (attendance[s.id] === true) attendedLeaders++; });
 
             let html = `
-                <!-- ===== SESSION INFO with Service Hours ===== -->
-                <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                         <div>
-                            <div style="color:#5a7c6e; font-size:14px;">📝 Purpose</div>
-                            <div style="color:#2d5a4a;">${s.purpose || 'No purpose specified'}</div>
-                            <div style="color:#5a7c6e; font-size:14px; margin-top:8px;">⏱️ Service Hours</div>
-                            <div style="color:#2d5a4a;">${s.serviceHours || 0} hours</div>
-                            <div style="color:#b0c4b8; font-size:12px; margin-top:8px;">
-                                Created by ${s.createdBy || 'unknown'}
-                                ${s.lastEditedBy && s.lastEditedBy !== s.createdBy ? `· Last edited by ${s.lastEditedBy}` : ''}
+                            <div style="color:#5a7c6e;font-size:14px;">📝 Purpose</div>
+                            <div style="color:#2d5a4a;">${session.purpose || 'No purpose specified'}</div>
+                            <div style="color:#b0c4b8;font-size:12px;margin-top:8px;">
+                                Created by ${session.createdBy || 'unknown'}
+                                ${session.lastEditedBy && session.lastEditedBy !== session.createdBy ? `· Last edited by ${session.lastEditedBy}` : ''}
                             </div>
                         </div>
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
                             <button class="edit-toggle" id="toggle-edit-btn">✏️ Edit</button>
                             <button class="btn-delete" id="delete-session-btn" style="background:#c47a7a;color:white;border:none;padding:8px 20px;border-radius:40px;font-weight:500;cursor:pointer;">🗑️ Delete</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- ===== SCOUTS ATTENDANCE ===== -->
-                <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px;">
+                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
-                        <h3>👥 Scouts (${attendedScouts}/${scoutCount} · ${scoutPercent}%)</h3>
+                        <h3>👥 Scouts (${attendedScouts}/${allScouts.length} attended)</h3>
                         <button class="mark-btn-scouts" id="mark-all-scouts">✅ Mark All Attended</button>
                     </div>
                     <div class="attendance-grid" id="attendance-scouts">
@@ -196,10 +184,9 @@
                     </div>
                 </div>
 
-                <!-- ===== LEADERS ATTENDANCE ===== -->
-                <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:16px;">
+                <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                     <div class="section-title">
-                        <h3>👤 Leaders (${attendedLeaders}/${leaderCount} · ${leaderPercent}%)</h3>
+                        <h3>👤 Leaders (${attendedLeaders}/${allLeaders.length} attended)</h3>
                         <button class="mark-btn-leaders" id="mark-all-leaders">✅ Mark All Attended</button>
                     </div>
                     <div class="attendance-grid" id="attendance-leaders">
@@ -218,32 +205,27 @@
                     </div>
                 </div>
 
-                <!-- ===== EDIT SECTION with Service Hours ===== -->
                 <div id="edit-section" style="display:none;background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-top:16px;">
                     <h3 style="color:#2d5a4a;margin-bottom:16px;">✏️ Edit Session</h3>
                     <div class="form-group">
                         <label>Session Name</label>
-                        <input type="text" id="edit-name" value="${s.name}">
+                        <input type="text" id="edit-name" value="${session.name}">
                     </div>
                     <div class="form-group">
                         <label>Date</label>
-                        <input type="date" id="edit-date" value="${s.date}">
+                        <input type="date" id="edit-date" value="${session.date}">
                     </div>
                     <div class="form-group">
                         <label>Time</label>
-                        <input type="time" id="edit-time" value="${s.time}">
+                        <input type="time" id="edit-time" value="${session.time}">
                     </div>
                     <div class="form-group">
                         <label>Location</label>
-                        <input type="text" id="edit-location" value="${s.location || ''}">
+                        <input type="text" id="edit-location" value="${session.location || ''}">
                     </div>
                     <div class="form-group">
                         <label>Purpose / Notes</label>
-                        <textarea id="edit-purpose">${s.purpose || ''}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Service Hours</label>
-                        <input type="number" id="edit-hours" value="${s.serviceHours || 0}" step="0.5" min="0" style="width:100%; padding:12px; border:1px solid #e0ece4; border-radius:16px; font-family:inherit; font-size:14px;">
+                        <textarea id="edit-purpose">${session.purpose || ''}</textarea>
                     </div>
                     <div class="form-actions">
                         <button class="btn-save" id="save-edit-btn">💾 Save Changes</button>
@@ -253,86 +235,91 @@
                 </div>
             `;
 
-            container.innerHTML = html;
+            document.getElementById('session-detail').innerHTML = html;
+            attachEvents(session);
+        }
 
-            // ─── EVENT LISTENERS ───
-
-            // Toggle attendance for scouts
-            document.querySelectorAll('#attendance-scouts .attendance-toggle button').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const row = btn.closest('.attendance-row');
+        function attachEvents(session) {
+            // ─── ATTENDANCE TOGGLE ───
+            document.querySelectorAll('#attendance-scouts .attendance-toggle button, #attendance-leaders .attendance-toggle button').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const row = this.closest('.attendance-row');
                     const userId = row.dataset.id;
-                    const attend = btn.dataset.attend === 'true';
-                    await updateDoc(doc(db, 'sessions', sessionId), {
-                        [`attendance.${userId}`]: attend
+                    const userType = row.dataset.type;
+                    const attend = this.dataset.attend === 'true';
+                    const docId = `${sessionId}_${userId}`;
+                    
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: userId,
+                        userType: userType,
+                        attended: attend
                     });
-                    loadSession();
+                    
+                    await renderPage();
                 });
             });
 
-            // Toggle attendance for leaders
-            document.querySelectorAll('#attendance-leaders .attendance-toggle button').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const row = btn.closest('.attendance-row');
-                    const userId = row.dataset.id;
-                    const attend = btn.dataset.attend === 'true';
-                    await updateDoc(doc(db, 'sessions', sessionId), {
-                        [`attendance.${userId}`]: attend
-                    });
-                    loadSession();
-                });
-            });
-
-            // Mark all scouts attended
-            document.getElementById('mark-all-scouts').addEventListener('click', async () => {
-                const update = {};
+            // ─── MARK ALL SCOUTS ───
+            document.getElementById('mark-all-scouts')?.addEventListener('click', async () => {
                 for (const scout of allScouts) {
-                    update[`attendance.${scout.id}`] = true;
+                    const docId = `${sessionId}_${scout.id}`;
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: scout.id,
+                        userType: 'scout',
+                        attended: true
+                    });
                 }
-                await updateDoc(doc(db, 'sessions', sessionId), update);
-                loadSession();
+                await renderPage();
             });
 
-            // Mark all leaders attended
-            document.getElementById('mark-all-leaders').addEventListener('click', async () => {
-                const update = {};
+            // ─── MARK ALL LEADERS ───
+            document.getElementById('mark-all-leaders')?.addEventListener('click', async () => {
                 for (const leader of allLeaders) {
-                    update[`attendance.${leader.id}`] = true;
+                    const docId = `${sessionId}_${leader.id}`;
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: leader.id,
+                        userType: 'leader',
+                        attended: true
+                    });
                 }
-                await updateDoc(doc(db, 'sessions', sessionId), update);
-                loadSession();
+                await renderPage();
             });
 
-            // Delete session
-            document.getElementById('delete-session-btn').addEventListener('click', async () => {
-                if (confirm(`Delete "${s.name}"? This cannot be undone.`)) {
+            // ─── DELETE ───
+            document.getElementById('delete-session-btn')?.addEventListener('click', async () => {
+                if (confirm(`Delete "${session.name}"? This cannot be undone.`)) {
+                    const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
+                    const snapshot = await getDocs(q);
+                    for (const doc of snapshot.docs) {
+                        await deleteDoc(doc.ref);
+                    }
                     await deleteDoc(doc(db, 'sessions', sessionId));
                     window.location.href = 'sessions.html';
                 }
             });
 
-            // Edit toggle
+            // ─── EDIT TOGGLE ───
             let editVisible = false;
-            document.getElementById('toggle-edit-btn').addEventListener('click', () => {
+            document.getElementById('toggle-edit-btn')?.addEventListener('click', () => {
                 editVisible = !editVisible;
                 document.getElementById('edit-section').style.display = editVisible ? 'block' : 'none';
             });
 
-            document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+            document.getElementById('cancel-edit-btn')?.addEventListener('click', () => {
                 document.getElementById('edit-section').style.display = 'none';
                 editVisible = false;
             });
 
-            // ─── SAVE EDIT with Service Hours ───
-            document.getElementById('save-edit-btn').addEventListener('click', async () => {
+            // ─── SAVE EDIT ─── FIXED ───
+            document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('edit-name').value.trim();
                 const date = document.getElementById('edit-date').value;
                 const time = document.getElementById('edit-time').value;
                 const location = document.getElementById('edit-location').value.trim();
                 const purpose = document.getElementById('edit-purpose').value.trim();
-                const serviceHours = parseFloat(document.getElementById('edit-hours').value) || 0;
                 const msg = document.getElementById('edit-message');
 
                 if (!name || !date || !time) {
@@ -343,31 +330,36 @@
 
                 try {
                     await updateDoc(doc(db, 'sessions', sessionId), {
-                        name,
-                        date,
-                        time,
+                        name: name,
+                        date: date,
+                        time: time,
                         location: location || 'TBD',
                         purpose: purpose || '',
-                        serviceHours: serviceHours,
                         lastEditedBy: currentUser.username,
                         lastEditedAt: new Date().toISOString()
                     });
+                    
                     msg.textContent = '✅ Session updated!';
                     msg.style.color = '#8fbcbb';
                     document.getElementById('edit-section').style.display = 'none';
                     editVisible = false;
-                    loadSession();
+                    
+                    // Wait a moment then reload
+                    setTimeout(async () => {
+                        await renderPage();
+                    }, 500);
+                    
                 } catch (error) {
                     msg.textContent = '❌ Error: ' + error.message;
                     msg.style.color = '#c47a7a';
-                    console.error(error);
+                    console.error("Edit error:", error);
                 }
             });
         }
 
         async function init() {
             await loadUsers();
-            await loadSession();
+            await renderPage();
         }
         init();
     </script>
