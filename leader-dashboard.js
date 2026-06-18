@@ -150,7 +150,16 @@ function renderDashboard(container) {
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
     let html = `
-        <!-- ===== STATS CARDS ===== -->
+        <!-- HEADER -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
+            <div>
+                <h1 style="font-size:32px; font-weight:700; color:#2d5a4a; margin:0;">Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
+                <p style="color:#5a7c6e; font-size:16px; margin-top:4px;">welcome back ~</p>
+            </div>
+            <div style="width:40px; height:40px; border-radius:50%; background:#7a9e8a; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px;">${currentUser.username.charAt(0).toUpperCase()}</div>
+        </div>
+
+        <!-- STATS CARDS -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
             <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${badgeEarned}</div>
@@ -166,22 +175,12 @@ function renderDashboard(container) {
             </div>
         </div>
 
-        <!-- ===== MIDDLE SECTION (2/3 + 1/3) ===== -->
+        <!-- MIDDLE: Pending Banner + Attendance -->
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
-            <!-- LEFT: Pending Banner -->
             <div id="pending-banner-click" style="background:${pendingCount > 0 ? '#fef9f0' : '#e8f0ec'}; border-left:4px solid ${pendingCount > 0 ? '#d4a86a' : '#b0c4b8'}; border-radius:16px; padding:16px 20px; ${pendingCount > 0 ? 'cursor:pointer;' : ''} display:flex; align-items:center;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; width:100%;">
-                    ${pendingCount > 0 ? `
-                        <span style="font-size:16px;">✋ <strong>${pendingCount}</strong> scout(s) need your approval →</span>
-                    ` : `
-                        <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
-                    `}
-                </div>
+                <span style="font-size:16px;">${pendingCount > 0 ? `✋ <strong>${pendingCount}</strong> scout(s) need your approval →` : '✅ No pending approvals — all caught up!'}</span>
             </div>
-
-            <!-- RIGHT: Attendance Ring + Scout Levels -->
             <div style="display:flex; flex-direction:column; gap:16px;">
-                <!-- Attendance Ring -->
                 <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
                     <div style="position:relative; width:100px; height:100px; margin:0 auto;">
                         <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
@@ -196,8 +195,6 @@ function renderDashboard(container) {
                     </div>
                     <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
                 </div>
-
-                <!-- Scout Levels -->
                 <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                     <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
@@ -218,7 +215,7 @@ function renderDashboard(container) {
             </div>
         </div>
 
-        <!-- ===== SCOUT CARDS (3 columns) ===== -->
+        <!-- SCOUT CARDS -->
         <div>
             <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
@@ -252,7 +249,6 @@ function renderDashboard(container) {
 
     container.innerHTML = html;
 
-    // ─── Event Listeners ──────────────────────────────────
     document.getElementById('pending-banner-click')?.addEventListener('click', () => {
         if (pendingCount > 0) {
             document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
