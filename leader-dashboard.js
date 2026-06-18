@@ -544,5 +544,95 @@ function renderExport(container) {
             <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">📥 Export All Scouts</button>
             <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">📥 Export Pending Only</button>
             <div id="export-status" style="margin-top:16px; color:#5a7c6e;"></div>
-        </
-    
+        </div>
+    `;
+
+    document.getElementById('export-all-btn').addEventListener('click', () => exportCSV('all'));
+    document.getElementById('export-pending-btn').addEventListener('click', () => exportCSV('pending'));
+}
+
+function exportCSV(type) {
+    const rows = [['Scout', 'Requirement', 'Status', 'Approved By', 'Approved At']];
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const data = status[key];
+            if (type === 'pending' && (!data || data.status !== 'pending')) continue;
+            const stat = data ? data.status : 'todo';
+            const by = data?.approvedBy || '';
+            const at = data?.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : '';
+            rows.push([scout.username, req, stat, by, at]);
+        }
+    }
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
+}
+
+// ─── Helpers ────────────────────────────────────────────────
+function getColor(name) {
+    const colors = ['#7a9e8a', '#a8c4d4', '#d4a86a', '#8fbcbb', '#c47a7a', '#b0a8c4'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
+
+function scoutCardHTML(scout) {
+    const status = allStatus[scout.id] || {};
+    let done = 0, pending = 0;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
+        const value = status[key];
+        if (value === 'pending' || (value && value.status === 'pending')) pending++;
+        else if (value && value.status === 'approved') done++;
+    }
+    const total = membershipReqs.length;
+    const progress = total > 0 ? done / total : 0;
+    const hasNote = !!status.leaderNote;
+    const color = getColor(scout.username);
+    return `
+        <div class="scout-card" data-id="${scout.id}" data-name="${scout.username.toLowerCase()}" data-progress="${progress}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
+                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${scout.username}</span>
+            </div>
+            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${done}/${total} done</div>
+            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;">
+                <div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div>
+            </div>
+            <div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">
+                <span style="color:#8fbcbb;">🟢 ${done} done</span>
+                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
+                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
+            </div>
+            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>' : ''}
+        </div>
+    `;
+}
+
+async function approveRequirement(scoutId, reqName) {
+    const ref = doc(db, 'scoutStatus', scoutId);
+    const current = (await getDoc(ref)).data() || {};
+    current[`membership_${reqName}`] = {
+        status: 'approved',
+        approvedBy: currentUser.username,
+        approvedAt: new Date().toISOString()
+    };
+    await setDoc(ref, current);
+}
+
+// ─── Init ──────────────────────────────────────────────────
+async function init() {
+    await loadScouts();
+    listenToStatus();
+    renderView();
+}
+
+init();
