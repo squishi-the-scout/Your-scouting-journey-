@@ -526,7 +526,7 @@ a { text-decoration: none; }
 }
 
 /* ============================================================
-   📱 MOBILE RESPONSIVE — FIXED (icons show, text hidden)
+   📱 MOBILE RESPONSIVE — FIXED
    ============================================================ */
 
 @media (max-width: 768px) {
@@ -537,8 +537,12 @@ a { text-decoration: none; }
     }
 
     .sidebar-brand {
-        font-size: 28px;
+        font-size: 0;
         margin-bottom: 24px;
+    }
+    .sidebar-brand::before {
+        content: "🏕️";
+        font-size: 28px;
     }
     .sidebar-brand span {
         display: none;
