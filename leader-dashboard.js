@@ -7,7 +7,7 @@ import {
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
 
-document.getElementById('leader-name').textContent = currentUser.username;
+document.getElementById('leader-name').textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
 
 let allScouts = [];
@@ -97,7 +97,7 @@ function updatePendingBadge() {
 function renderView() {
     const container = document.getElementById('page-content');
     if (!container) return;
-    if (currentView === 'dashboard') renderDashboard(container);
+    if (currentView === 'dashboard') renderDashboard();
     else if (currentView === 'scouts') renderAllScouts(container);
     else if (currentView === 'pending') renderPending(container);
     else if (currentView === 'sessions') renderSessions(container);
@@ -106,7 +106,8 @@ function renderView() {
 }
 
 // ─── Dashboard ────────────────────────────────────────────
-function renderDashboard(container) {
+function renderDashboard() {
+    // ─── Stats ──────────────────────────────────────────────
     let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
 
     for (const scout of allScouts) {
@@ -125,19 +126,93 @@ function renderDashboard(container) {
         if (pending > 0) pendingCount++;
     }
 
-    container.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card green"><div class="number">${completed}</div><div class="label">✅ Completed</div></div>
-            <div class="stat-card yellow"><div class="number">${onTrack}</div><div class="label">🟡 On Track</div></div>
-            <div class="stat-card red"><div class="number">${needsHelp}</div><div class="label">🔴 Needs Help</div></div>
-            <div class="stat-card blue"><div class="number">${pendingCount}</div><div class="label">✋ Pending</div></div>
+    document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card green">
+            <div class="icon">✅</div>
+            <div class="number">${completed}</div>
+            <div class="label">Completed</div>
         </div>
-        <div class="scout-grid">
-            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
+        <div class="stat-card yellow">
+            <div class="icon">🟡</div>
+            <div class="number">${onTrack}</div>
+            <div class="label">On Track</div>
+        </div>
+        <div class="stat-card red">
+            <div class="icon">🔴</div>
+            <div class="number">${needsHelp}</div>
+            <div class="label">Needs Help</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="icon">✋</div>
+            <div class="number">${pendingCount}</div>
+            <div class="label">Pending</div>
         </div>
     `;
 
-    container.querySelectorAll('.scout-card').forEach(card => {
+    // ─── Pending Banner ────────────────────────────────────
+    const banner = document.getElementById('pending-banner');
+    if (pendingCount > 0) {
+        banner.style.display = 'block';
+        document.getElementById('pending-count-text').textContent = pendingCount;
+        document.getElementById('pending-banner-link').onclick = (e) => {
+            e.preventDefault();
+            document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+        };
+    } else {
+        banner.style.display = 'none';
+    }
+
+    // ─── Attendance Ring ──────────────────────────────────
+    // For now, use dummy data — replace with real attendance later
+    const totalScouts = allScouts.length;
+    const attendedThisWeek = Math.floor(totalScouts * 0.6); // dummy: 60%
+    const absentThisWeek = totalScouts - attendedThisWeek;
+    const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
+
+    document.getElementById('attendance-percent').textContent = percent + '%';
+    document.getElementById('attended-count').textContent = attendedThisWeek;
+    document.getElementById('total-scouts').textContent = totalScouts;
+    document.getElementById('attended-count-breakdown').textContent = attendedThisWeek;
+    document.getElementById('absent-count').textContent = absentThisWeek;
+    document.getElementById('total-scouts-breakdown').textContent = totalScouts;
+
+    // Animate the ring
+    const ring = document.getElementById('attendance-ring');
+    if (ring) {
+        const circumference = 314.16;
+        const offset = circumference - (percent / 100) * circumference;
+        ring.style.strokeDashoffset = offset;
+    }
+
+    // ─── Scout Grid ────────────────────────────────────────
+    const grid = document.getElementById('scout-grid');
+    if (allScouts.length === 0) {
+        grid.innerHTML = `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`;
+        return;
+    }
+    grid.innerHTML = allScouts.map(scout => {
+        const status = allStatus[scout.id] || {};
+        let done = 0;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value && value.status === 'approved') done++;
+        }
+        const progress = membershipReqs.length > 0 ? Math.round((done / membershipReqs.length) * 100) : 0;
+        const color = getColor(scout.username);
+        return `
+            <div class="scout-card" data-id="${scout.id}" style="cursor:pointer;">
+                <div class="scout-top">
+                    <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
+                    <span class="scout-name">${scout.username}</span>
+                </div>
+                <div class="scout-progress-text">${progress}%</div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+            </div>
+        `;
+    }).join('');
+
+    document.querySelectorAll('#scout-grid .scout-card').forEach(card => {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
