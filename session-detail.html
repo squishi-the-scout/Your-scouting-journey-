@@ -114,14 +114,11 @@
                 if (data.role === 'scout') allScouts.push({ id: doc.id, username: data.username });
                 else if (data.role === 'leader') allLeaders.push({ id: doc.id, username: data.username });
             });
-            console.log("✅ Loaded users:", { scouts: allScouts.length, leaders: allLeaders.length });
         }
 
         async function getAttendance() {
-            console.log("🔍 Fetching attendance for session:", sessionId);
             const q = query(collection(db, 'attendance'), where('sessionId', '==', sessionId));
             const snapshot = await getDocs(q);
-            console.log("📊 Found attendance records:", snapshot.size);
             const attendance = {};
             snapshot.forEach(doc => {
                 const data = doc.data();
@@ -131,7 +128,6 @@
         }
 
         async function renderPage() {
-            console.log("🔄 renderPage() called");
             const docRef = doc(db, 'sessions', sessionId);
             const docSnap = await getDoc(docRef);
             if (!docSnap.exists()) {
@@ -244,38 +240,28 @@
         }
 
         function attachEvents(session) {
-            console.log("🔗 Attaching events");
-            
             // ─── ATTENDANCE TOGGLE ───
             document.querySelectorAll('#attendance-scouts .attendance-toggle button, #attendance-leaders .attendance-toggle button').forEach(btn => {
                 btn.addEventListener('click', async function() {
-                    console.log("👆 Clicked attendance button");
                     const row = this.closest('.attendance-row');
                     const userId = row.dataset.id;
                     const userType = row.dataset.type;
                     const attend = this.dataset.attend === 'true';
                     const docId = `${sessionId}_${userId}`;
                     
-                    console.log("📝 Saving attendance:", { sessionId, userId, userType, attend, docId });
+                    await setDoc(doc(db, 'attendance', docId), {
+                        sessionId: sessionId,
+                        userId: userId,
+                        userType: userType,
+                        attended: attend
+                    });
                     
-                    try {
-                        await setDoc(doc(db, 'attendance', docId), {
-                            sessionId: sessionId,
-                            userId: userId,
-                            userType: userType,
-                            attended: attend
-                        });
-                        console.log("✅ Attendance saved successfully!");
-                        await renderPage();
-                    } catch (error) {
-                        console.error("❌ Error saving attendance:", error);
-                    }
+                    await renderPage();
                 });
             });
 
             // ─── MARK ALL SCOUTS ───
             document.getElementById('mark-all-scouts')?.addEventListener('click', async () => {
-                console.log("👆 Mark All Scouts clicked");
                 for (const scout of allScouts) {
                     const docId = `${sessionId}_${scout.id}`;
                     await setDoc(doc(db, 'attendance', docId), {
@@ -290,7 +276,6 @@
 
             // ─── MARK ALL LEADERS ───
             document.getElementById('mark-all-leaders')?.addEventListener('click', async () => {
-                console.log("👆 Mark All Leaders clicked");
                 for (const leader of allLeaders) {
                     const docId = `${sessionId}_${leader.id}`;
                     await setDoc(doc(db, 'attendance', docId), {
@@ -325,9 +310,10 @@
 
             document.getElementById('cancel-edit-btn')?.addEventListener('click', () => {
                 document.getElementById('edit-section').style.display = 'none';
+                editVisible = false;
             });
 
-            // ─── SAVE EDIT ───
+            // ─── SAVE EDIT ─── FIXED ───
             document.getElementById('save-edit-btn')?.addEventListener('click', async () => {
                 const name = document.getElementById('edit-name').value.trim();
                 const date = document.getElementById('edit-date').value;
@@ -344,19 +330,29 @@
 
                 try {
                     await updateDoc(doc(db, 'sessions', sessionId), {
-                        name, date, time,
+                        name: name,
+                        date: date,
+                        time: time,
                         location: location || 'TBD',
                         purpose: purpose || '',
                         lastEditedBy: currentUser.username,
                         lastEditedAt: new Date().toISOString()
                     });
+                    
                     msg.textContent = '✅ Session updated!';
                     msg.style.color = '#8fbcbb';
                     document.getElementById('edit-section').style.display = 'none';
-                    await renderPage();
+                    editVisible = false;
+                    
+                    // Wait a moment then reload
+                    setTimeout(async () => {
+                        await renderPage();
+                    }, 500);
+                    
                 } catch (error) {
                     msg.textContent = '❌ Error: ' + error.message;
                     msg.style.color = '#c47a7a';
+                    console.error("Edit error:", error);
                 }
             });
         }
