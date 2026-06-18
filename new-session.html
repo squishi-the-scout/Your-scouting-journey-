@@ -45,7 +45,7 @@
             </div>
         </div>
 
-        <div style="background:white;border-radius:20px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="background:white; border-radius:20px; padding:32px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <div class="form-group">
                 <label>Session Name *</label>
                 <input type="text" id="session-name" placeholder="e.g., Knots Practice">
@@ -66,11 +66,15 @@
                 <label>Purpose / Notes</label>
                 <textarea id="session-purpose" placeholder="What will you be covering?"></textarea>
             </div>
+            <div class="form-group">
+                <label>Service Hours</label>
+                <input type="number" id="session-hours" placeholder="e.g., 2" step="0.5" min="0" style="width:100%; padding:12px; border:1px solid #e0ece4; border-radius:16px; font-family:inherit; font-size:14px;">
+            </div>
             <div class="form-actions">
                 <button class="btn-save" id="save-session-btn">💾 Save Session</button>
                 <button class="btn-cancel" id="cancel-btn">Cancel</button>
             </div>
-            <div id="form-message" style="margin-top:16px;color:#5a7c6e;"></div>
+            <div id="form-message" style="margin-top:16px; color:#5a7c6e;"></div>
         </div>
     </div>
 
@@ -98,6 +102,7 @@
             const time = document.getElementById('session-time').value;
             const location = document.getElementById('session-location').value.trim();
             const purpose = document.getElementById('session-purpose').value.trim();
+            const serviceHours = parseFloat(document.getElementById('session-hours').value) || 0;
             const message = document.getElementById('form-message');
 
             if (!name || !date || !time) {
@@ -113,6 +118,7 @@
                     time,
                     location: location || 'TBD',
                     purpose: purpose || '',
+                    serviceHours: serviceHours,
                     createdBy: currentUser.username,
                     createdAt: serverTimestamp(),
                     lastEditedBy: currentUser.username,
