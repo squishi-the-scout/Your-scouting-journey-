@@ -37,4 +37,122 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 16px;
-   
+    margin-bottom: 28px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+.stat-card .number {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-card .label {
+    font-size: 14px;
+    color: #5a7c6e;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.stat-card .icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+}
+
+.stat-card.green .number { color: #8fbcbb; }
+.stat-card.yellow .number { color: #d4a86a; }
+.stat-card.red .number { color: #c47a7a; }
+.stat-card.blue .number { color: #7a9ec4; }
+
+/* ===== SCOUT GRID ===== */
+.scout-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.scout-card {
+    background: white;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: all 0.2s;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.scout-card:hover {
+    border-color: #d4e4dc;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.scout-card .scout-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.scout-card .scout-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.scout-card .scout-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #2d5a4a;
+}
+
+.scout-card .scout-progress-text {
+    font-size: 13px;
+    color: #5a7c6e;
+    margin-bottom: 6px;
+}
+
+.scout-card .progress-bar-bg {
+    background: #e8f0ec;
+    border-radius: 20px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.scout-card .progress-bar-fill {
+    background: #8fbcbb;
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.4s;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .scout-grid {
+        grid-template-columns: 1fr;
+    }
+    .header-left h1 {
+        font-size: 24px;
+    }
+}
