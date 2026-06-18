@@ -39,36 +39,15 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
-// ─── Navigation using URL hash ──────────────────────────
-function navigateTo(view) {
-    window.location.hash = view;
-}
-
-function getViewFromHash() {
-    const hash = window.location.hash.replace('#', '');
-    return hash || 'dashboard';
-}
-
-// ─── Sidebar click handlers ─────────────────────────────
+// ─── Navigation ──────────────────────────────────────────
 document.querySelectorAll('.sidebar-nav a').forEach(link => {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        const view = this.dataset.view;
-        if (view) navigateTo(view);
+        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        currentView = this.dataset.view;
+        renderView();
     });
-});
-
-// ─── Hash change listener ───────────────────────────────
-window.addEventListener('hashchange', () => {
-    const view = getViewFromHash();
-    currentView = view;
-    
-    // Update active link
-    document.querySelectorAll('.sidebar-nav a').forEach(l => {
-        l.classList.toggle('active', l.dataset.view === view);
-    });
-    
-    renderView();
 });
 
 // ─── Load Scouts ─────────────────────────────────────────
@@ -118,18 +97,14 @@ function updatePendingBadge() {
 function renderView() {
     const container = document.getElementById('page-content');
     if (!container) return;
-    
-    // Dashboard renders directly into the main area
-    if (currentView === 'dashboard') {
-        container.style.display = 'none';
-        renderDashboard();
-        return;
-    }
-    
-    // Other views render inside the container
-    container.style.display = 'block';
-    
+
+    // Clear the container
+    container.innerHTML = '';
+
     switch(currentView) {
+        case 'dashboard':
+            renderDashboard(container);
+            break;
         case 'scouts':
             renderAllScouts(container);
             break;
@@ -151,7 +126,7 @@ function renderView() {
 }
 
 // ─── Dashboard ────────────────────────────────────────────
-function renderDashboard() {
+function renderDashboard(container) {
     let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
 
     for (const scout of allScouts) {
@@ -170,92 +145,144 @@ function renderDashboard() {
         if (pending > 0) pendingCount++;
     }
 
-    document.getElementById('stats-grid').innerHTML = `
-        <div class="stat-card green">
-            <div class="icon">✅</div>
-            <div class="number">${completed}</div>
-            <div class="label">Completed</div>
-        </div>
-        <div class="stat-card yellow">
-            <div class="icon">🟡</div>
-            <div class="number">${onTrack}</div>
-            <div class="label">On Track</div>
-        </div>
-        <div class="stat-card red">
-            <div class="icon">🔴</div>
-            <div class="number">${needsHelp}</div>
-            <div class="label">Needs Help</div>
-        </div>
-        <div class="stat-card blue">
-            <div class="icon">✋</div>
-            <div class="number">${pendingCount}</div>
-            <div class="label">Pending</div>
+    let html = `
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="icon">✅</div>
+                <div class="number">${completed}</div>
+                <div class="label">Completed</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="icon">🟡</div>
+                <div class="number">${onTrack}</div>
+                <div class="label">On Track</div>
+            </div>
+            <div class="stat-card red">
+                <div class="icon">🔴</div>
+                <div class="number">${needsHelp}</div>
+                <div class="label">Needs Help</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="icon">✋</div>
+                <div class="number">${pendingCount}</div>
+                <div class="label">Pending</div>
+            </div>
         </div>
     `;
 
-    const banner = document.getElementById('pending-banner');
+    // Pending Banner
     if (pendingCount > 0) {
-        banner.style.display = 'block';
-        document.getElementById('pending-count-text').textContent = pendingCount;
-        document.getElementById('pending-banner-link').onclick = (e) => {
-            e.preventDefault();
-            navigateTo('pending');
-        };
-    } else {
-        banner.style.display = 'none';
+        html += `
+            <div style="background:#fef9f0; border-left: 4px solid #d4a86a; border-radius:16px; padding:16px 20px; margin-bottom:24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <span style="font-size:20px;">✋</span>
+                        <strong style="color:#2d5a4a;">${pendingCount}</strong>
+                        <span style="color:#5a7c6e;">scout(s) need your approval</span>
+                    </div>
+                    <a href="#" id="pending-banner-link" style="background:#8fbcbb; color:white; padding:8px 20px; border-radius:40px; text-decoration:none; font-weight:500; font-size:14px;">Review Now →</a>
+                </div>
+            </div>
+        `;
     }
 
+    // Attendance
     const totalScouts = allScouts.length;
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const absentThisWeek = totalScouts - attendedThisWeek;
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
-    document.getElementById('attendance-percent').textContent = percent + '%';
-    document.getElementById('attended-count').textContent = attendedThisWeek;
-    document.getElementById('total-scouts').textContent = totalScouts;
-    document.getElementById('attended-count-breakdown').textContent = attendedThisWeek;
-    document.getElementById('absent-count').textContent = absentThisWeek;
-    document.getElementById('total-scouts-breakdown').textContent = totalScouts;
-
-    const ring = document.getElementById('attendance-ring');
-    if (ring) {
-        const circumference = 314.16;
-        const offset = circumference - (percent / 100) * circumference;
-        ring.style.strokeDashoffset = offset;
-    }
-
-    const grid = document.getElementById('scout-grid');
-    if (allScouts.length === 0) {
-        grid.innerHTML = `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`;
-        return;
-    }
-    grid.innerHTML = allScouts.map(scout => {
-        const status = allStatus[scout.id] || {};
-        let done = 0;
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
-            const value = status[key];
-            if (value && value.status === 'approved') done++;
-        }
-        const progress = membershipReqs.length > 0 ? Math.round((done / membershipReqs.length) * 100) : 0;
-        const color = getColor(scout.username);
-        return `
-            <div class="scout-card" data-id="${scout.id}" style="cursor:pointer;">
-                <div class="scout-top">
-                    <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
-                    <span class="scout-name">${scout.username}</span>
+    html += `
+        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px; margin-bottom:28px;">
+            <div style="background:white; border-radius:24px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div style="position:relative; width:140px; height:140px;">
+                    <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f0ec" stroke-width="12"/>
+                        <circle id="attendance-ring" cx="60" cy="60" r="50" fill="none" stroke="#8fbcbb" stroke-width="12" stroke-linecap="round"
+                            stroke-dasharray="314.16" stroke-dashoffset="${314.16 - (percent / 100) * 314.16}" style="transition: stroke-dashoffset 1.2s ease-out;"/>
+                    </svg>
+                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;">
+                        <div style="font-size:28px; font-weight:700; color:#2d5a4a;">${percent}%</div>
+                        <div style="font-size:14px; color:#5a7c6e;">Attendance</div>
+                    </div>
                 </div>
-                <div class="scout-progress-text">${progress}%</div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+                <div style="margin-top:12px; font-size:14px; color:#5a7c6e; text-align:center;">
+                    ${attendedThisWeek} of ${totalScouts} scouts attended this week
+                </div>
             </div>
-        `;
-    }).join('');
+            <div style="background:white; border-radius:24px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04); display:flex; flex-direction:column; justify-content:center;">
+                <h3 style="color:#2d5a4a; font-size:18px; margin-bottom:16px;">📊 Weekly Attendance</h3>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f9fbfa; border-radius:12px;">
+                        <span>✅ Attended</span>
+                        <span style="font-weight:600; color:#8fbcbb;">${attendedThisWeek}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f9fbfa; border-radius:12px;">
+                        <span>❌ Absent</span>
+                        <span style="font-weight:600; color:#c47a7a;">${absentThisWeek}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f9fbfa; border-radius:12px;">
+                        <span>📅 Total Scouts</span>
+                        <span style="font-weight:600; color:#2d5a4a;">${totalScouts}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
-    document.querySelectorAll('#scout-grid .scout-card').forEach(card => {
+    // Scout Grid
+    if (allScouts.length > 0) {
+        html += `
+            <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
+            <div class="scout-grid">
+                ${allScouts.map(scout => {
+                    const status = allStatus[scout.id] || {};
+                    let done = 0;
+                    for (const req of membershipReqs) {
+                        const key = `membership_${req}`;
+                        const value = status[key];
+                        if (value && value.status === 'approved') done++;
+                    }
+                    const progress = membershipReqs.length > 0 ? Math.round((done / membershipReqs.length) * 100) : 0;
+                    const color = getColor(scout.username);
+                    return `
+                        <div class="scout-card" data-id="${scout.id}" style="cursor:pointer;">
+                            <div class="scout-top">
+                                <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
+                                <span class="scout-name">${scout.username}</span>
+                            </div>
+                            <div class="scout-progress-text">${progress}%</div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
+        `;
+    } else {
+        html += `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`;
+    }
+
+    container.innerHTML = html;
+
+    // ─── Event Listeners ──────────────────────────────────
+    // Pending banner link
+    const bannerLink = document.getElementById('pending-banner-link');
+    if (bannerLink) {
+        bannerLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+        });
+    }
+
+    // Scout cards
+    document.querySelectorAll('.scout-card').forEach(card => {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
-            navigateTo('scout-detail');
+            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
         });
     });
 }
@@ -287,7 +314,8 @@ function renderAllScouts(container) {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
-            navigateTo('scout-detail');
+            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
         });
     });
 }
@@ -351,6 +379,7 @@ function renderPending(container) {
             const scoutId = item.dataset.scout;
             const reqName = item.dataset.req;
             await approveRequirement(scoutId, reqName);
+            renderView(); // Refresh the view
         });
     });
 }
@@ -358,12 +387,12 @@ function renderPending(container) {
 // ─── Sessions ──────────────────────────────────────────────
 function renderSessions(container) {
     container.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
             <div>
                 <h2 style="color:#2d5a4a;">📋 Sessions</h2>
                 <p style="color:#5a7c6e;">Manage your scout activities and attendance</p>
             </div>
-            <button class="export-btn" id="sessions-new-btn" style="background:#8fbcbb;color:white;">➕ New Session</button>
+            <button class="export-btn" id="sessions-new-btn" style="background:#8fbcbb; color:white;">➕ New Session</button>
         </div>
         <div id="sessions-list-container">
             <p style="color:#5a7c6e;">Loading sessions...</p>
@@ -393,8 +422,8 @@ function renderSessionsList() {
 
     if (allSessions.length === 0) {
         container.innerHTML = `
-            <div style="background:white;border-radius:20px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <p style="color:#5a7c6e;font-size:18px;">📋 No sessions yet.</p>
+            <div style="background:white; border-radius:20px; padding:40px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <p style="color:#5a7c6e; font-size:18px;">📋 No sessions yet.</p>
                 <p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p>
             </div>
         `;
@@ -410,7 +439,7 @@ function renderSessionsList() {
     });
 
     container.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
             ${sorted.map(session => {
                 const scoutCount = allScouts.length;
                 let attended = 0;
@@ -423,19 +452,19 @@ function renderSessionsList() {
 
                 return `
                     <div class="scout-card" style="cursor:pointer;" data-id="${session.id}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                             <div>
-                                <div style="font-weight:600;font-size:18px;color:#2d5a4a;">${session.name}</div>
-                                <div style="color:#5a7c6e;font-size:14px;">
+                                <div style="font-weight:600; font-size:18px; color:#2d5a4a;">${session.name}</div>
+                                <div style="color:#5a7c6e; font-size:14px;">
                                     📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
                                 </div>
-                                <div style="color:#5a7c6e;font-size:14px;margin-top:4px;">
+                                <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">
                                     👥 ${attended}/${scoutCount} scouts attended (${percent}%)
                                 </div>
                             </div>
-                            <div style="font-size:14px;color:#5a7c6e;text-align:right;">
-                                ${session.purpose ? `<div style="max-width:200px;font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
-                                <div style="font-size:12px;color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
+                            <div style="font-size:14px; color:#5a7c6e; text-align:right;">
+                                ${session.purpose ? `<div style="max-width:200px; font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
+                                <div style="font-size:12px; color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
                             </div>
                         </div>
                     </div>
@@ -454,7 +483,7 @@ function renderSessionsList() {
 // ─── Scout Detail ─────────────────────────────────────────
 function renderScoutDetail(container, scoutId) {
     const scout = allScouts.find(s => s.id === scoutId);
-    if (!scout) { currentView = 'dashboard'; navigateTo('dashboard'); return; }
+    if (!scout) { currentView = 'dashboard'; renderView(); return; }
 
     const status = allStatus[scoutId] || {};
     const done = membershipReqs.filter(r => status[`membership_${r}`] && status[`membership_${r}`].status === 'approved').length;
@@ -462,38 +491,46 @@ function renderScoutDetail(container, scoutId) {
 
     container.innerHTML = `
         <div class="detail-header">
-            <span class="detail-back" id="detail-back">← Back</span>
-            <div class="detail-avatar" style="background:${getColor(scout.username)}">${scout.username.charAt(0).toUpperCase()}</div>
-            <div class="detail-name">
-                <h2>${scout.username}</h2>
-                <p>Membership Badge · ${done}/${membershipReqs.length} completed</p>
+            <span class="detail-back" id="detail-back" style="cursor:pointer; color:#5a7c6e; font-weight:500;">← Back</span>
+            <div style="display:flex; align-items:center; gap:16px; margin-top:16px;">
+                <div class="detail-avatar" style="width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:24px; color:white; background:${getColor(scout.username)};">${scout.username.charAt(0).toUpperCase()}</div>
+                <div>
+                    <h2 style="font-size:24px; color:#2d5a4a;">${scout.username}</h2>
+                    <p style="color:#5a7c6e;">Membership Badge · ${done}/${membershipReqs.length} completed</p>
+                </div>
             </div>
         </div>
-        <div class="detail-progress">
-            <div class="progress-label"><span>Progress</span><span>${Math.round(progress * 100)}%</span></div>
-            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress * 100}%"></div></div>
+        <div class="detail-progress" style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; margin-bottom:8px;">
+                <span>Progress</span>
+                <span>${Math.round(progress * 100)}%</span>
+            </div>
+            <div style="background:#e8f0ec; border-radius:20px; height:8px; overflow:hidden;">
+                <div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div>
+            </div>
         </div>
-        <div class="detail-notes">
-            <label><strong>📝 Private Note</strong> <span style="color:#5a7c6e;font-weight:400;">(only you can see this)</span></label>
-            <textarea id="note-textarea">${status.leaderNote || ''}</textarea>
-            <button id="save-note-btn">💾 Save Note</button>
+        <div style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <label style="font-weight:600; color:#2d5a4a;">📝 Private Note <span style="font-weight:400; color:#5a7c6e;">(only you can see this)</span></label>
+            <textarea id="note-textarea" style="width:100%; padding:12px; border:1px solid #e0ece4; border-radius:16px; font-family:inherit; font-size:14px; resize:vertical; min-height:80px; margin-top:8px;">${status.leaderNote || ''}</textarea>
+            <button id="save-note-btn" style="background:#7a9e8a; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-top:10px;">💾 Save Note</button>
         </div>
-        <div class="detail-requirements">
-            <h3 style="margin-bottom:12px;color:#2d5a4a;">Requirements</h3>
+        <div style="background:white; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <h3 style="color:#2d5a4a; margin-bottom:12px;">Requirements</h3>
             ${membershipReqs.map(req => {
                 const data = status[`membership_${req}`];
                 const stat = data ? data.status : 'todo';
                 const icon = stat === 'approved' ? '✅' : stat === 'pending' ? '✋' : '⭕';
                 const label = stat === 'approved' ? 'Completed' : stat === 'pending' ? 'Pending' : 'Not started';
                 const meta = stat === 'approved' ? `Approved by ${data.approvedBy || 'leader'} · ${data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently'}` : '';
-                return `<div class="req-item"><span>${icon} ${req}</span><span class="req-status ${stat}">${label} ${meta ? `<span class="req-meta">— ${meta}</span>` : ''}</span></div>`;
+                return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>${icon} ${req}</span><span style="font-weight:500; ${stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8'};">${label} ${meta ? `<span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ${meta}</span>` : ''}</span></div>`;
             }).join('')}
         </div>
     `;
 
     document.getElementById('detail-back').addEventListener('click', () => {
         currentView = 'dashboard';
-        navigateTo('dashboard');
+        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
+        renderView();
     });
 
     document.getElementById('save-note-btn').addEventListener('click', async () => {
@@ -509,12 +546,12 @@ function renderScoutDetail(container, scoutId) {
 // ─── Export ────────────────────────────────────────────────
 function renderExport(container) {
     container.innerHTML = `
-        <div style="background:white;border-radius:20px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <h2 style="color:#2d5a4a;margin-bottom:8px;">📤 Export Reports</h2>
-            <p style="color:#5a7c6e;margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
+        <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <h2 style="color:#2d5a4a; margin-bottom:8px;">📤 Export Reports</h2>
+            <p style="color:#5a7c6e; margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
             <button class="export-btn" id="export-all-btn">📥 Export All Scouts</button>
             <button class="export-btn" style="margin-left:12px;" id="export-pending-btn">📥 Export Pending Only</button>
-            <div id="export-status" style="margin-top:16px;color:#5a7c6e;"></div>
+            <div id="export-status" style="margin-top:16px; color:#5a7c6e;"></div>
         </div>
     `;
 
@@ -576,12 +613,12 @@ function scoutCardHTML(scout) {
             </div>
             <div class="scout-progress-text">${done}/${total} done</div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress * 100}%"></div></div>
-            <div class="scout-status">
-                <span class="done">🟢 ${done} done</span>
-                ${pending > 0 ? `<span class="pending">✋ ${pending} pending</span>` : ''}
-                <span class="missing">⚠️ ${total - done - pending} missing</span>
+            <div class="scout-status" style="display:flex; gap:12px; font-size:13px; color:#5a7c6e; flex-wrap:wrap;">
+                <span style="color:#8fbcbb;">🟢 ${done} done</span>
+                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
+                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
             </div>
-            ${hasNote ? '<div class="scout-note-indicator">📝 Has private note</div>' : ''}
+            ${hasNote ? '<div style="margin-top:8px; font-size:13px; color:#7a9ec4;">📝 Has private note</div>' : ''}
         </div>
     `;
 }
@@ -599,15 +636,6 @@ async function approveRequirement(scoutId, reqName) {
 
 // ─── Init ──────────────────────────────────────────────────
 async function init() {
-    // Set initial view from URL hash
-    const initialView = getViewFromHash();
-    currentView = initialView;
-    
-    // Update active link
-    document.querySelectorAll('.sidebar-nav a').forEach(l => {
-        l.classList.toggle('active', l.dataset.view === initialView);
-    });
-    
     await loadScouts();
     listenToStatus();
     renderView();
