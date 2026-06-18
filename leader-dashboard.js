@@ -160,7 +160,7 @@ function renderDashboard() {
 
     if (pendingItems.length > 0) {
         pendingHTML = `
-            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; height:100%;">
                 <div style="font-weight:600; color:#2d5a4a; margin-bottom:10px;">✋ ${pendingItems.length} scout(s) need your approval</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     ${visibleItems.map(({ scout, req }) => `
@@ -175,7 +175,7 @@ function renderDashboard() {
         `;
     } else {
         pendingHTML = `
-            <div style="background:#e8f0ec; border-radius:16px; padding:16px 20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background:#e8f0ec; border-radius:16px; padding:16px 20px; height:100%; display:flex; align-items:center;">
                 <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
             </div>
         `;
@@ -183,6 +183,7 @@ function renderDashboard() {
 
     // ─── Build full HTML ─────────────────────────────────────
     let html = `
+        <!-- HEADER -->
         <div class="header">
             <div class="header-left">
                 <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
@@ -193,8 +194,7 @@ function renderDashboard() {
             </div>
         </div>
 
-        ${pendingHTML}
-
+        <!-- ROW 1: STATS CARDS (3 columns) -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
             <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${badgeEarned}</div>
@@ -210,41 +210,51 @@ function renderDashboard() {
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:28px;">
-            <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
-                <div style="position:relative; width:100px; height:100px; margin:0 auto;">
-                    <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
-                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f0ec" stroke-width="12"/>
-                        <circle cx="60" cy="60" r="50" fill="none" stroke="#8fbcbb" stroke-width="12" stroke-linecap="round"
-                            stroke-dasharray="314.16" stroke-dashoffset="${314.16 - (percent / 100) * 314.16}" style="transition: stroke-dashoffset 1.2s ease-out;"/>
-                    </svg>
-                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
-                        <div style="font-size:20px; font-weight:700; color:#2d5a4a;">${percent}%</div>
-                        <div style="font-size:10px; color:#5a7c6e;">Attendance</div>
-                    </div>
-                </div>
-                <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
+        <!-- ROW 2: PENDING (spans col 1 & 2) + ATTENDANCE + SCOUT LEVELS (col 3) -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; margin-bottom:28px;">
+            <!-- Col 1 + 2: Pending Approvals -->
+            <div style="grid-column: span 2;">
+                ${pendingHTML}
             </div>
 
-            <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
-                        <span>🏅 Membership</span>
-                        <span style="font-weight:600;">${totalScouts}</span>
+            <!-- Col 3: Attendance Ring + Scout Levels -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
+                    <div style="position:relative; width:100px; height:100px; margin:0 auto;">
+                        <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f0ec" stroke-width="12"/>
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#8fbcbb" stroke-width="12" stroke-linecap="round"
+                                stroke-dasharray="314.16" stroke-dashoffset="${314.16 - (percent / 100) * 314.16}" style="transition: stroke-dashoffset 1.2s ease-out;"/>
+                        </svg>
+                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
+                            <div style="font-size:20px; font-weight:700; color:#2d5a4a;">${percent}%</div>
+                            <div style="font-size:10px; color:#5a7c6e;">Attendance</div>
+                        </div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
-                        <span>⭐ Second Class</span>
-                        <span style="font-weight:600; color:#b0c4b8;">0</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0;">
-                        <span>🌟 First Class</span>
-                        <span style="font-weight:600; color:#b0c4b8;">0</span>
+                    <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
+                </div>
+
+                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
+                            <span>🏅 Membership</span>
+                            <span style="font-weight:600;">${totalScouts}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
+                            <span>⭐ Second Class</span>
+                            <span style="font-weight:600; color:#b0c4b8;">0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0;">
+                            <span>🌟 First Class</span>
+                            <span style="font-weight:600; color:#b0c4b8;">0</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- ROW 3: SCOUT CARDS (3 columns) -->
         <div>
             <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
