@@ -150,7 +150,7 @@ function renderDashboard(container) {
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
     let html = `
-        <!-- ===== STATS CARDS (full width) ===== -->
+        <!-- ===== STATS CARDS ===== -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
             <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${badgeEarned}</div>
@@ -168,8 +168,8 @@ function renderDashboard(container) {
 
         <!-- ===== MIDDLE SECTION (2/3 + 1/3) ===== -->
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
-            <!-- LEFT: Pending Banner (clickable) -->
-            <div id="pending-banner-click" style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; cursor:pointer; display:flex; align-items:center; ${pendingCount === 0 ? 'background:#e8f0ec; border-left-color:#b0c4b8;' : ''}">
+            <!-- LEFT: Pending Banner -->
+            <div id="pending-banner-click" style="background:${pendingCount > 0 ? '#fef9f0' : '#e8f0ec'}; border-left:4px solid ${pendingCount > 0 ? '#d4a86a' : '#b0c4b8'}; border-radius:16px; padding:16px 20px; ${pendingCount > 0 ? 'cursor:pointer;' : ''} display:flex; align-items:center;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; width:100%;">
                     ${pendingCount > 0 ? `
                         <span style="font-size:16px;">✋ <strong>${pendingCount}</strong> scout(s) need your approval →</span>
@@ -253,7 +253,6 @@ function renderDashboard(container) {
     container.innerHTML = html;
 
     // ─── Event Listeners ──────────────────────────────────
-    // Clickable pending banner
     document.getElementById('pending-banner-click')?.addEventListener('click', () => {
         if (pendingCount > 0) {
             document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
@@ -273,12 +272,6 @@ function renderDashboard(container) {
 // ─── All Scouts ──────────────────────────────────────────
 function renderAllScouts(container) {
     container.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <h1>👥 All Scouts</h1>
-                <p>Manage your scout roster</p>
-            </div>
-        </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; gap:12px; flex:1; max-width:320px; background:white; padding:10px 18px; border-radius:40px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <span>🔍</span>
@@ -347,12 +340,6 @@ function renderPending(container) {
     }
 
     container.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <h1>✋ Pending Approvals</h1>
-                <p>Scouts waiting for your sign-off</p>
-            </div>
-        </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
             ${pendingItems.map(({ scout, req }) => `
                 <div style="background:white; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -381,13 +368,11 @@ function renderPending(container) {
 // ─── Sessions ──────────────────────────────────────────────
 function renderSessions(container) {
     container.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <h1>📋 Sessions</h1>
-                <p>Manage your scout activities and attendance</p>
-            </div>
-        </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+            <div>
+                <h2 style="color:#2d5a4a;">📋 Sessions</h2>
+                <p style="color:#5a7c6e;">Manage your scout activities and attendance</p>
+            </div>
             <button id="sessions-new-btn" style="background:#8fbcbb; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">➕ New Session</button>
         </div>
         <div id="sessions-list-container">
@@ -486,13 +471,14 @@ function renderScoutDetail(container, scoutId) {
     const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
 
     container.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <h1>${scout.username}</h1>
-                <p>Membership Badge · ${done}/${membershipReqs.length} completed</p>
+        <span id="detail-back" style="cursor:pointer; color:#5a7c6e; font-weight:500; display:inline-block; margin-bottom:16px;">← Back</span>
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px;">
+            <div style="width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:24px; color:white; background:${getColor(scout.username)};">${scout.username.charAt(0).toUpperCase()}</div>
+            <div>
+                <h2 style="font-size:24px; color:#2d5a4a;">${scout.username}</h2>
+                <p style="color:#5a7c6e;">Membership Badge · ${done}/${membershipReqs.length} completed</p>
             </div>
         </div>
-        <span id="detail-back" style="cursor:pointer; color:#5a7c6e; font-weight:500; display:inline-block; margin-bottom:16px;">← Back</span>
         <div style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; margin-bottom:8px;">
                 <span>Progress</span>
@@ -539,13 +525,8 @@ function renderScoutDetail(container, scoutId) {
 // ─── Export ────────────────────────────────────────────────
 function renderExport(container) {
     container.innerHTML = `
-        <div class="header">
-            <div class="header-left">
-                <h1>📤 Export Reports</h1>
-                <p>Download scout progress data</p>
-            </div>
-        </div>
         <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <h2 style="color:#2d5a4a; margin-bottom:8px;">📤 Export Reports</h2>
             <p style="color:#5a7c6e; margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
             <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">📥 Export All Scouts</button>
             <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">📥 Export Pending Only</button>
