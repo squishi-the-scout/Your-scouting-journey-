@@ -1,47 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leader Dashboard — GIS Scouts</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leader Dashboard</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- ===== SIDEBAR ===== -->
-<div class="sidebar">
-    <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
-    <nav class="sidebar-nav">
-        <a href="#" class="active" data-view="dashboard">📊 <span>Dashboard</span></a>
-        <a href="#" data-view="scouts">👥 <span>All Scouts</span></a>
-        <a href="#" data-view="pending">✋ <span>Pending</span> <span class="badge" id="pending-badge">0</span></a>
-        <a href="#" data-view="sessions">📋 <span>Sessions</span></a>
-        <a href="#" data-view="export">📤 <span>Export</span></a>
-    </nav>
-    <div class="sidebar-footer">
-        <a href="#" id="logout-btn">🚪 <span>Logout</span></a>
-    </div>
+<div class="container">
+<div class="header-card">
+<h1>👋 Leader Dashboard</h1>
+<div class="subtitle">Manage scout progress — live updates</div>
+<button id="logout-btn" class="logout-btn">Log out</button>
+</div>
+<div id="scouts-list" class="requirements-grid">Loading scouts...</div>
 </div>
 
-<!-- ===== MAIN CONTENT ===== -->
-<div class="main-content" id="main-content">
+```
+<script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { collection, getDocs, doc, getDoc, setDoc, onSnapshot } from "<https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js>";
 
-    <!-- Header -->
-    <div class="header">
-        <div class="header-left">
-            <h1 id="page-title">📊 Dashboard</h1>
-            <p id="page-subtitle">Welcome back, <span id="leader-name">Hazfar</span> 👋</p>
-        </div>
-        <div class="header-right">
-            <span class="avatar" id="leader-avatar">H</span>
-        </div>
-    </div>
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
 
-    <!-- Dynamic content goes here -->
-    <div id="page-content"></div>
+    document.getElementById('logout-btn').onclick = () => {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    };
 
-</div>
+    const membershipReqs = [
+        "Law and Promise",
+        "Scout Uniform, Badges and Positions",
+        "Knots and Whipping",
+        "Woodcraft Signs",
+        "National Flag, Anthem, Emblem, Tree, Flower",
+        "Scouting History",
+        "Salutes, Signs, Handshake, Scout Staff",
+        "Dress a Wound",
+        "Whistle Calls, Silent Signs, Formations",
+        "Re-test Membership",
+        "Interview by Scouter",
+        "Investiture"
+    ];
 
-<script type="module" src="leader-dashboard.js"></script>
+    let scoutsCache = [];
+    let statusCache = {};
+
+    async function loadScouts() {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const scouts = [];
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.role === 'scout') {
+                scouts.push({ id: doc.id, username: data.username });
+            }
+        });
+        scoutsCache = scouts;
+        return scouts;
+    }
+
+    // Real-time listener for ALL scout statuses
+    function listenToStatusUpdates() {
+        // Listen to the entire scoutStatus collection
+        const unsubscribe = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+            statusCache = {};
+            snapshot.forEach(doc => {
+                statusCache[doc.id] = doc.data();
+            });
+            renderDashboard();
+        }, (error) => {
+            console.error("Error listening to status updates:", error);
+        });
+
+        // Return unsubscribe function for cleanup
+        return unsubscribe;
+    }
+
+    async function renderDashboard() {
+        const container = document.getElementById('scouts-list');
+
+        if (scoutsCache.length === 0) {
+            container.innerHTML = '<div class="req-card"><div class="req-name">No scouts found.</div></div>';
+            return;
+        }
+
+        container.innerHTML = '';
+
+        for (const scout of scoutsCache) {
+            const status = statusCache[scout.id] || {};
+
+            const pending = [];
+            for (const req of membershipReqs) {
+                const key = `membership_${req}`;
+                const value = status[key];
+                if (value === 'pending' || (value && value.status === 'pending')) {
+                    pending.push(req);
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = 'req-card';
+
+            let html = `<div class="req-name">📋 ${scout.username}</div>`;
+
+            if (pending.length === 0) {
+                html += '<div class="req-footer" style="margin-top: 12px;"><span class="done-text">✅ No pending approvals</span></div>';
+            } else {
+                pending.forEach(req => {
+                    html += `
+                        <div class="req-footer" style="margin-top: 12px; justify-content: space-between; display: flex; align-items: center;">
+                            <span>✋ ${req}</span>
+                            <button class="ready-btn" data-scout="${scout.id}" data-req="${req}" style="background: #8fbcbb; border: none; padding: 6px 16px; border-radius: 30px; color: white; cursor: pointer;">Approve</button>
+                        </div>
+                    `;
+                });
+            }
+
+            card.innerHTML = html;
+            container.appendChild(card);
+        }
+
+        // Add approve listeners
+        document.querySelectorAll('.ready-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const scoutId = btn.dataset.scout;
+                const reqName = btn.dataset.req;
+                const statusRef = doc(db, 'scoutStatus', scoutId);
+                const current = (await getDoc(statusRef)).data() || {};
+
+                current[`membership_${reqName}`] = {
+                    status: 'approved',
+                    approvedBy: currentUser.username,
+                    approvedAt: new Date().toISOString()
+                };
+
+                await setDoc(statusRef, current);
+                // No need to render — real-time listener will update automatically
+            });
+        });
+    }
+
+    async function init() {
+        await loadScouts();
+        // Start listening to real-time updates
+        listenToStatusUpdates();
+    }
+
+    init();
+</script>
+```
+
 </body>
 </html>
