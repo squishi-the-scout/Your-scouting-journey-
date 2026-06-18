@@ -3,12 +3,18 @@ import {
     collection, getDocs, doc, getDoc, setDoc, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
+if (!currentUser || currentUser.role !== 'leader') {
+    window.location.href = 'index.html';
+}
 
-document.getElementById('leader-name')?.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-document.getElementById('leader-avatar')?.textContent = currentUser.username.charAt(0).toUpperCase();
+const leaderNameEl = document.getElementById('leader-name');
+const leaderAvatarEl = document.getElementById('leader-avatar');
+const pendingBadgeEl = document.getElementById('pending-badge');
+const pageContent = document.getElementById('page-content');
+
+if (leaderNameEl) leaderNameEl.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+if (leaderAvatarEl) leaderAvatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
 
 let allScouts = [];
 let allStatus = {};
@@ -33,28 +39,30 @@ const membershipReqs = [
     "Investiture"
 ];
 
-// ─── Logout ──────────────────────────────────────────────
-document.getElementById('logout-btn')?.addEventListener('click', () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
-});
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', function() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    });
+}
 
-// ─── Navigation ──────────────────────────────────────────
-document.querySelectorAll('.sidebar-nav a').forEach(link => {
+document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+            l.classList.remove('active');
+        });
         this.classList.add('active');
         currentView = this.dataset.view;
         renderView();
     });
 });
 
-// ─── Load Scouts ─────────────────────────────────────────
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
     allScouts = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach(function(doc) {
         const data = doc.data();
         if (data.role === 'scout') {
             allScouts.push({ id: doc.id, username: data.username });
@@ -63,12 +71,11 @@ async function loadScouts() {
     return allScouts;
 }
 
-// ─── Live Status Listener ────────────────────────────────
 function listenToStatus() {
     if (unsubscribeStatus) unsubscribeStatus();
-    unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+    unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), function(snapshot) {
         allStatus = {};
-        snapshot.forEach(doc => {
+        snapshot.forEach(function(doc) {
             allStatus[doc.id] = doc.data();
         });
         renderView();
@@ -78,10 +85,12 @@ function listenToStatus() {
 
 function updatePendingBadge() {
     let count = 0;
-    for (const scout of allScouts) {
+    for (let i = 0; i < allScouts.length; i++) {
+        const scout = allScouts[i];
         const status = allStatus[scout.id] || {};
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
+        for (let j = 0; j < membershipReqs.length; j++) {
+            const req = membershipReqs[j];
+            const key = 'membership_' + req;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
                 count++;
@@ -89,53 +98,45 @@ function updatePendingBadge() {
             }
         }
     }
-    const badge = document.getElementById('pending-badge');
-    if (badge) badge.textContent = count;
+    if (pendingBadgeEl) pendingBadgeEl.textContent = count;
 }
 
-// ─── Render Views ─────────────────────────────────────────
 function renderView() {
-    const container = document.getElementById('page-content');
-    if (!container) return;
+    if (!pageContent) return;
+    pageContent.innerHTML = '';
 
-    container.innerHTML = '';
-
-    switch(currentView) {
-        case 'dashboard':
-            renderDashboard(container);
-            break;
-        case 'scouts':
-            renderAllScouts(container);
-            break;
-        case 'pending':
-            renderPending(container);
-            break;
-        case 'sessions':
-            renderSessions(container);
-            break;
-        case 'export':
-            renderExport(container);
-            break;
-        case 'scout-detail':
-            if (selectedScoutId) renderScoutDetail(container, selectedScoutId);
-            break;
-        default:
-            container.innerHTML = `<p style="color:#5a7c6e;">View "${currentView}" not found.</p>`;
+    if (currentView === 'dashboard') {
+        renderDashboard();
+    } else if (currentView === 'scouts') {
+        renderAllScouts();
+    } else if (currentView === 'pending') {
+        renderPending();
+    } else if (currentView === 'sessions') {
+        renderSessions();
+    } else if (currentView === 'export') {
+        renderExport();
+    } else if (currentView === 'scout-detail' && selectedScoutId) {
+        renderScoutDetail(selectedScoutId);
+    } else {
+        pageContent.innerHTML = '<p style="color:#5a7c6e;">View "' + currentView + '" not found.</p>';
     }
 }
 
-// ─── Dashboard ────────────────────────────────────────────
-function renderDashboard(container) {
+function renderDashboard() {
     let badgeEarned = 0, onTrail = 0, atTrailhead = 0;
+    const pendingItems = [];
 
-    for (const scout of allScouts) {
+    for (let i = 0; i < allScouts.length; i++) {
+        const scout = allScouts[i];
         const status = allStatus[scout.id] || {};
         let done = 0, pending = 0;
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
+        for (let j = 0; j < membershipReqs.length; j++) {
+            const req = membershipReqs[j];
+            const key = 'membership_' + req;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
                 pending++;
+                pendingItems.push({ scout: scout, req: req, key: key });
             } else if (value && value.status === 'approved') {
                 done++;
             }
@@ -150,48 +151,36 @@ function renderDashboard(container) {
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
-    // ─── Build pending items ──────────────────────────────
-    const pendingItems = [];
-    for (const scout of allScouts) {
-        const status = allStatus[scout.id] || {};
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
-            const value = status[key];
-            if (value === 'pending' || (value && value.status === 'pending')) {
-                pendingItems.push({ scout, req, key });
-            }
-        }
-    }
-
     const showCount = 3;
     const visibleItems = pendingItems.slice(0, showCount);
     const remaining = pendingItems.length - showCount;
 
     let pendingHtml = '';
     if (pendingItems.length > 0) {
-        pendingHtml = `
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-                ${visibleItems.map(({ scout, req }) => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:white; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
-                        <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#2d5a4a;">
-                            <span style="font-weight:600;">${scout.username}</span>
-                            <span style="color:#5a7c6e;">— ${req}</span>
-                        </div>
-                        <button class="pending-approve-btn" data-scout="${scout.id}" data-req="${req}" style="background:#8fbcbb; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer;">Approve</button>
+        pendingHtml = '<div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">';
+        for (let i = 0; i < visibleItems.length; i++) {
+            const item = visibleItems[i];
+            pendingHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:white; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#2d5a4a;">
+                        <span style="font-weight:600;">${item.scout.username}</span>
+                        <span style="color:#5a7c6e;">— ${item.req}</span>
                     </div>
-                `).join('')}
-                ${remaining > 0 ? `
-                    <div style="text-align:right; margin-top:4px;">
-                        <a href="#" id="pending-view-all" style="color:#8fbcbb; font-size:14px; font-weight:500; text-decoration:none;">View All ${remaining} more →</a>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+                    <button class="pending-approve-btn" data-scout="${item.scout.id}" data-req="${item.req}" style="background:#8fbcbb; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer;">Approve</button>
+                </div>
+            `;
+        }
+        if (remaining > 0) {
+            pendingHtml += `
+                <div style="text-align:right; margin-top:4px;">
+                    <a href="#" id="pending-view-all" style="color:#8fbcbb; font-size:14px; font-weight:500; text-decoration:none;">View All ${remaining} more →</a>
+                </div>
+            `;
+        }
+        pendingHtml += '</div>';
     }
 
-    // ─── Full HTML ──────────────────────────────────────────
     let html = `
-        <!-- HEADER -->
         <div class="header">
             <div class="header-left">
                 <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
@@ -202,7 +191,6 @@ function renderDashboard(container) {
             </div>
         </div>
 
-        <!-- STATS CARDS -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
             <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${badgeEarned}</div>
@@ -218,7 +206,6 @@ function renderDashboard(container) {
             </div>
         </div>
 
-        <!-- PENDING BANNER -->
         ${pendingItems.length > 0 ? `
             <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:24px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -232,7 +219,6 @@ function renderDashboard(container) {
             </div>
         `}
 
-        <!-- ATTENDANCE + SCOUT LEVELS -->
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:28px;">
             <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
                 <div style="position:relative; width:100px; height:100px; margin:0 auto;">
@@ -268,15 +254,15 @@ function renderDashboard(container) {
             </div>
         </div>
 
-        <!-- SCOUT CARDS -->
         <div>
             <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
-                ${allScouts.length > 0 ? allScouts.map(scout => {
+                ${allScouts.length > 0 ? allScouts.map(function(scout) {
                     const status = allStatus[scout.id] || {};
                     let done = 0;
-                    for (const req of membershipReqs) {
-                        const key = `membership_${req}`;
+                    for (let j = 0; j < membershipReqs.length; j++) {
+                        const req = membershipReqs[j];
+                        const key = 'membership_' + req;
                         const value = status[key];
                         if (value && value.status === 'approved') done++;
                     }
@@ -294,16 +280,15 @@ function renderDashboard(container) {
                             </div>
                         </div>
                     `;
-                }).join('') : `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`}
+                }).join('') : '<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>'}
             </div>
             <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
         </div>
     `;
 
-    container.innerHTML = html;
+    pageContent.innerHTML = html;
 
-    // ─── Event Listeners ──────────────────────────────────
-    document.querySelectorAll('.pending-approve-btn').forEach(btn => {
+    document.querySelectorAll('.pending-approve-btn').forEach(function(btn) {
         btn.addEventListener('click', async function(e) {
             e.stopPropagation();
             const scoutId = this.dataset.scout;
@@ -313,24 +298,29 @@ function renderDashboard(container) {
         });
     });
 
-    document.getElementById('pending-view-all')?.addEventListener('click', function(e) {
-        e.preventDefault();
-        document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
-    });
+    const viewAllLink = document.getElementById('pending-view-all');
+    if (viewAllLink) {
+        viewAllLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const pendingLink = document.querySelector('.sidebar-nav a[data-view="pending"]');
+            if (pendingLink) pendingLink.click();
+        });
+    }
 
-    document.querySelectorAll('.scout-card').forEach(card => {
+    document.querySelectorAll('.scout-card').forEach(function(card) {
         card.addEventListener('click', function() {
             selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+                l.classList.remove('active');
+            });
             renderView();
         });
     });
 }
 
-// ─── All Scouts ──────────────────────────────────────────
-function renderAllScouts(container) {
-    container.innerHTML = `
+function renderAllScouts() {
+    let html = `
         <div class="header">
             <div class="header-left">
                 <h1>👥 All Scouts</h1>
@@ -350,18 +340,23 @@ function renderAllScouts(container) {
             </select>
         </div>
         <div id="scout-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
-            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
+            ${allScouts.map(function(scout) { return scoutCardHTML(scout); }).join('')}
         </div>
     `;
+    pageContent.innerHTML = html;
 
-    document.getElementById('search-input')?.addEventListener('input', filterScouts);
-    document.getElementById('filter-select')?.addEventListener('change', filterScouts);
+    const searchInput = document.getElementById('search-input');
+    const filterSelect = document.getElementById('filter-select');
+    if (searchInput) searchInput.addEventListener('input', filterScouts);
+    if (filterSelect) filterSelect.addEventListener('change', filterScouts);
 
-    document.querySelectorAll('.scout-card').forEach(card => {
-        card.addEventListener('click', () => {
-            selectedScoutId = card.dataset.id;
+    document.querySelectorAll('.scout-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav a').forEach(function(l) {
+                l.classList.remove('active');
+            });
             renderView();
         });
     });
@@ -373,7 +368,7 @@ function filterScouts() {
     const grid = document.getElementById('scout-grid');
     if (!grid) return;
     const cards = grid.querySelectorAll('.scout-card');
-    cards.forEach(card => {
+    cards.forEach(function(card) {
         const name = card.dataset.name.toLowerCase();
         const progress = parseFloat(card.dataset.progress);
         let show = true;
@@ -385,26 +380,27 @@ function filterScouts() {
     });
 }
 
-// ─── Pending ──────────────────────────────────────────────
-function renderPending(container) {
+function renderPending() {
     const pendingItems = [];
-    for (const scout of allScouts) {
+    for (let i = 0; i < allScouts.length; i++) {
+        const scout = allScouts[i];
         const status = allStatus[scout.id] || {};
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
+        for (let j = 0; j < membershipReqs.length; j++) {
+            const req = membershipReqs[j];
+            const key = 'membership_' + req;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
-                pendingItems.push({ scout, req, key });
+                pendingItems.push({ scout: scout, req: req, key: key });
             }
         }
     }
 
     if (pendingItems.length === 0) {
-        container.innerHTML = `<p style="color:#5a7c6e;">✅ No pending approvals — you're all caught up!</p>`;
+        pageContent.innerHTML = '<p style="color:#5a7c6e;">✅ No pending approvals — you\'re all caught up!</p>';
         return;
     }
 
-    container.innerHTML = `
+    let html = `
         <div class="header">
             <div class="header-left">
                 <h1>✋ Pending Approvals</h1>
@@ -412,33 +408,37 @@ function renderPending(container) {
             </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
-            ${pendingItems.map(({ scout, req }) => `
-                <div style="background:white; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; color:white; background:${getColor(scout.username)};">${scout.username.charAt(0).toUpperCase()}</div>
-                        <span style="font-weight:500; color:#2d5a4a;">${scout.username}</span>
-                        <span style="color:#5a7c6e; font-size:14px;">— ${req}</span>
-                    </div>
-                    <button class="approve-btn" data-scout="${scout.id}" data-req="${req}" style="background:#8fbcbb; color:white; border:none; padding:6px 18px; border-radius:40px; font-weight:500; cursor:pointer;">Approve</button>
-                </div>
-            `).join('')}
-        </div>
     `;
+    for (let i = 0; i < pendingItems.length; i++) {
+        const item = pendingItems[i];
+        const color = getColor(item.scout.username);
+        html += `
+            <div style="background:white; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; color:white; background:${color};">${item.scout.username.charAt(0).toUpperCase()}</div>
+                    <span style="font-weight:500; color:#2d5a4a;">${item.scout.username}</span>
+                    <span style="color:#5a7c6e; font-size:14px;">— ${item.req}</span>
+                </div>
+                <button class="approve-btn" data-scout="${item.scout.id}" data-req="${item.req}" style="background:#8fbcbb; color:white; border:none; padding:6px 18px; border-radius:40px; font-weight:500; cursor:pointer;">Approve</button>
+            </div>
+        `;
+    }
+    html += '</div>';
+    pageContent.innerHTML = html;
 
-    container.querySelectorAll('.approve-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+    document.querySelectorAll('.approve-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function(e) {
             e.stopPropagation();
-            const scoutId = btn.dataset.scout;
-            const reqName = btn.dataset.req;
+            const scoutId = this.dataset.scout;
+            const reqName = this.dataset.req;
             await approveRequirement(scoutId, reqName);
             renderView();
         });
     });
 }
 
-// ─── Sessions ──────────────────────────────────────────────
-function renderSessions(container) {
-    container.innerHTML = `
+function renderSessions() {
+    let html = `
         <div class="header">
             <div class="header-left">
                 <h1>📋 Sessions</h1>
@@ -452,20 +452,25 @@ function renderSessions(container) {
             <p style="color:#5a7c6e;">Loading sessions...</p>
         </div>
     `;
+    pageContent.innerHTML = html;
 
-    document.getElementById('sessions-new-btn')?.addEventListener('click', () => {
-        window.location.href = 'new-session.html';
-    });
+    const newBtn = document.getElementById('sessions-new-btn');
+    if (newBtn) {
+        newBtn.addEventListener('click', function() {
+            window.location.href = 'new-session.html';
+        });
+    }
 
     if (sessionsUnsubscribe) sessionsUnsubscribe();
-    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), function(snapshot) {
         allSessions = [];
-        snapshot.forEach(doc => {
+        snapshot.forEach(function(doc) {
             allSessions.push({ id: doc.id, ...doc.data() });
         });
         renderSessionsList();
-    }, (error) => {
-        document.getElementById('sessions-list-container').innerHTML = `<p style="color:#c47a7a;">❌ Error: ${error.message}</p>`;
+    }, function(error) {
+        const container = document.getElementById('sessions-list-container');
+        if (container) container.innerHTML = '<p style="color:#c47a7a;">❌ Error: ' + error.message + '</p>';
         console.error(error);
     });
 }
@@ -484,7 +489,7 @@ function renderSessionsList() {
         return;
     }
 
-    const sorted = [...allSessions].sort((a, b) => {
+    const sorted = allSessions.slice().sort(function(a, b) {
         if (a.date > b.date) return -1;
         if (a.date < b.date) return 1;
         if (a.time > b.time) return -1;
@@ -492,58 +497,72 @@ function renderSessionsList() {
         return 0;
     });
 
-    container.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:16px;">
-            ${sorted.map(session => {
-                const scoutCount = allScouts.length;
-                let attended = 0;
-                if (session.attendance) {
-                    for (const key in session.attendance) {
-                        if (session.attendance[key] === true) attended++;
-                    }
-                }
-                const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
-
-                return `
-                    <div style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer;" data-id="${session.id}">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                            <div>
-                                <div style="font-weight:600; font-size:18px; color:#2d5a4a;">${session.name}</div>
-                                <div style="color:#5a7c6e; font-size:14px;">
-                                    📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
-                                </div>
-                                <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">
-                                    👥 ${attended}/${scoutCount} scouts attended (${percent}%)
-                                </div>
-                            </div>
-                            <div style="font-size:14px; color:#5a7c6e; text-align:right;">
-                                ${session.purpose ? `<div style="max-width:200px; font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
-                                <div style="font-size:12px; color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
-                            </div>
+    let html = '<div style="display:flex; flex-direction:column; gap:16px;">';
+    for (let i = 0; i < sorted.length; i++) {
+        const session = sorted[i];
+        const scoutCount = allScouts.length;
+        let attended = 0;
+        if (session.attendance) {
+            for (const key in session.attendance) {
+                if (session.attendance[key] === true) attended++;
+            }
+        }
+        const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
+        html += `
+            <div style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer;" data-id="${session.id}">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <div style="font-weight:600; font-size:18px; color:#2d5a4a;">${session.name}</div>
+                        <div style="color:#5a7c6e; font-size:14px;">
+                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                        </div>
+                        <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">
+                            👥 ${attended}/${scoutCount} scouts attended (${percent}%)
                         </div>
                     </div>
-                `;
-            }).join('')}
-        </div>
-    `;
+                    <div style="font-size:14px; color:#5a7c6e; text-align:right;">
+                        ${session.purpose ? '<div style="max-width:200px; font-style:italic;">' + session.purpose.substring(0, 60) + (session.purpose.length > 60 ? '...' : '') + '</div>' : ''}
+                        <div style="font-size:12px; color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    html += '</div>';
+    container.innerHTML = html;
 
-    document.querySelectorAll('[data-id]').forEach(card => {
-        card.addEventListener('click', () => {
-            window.location.href = `session-detail.html?id=${card.dataset.id}`;
+    document.querySelectorAll('[data-id]').forEach(function(card) {
+        card.addEventListener('click', function() {
+            window.location.href = 'session-detail.html?id=' + this.dataset.id;
         });
     });
 }
 
-// ─── Scout Detail ─────────────────────────────────────────
-function renderScoutDetail(container, scoutId) {
-    const scout = allScouts.find(s => s.id === scoutId);
-    if (!scout) { currentView = 'dashboard'; renderView(); return; }
+function renderScoutDetail(scoutId) {
+    let scout = null;
+    for (let i = 0; i < allScouts.length; i++) {
+        if (allScouts[i].id === scoutId) {
+            scout = allScouts[i];
+            break;
+        }
+    }
+    if (!scout) {
+        currentView = 'dashboard';
+        renderView();
+        return;
+    }
 
     const status = allStatus[scoutId] || {};
-    const done = membershipReqs.filter(r => status[`membership_${r}`] && status[`membership_${r}`].status === 'approved').length;
+    let done = 0;
+    for (let j = 0; j < membershipReqs.length; j++) {
+        const req = membershipReqs[j];
+        const key = 'membership_' + req;
+        const data = status[key];
+        if (data && data.status === 'approved') done++;
+    }
     const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
 
-    container.innerHTML = `
+    let html = `
         <div class="header">
             <div class="header-left">
                 <h1>${scout.username}</h1>
@@ -567,36 +586,47 @@ function renderScoutDetail(container, scoutId) {
         </div>
         <div style="background:white; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <h3 style="color:#2d5a4a; margin-bottom:12px;">Requirements</h3>
-            ${membershipReqs.map(req => {
-                const data = status[`membership_${req}`];
+            ${membershipReqs.map(function(req) {
+                const data = status['membership_' + req];
                 const stat = data ? data.status : 'todo';
                 const icon = stat === 'approved' ? '✅' : stat === 'pending' ? '✋' : '⭕';
                 const label = stat === 'approved' ? 'Completed' : stat === 'pending' ? 'Pending' : 'Not started';
-                const meta = stat === 'approved' ? `Approved by ${data.approvedBy || 'leader'} · ${data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently'}` : '';
-                return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>${icon} ${req}</span><span style="font-weight:500; ${stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8'};">${label} ${meta ? `<span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ${meta}</span>` : ''}</span></div>`;
+                let meta = '';
+                if (stat === 'approved') {
+                    meta = 'Approved by ' + (data.approvedBy || 'leader') + ' · ' + (data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently');
+                }
+                return '<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>' + icon + ' ' + req + '</span><span style="font-weight:500; ' + (stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8') + ';">' + label + (meta ? ' <span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ' + meta + '</span>' : '') + '</span></div>';
             }).join('')}
         </div>
     `;
+    pageContent.innerHTML = html;
 
-    document.getElementById('detail-back')?.addEventListener('click', () => {
-        currentView = 'dashboard';
-        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
-        renderView();
-    });
+    const backBtn = document.getElementById('detail-back');
+    if (backBtn) {
+        backBtn.addEventListener('click', function() {
+            currentView = 'dashboard';
+            const dashboardLink = document.querySelector('.sidebar-nav a[data-view="dashboard"]');
+            if (dashboardLink) dashboardLink.classList.add('active');
+            renderView();
+        });
+    }
 
-    document.getElementById('save-note-btn')?.addEventListener('click', async () => {
-        const note = document.getElementById('note-textarea').value;
-        const ref = doc(db, 'scoutStatus', scoutId);
-        const current = (await getDoc(ref)).data() || {};
-        current.leaderNote = note;
-        await setDoc(ref, current);
-        alert('✅ Note saved!');
-    });
+    const saveBtn = document.getElementById('save-note-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async function() {
+            const note = document.getElementById('note-textarea').value;
+            const ref = doc(db, 'scoutStatus', scoutId);
+            const docSnap = await getDoc(ref);
+            const current = docSnap.exists() ? docSnap.data() : {};
+            current.leaderNote = note;
+            await setDoc(ref, current);
+            alert('✅ Note saved!');
+        });
+    }
 }
 
-// ─── Export ────────────────────────────────────────────────
-function renderExport(container) {
-    container.innerHTML = `
+function renderExport() {
+    let html = `
         <div class="header">
             <div class="header-left">
                 <h1>📤 Export Reports</h1>
@@ -604,99 +634,4 @@ function renderExport(container) {
             </div>
         </div>
         <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <p style="color:#5a7c6e; margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
-            <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">📥 Export All Scouts</button>
-            <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">📥 Export Pending Only</button>
-            <div id="export-status" style="margin-top:16px; color:#5a7c6e;"></div>
-        </div>
-    `;
-
-    document.getElementById('export-all-btn')?.addEventListener('click', () => exportCSV('all'));
-    document.getElementById('export-pending-btn')?.addEventListener('click', () => exportCSV('pending'));
-}
-
-function exportCSV(type) {
-    const rows = [['Scout', 'Requirement', 'Status', 'Approved By', 'Approved At']];
-    for (const scout of allScouts) {
-        const status = allStatus[scout.id] || {};
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
-            const data = status[key];
-            if (type === 'pending' && (!data || data.status !== 'pending')) continue;
-            const stat = data ? data.status : 'todo';
-            const by = data?.approvedBy || '';
-            const at = data?.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : '';
-            rows.push([scout.username, req, stat, by, at]);
-        }
-    }
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
-}
-
-// ─── Helpers ────────────────────────────────────────────────
-function getColor(name) {
-    const colors = ['#7a9e8a', '#a8c4d4', '#d4a86a', '#8fbcbb', '#c47a7a', '#b0a8c4'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
-}
-
-function scoutCardHTML(scout) {
-    const status = allStatus[scout.id] || {};
-    let done = 0, pending = 0;
-    for (const req of membershipReqs) {
-        const key = `membership_${req}`;
-        const value = status[key];
-        if (value === 'pending' || (value && value.status === 'pending')) pending++;
-        else if (value && value.status === 'approved') done++;
-    }
-    const total = membershipReqs.length;
-    const progress = total > 0 ? done / total : 0;
-    const hasNote = !!status.leaderNote;
-    const color = getColor(scout.username);
-    return `
-        <div class="scout-card" data-id="${scout.id}" data-name="${scout.username.toLowerCase()}" data-progress="${progress}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
-                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${scout.username}</span>
-            </div>
-            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${done}/${total} done</div>
-            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;">
-                <div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div>
-            </div>
-            <div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">
-                <span style="color:#8fbcbb;">🟢 ${done} done</span>
-                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
-                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
-            </div>
-            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>' : ''}
-        </div>
-    `;
-}
-
-async function approveRequirement(scoutId, reqName) {
-    const ref = doc(db, 'scoutStatus', scoutId);
-    const current = (await getDoc(ref)).data() || {};
-    current[`membership_${reqName}`] = {
-        status: 'approved',
-        approvedBy: currentUser.username,
-        approvedAt: new Date().toISOString()
-    };
-    await setDoc(ref, current);
-}
-
-// ─── Init ──────────────────────────────────────────────────
-async function init() {
-    await loadScouts();
-    listenToStatus();
-    renderView();
-}
-
-init();
+            <p style="color:#
