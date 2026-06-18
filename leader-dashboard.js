@@ -126,19 +126,196 @@ function renderView() {
 
 // ─── Dashboard ────────────────────────────────────────────
 function renderDashboard(container) {
-    // Simple placeholder — we'll build this up piece by piece
-    container.innerHTML = `
+    let badgeEarned = 0, onTrail = 0, atTrailhead = 0;
+    let pendingItems = [];
+
+    for (const scout of allScouts) {
+        const status = allStatus[scout.id] || {};
+        let done = 0, pending = 0;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value === 'pending' || (value && value.status === 'pending')) {
+                pending++;
+                pendingItems.push({ scout, req, key });
+            } else if (value && value.status === 'approved') {
+                done++;
+            }
+        }
+        const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
+        if (progress === 1) badgeEarned++;
+        else if (progress >= 0.5) onTrail++;
+        else atTrailhead++;
+    }
+
+    const totalScouts = allScouts.length;
+    const attendedThisWeek = Math.floor(totalScouts * 0.6);
+    const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
+
+    // ─── Build pending list HTML ──────────────────────────
+    let pendingHtml = '';
+    const showCount = 3;
+    const visibleItems = pendingItems.slice(0, showCount);
+    const remaining = pendingItems.length - showCount;
+
+    if (pendingItems.length > 0) {
+        pendingHtml = `
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+                ${visibleItems.map(({ scout, req }) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:#f9fbfa; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#2d5a4a;">
+                            <span style="font-weight:600;">${scout.username}</span>
+                            <span style="color:#5a7c6e;">— ${req}</span>
+                        </div>
+                        <button class="pending-approve-btn" data-scout="${scout.id}" data-req="${req}" style="background:#8fbcbb; color:white; border:none; padding:4px 14px; border-radius:30px; font-size:12px; cursor:pointer;">Approve</button>
+                    </div>
+                `).join('')}
+                ${remaining > 0 ? `
+                    <div style="text-align:right; margin-top:4px;">
+                        <a href="#" id="pending-view-all" style="color:#8fbcbb; font-size:14px; font-weight:500; text-decoration:none;">View All ${remaining} more →</a>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // ─── Full HTML ──────────────────────────────────────────
+    let html = `
+        <!-- HEADER -->
         <div class="header">
             <div class="header-left">
-                <h1>Good morning, <span id="leader-name">Hazfar</span>! 🎉</h1>
+                <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
                 <p>welcome back ~</p>
             </div>
             <div class="header-right">
-                <span class="avatar" id="leader-avatar">H</span>
+                <span class="avatar" id="leader-avatar">${currentUser.username.charAt(0).toUpperCase()}</span>
             </div>
         </div>
-        <p style="color:#5a7c6e; padding:40px; text-align:center;">Dashboard content coming soon...</p>
+
+        <!-- STATS CARDS -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
+            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${badgeEarned}</div>
+                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">🏅 Badge Earned</div>
+            </div>
+            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px; font-weight:700; color:#d4a86a;">${onTrail}</div>
+                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">🚶 On the Trail</div>
+            </div>
+            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px; font-weight:700; color:#c47a7a;">${atTrailhead}</div>
+                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">🏕️ At the Trailhead</div>
+            </div>
+        </div>
+
+        <!-- PENDING BANNER + ATTENDANCE -->
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
+            <!-- LEFT: Pending Banner -->
+            <div style="background:${pendingItems.length > 0 ? '#fef9f0' : '#e8f0ec'}; border-left:4px solid ${pendingItems.length > 0 ? '#d4a86a' : '#b0c4b8'}; border-radius:16px; padding:16px 20px;">
+                ${pendingItems.length > 0 ? `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:16px; font-weight:600; color:#2d5a4a;">✋ ${pendingItems.length} scout(s) need your approval</span>
+                    </div>
+                    ${pendingHtml}
+                ` : `
+                    <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
+                `}
+            </div>
+
+            <!-- RIGHT: Attendance Ring -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
+                    <div style="position:relative; width:100px; height:100px; margin:0 auto;">
+                        <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f0ec" stroke-width="12"/>
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="#8fbcbb" stroke-width="12" stroke-linecap="round"
+                                stroke-dasharray="314.16" stroke-dashoffset="${314.16 - (percent / 100) * 314.16}" style="transition: stroke-dashoffset 1.2s ease-out;"/>
+                        </svg>
+                        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
+                            <div style="font-size:20px; font-weight:700; color:#2d5a4a;">${percent}%</div>
+                            <div style="font-size:10px; color:#5a7c6e;">Attendance</div>
+                        </div>
+                    </div>
+                    <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
+                </div>
+                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
+                            <span>🏅 Membership</span>
+                            <span style="font-weight:600;">${totalScouts}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
+                            <span>⭐ Second Class</span>
+                            <span style="font-weight:600; color:#b0c4b8;">0</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0;">
+                            <span>🌟 First Class</span>
+                            <span style="font-weight:600; color:#b0c4b8;">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCOUT CARDS -->
+        <div>
+            <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
+                ${allScouts.length > 0 ? allScouts.map(scout => {
+                    const status = allStatus[scout.id] || {};
+                    let done = 0;
+                    for (const req of membershipReqs) {
+                        const key = `membership_${req}`;
+                        const value = status[key];
+                        if (value && value.status === 'approved') done++;
+                    }
+                    const progress = membershipReqs.length > 0 ? Math.round((done / membershipReqs.length) * 100) : 0;
+                    const color = getColor(scout.username);
+                    return `
+                        <div class="scout-card" data-id="${scout.id}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
+                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
+                                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${scout.username}</span>
+                            </div>
+                            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${progress}%</div>
+                            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;">
+                                <div style="background:#8fbcbb; height:100%; width:${progress}%; border-radius:20px;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') : `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`}
+            </div>
+            <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
+        </div>
     `;
+
+    container.innerHTML = html;
+
+    // ─── Event Listeners ──────────────────────────────────
+    document.querySelectorAll('.pending-approve-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.stopPropagation();
+            const scoutId = this.dataset.scout;
+            const reqName = this.dataset.req;
+            await approveRequirement(scoutId, reqName);
+            renderView();
+        });
+    });
+
+    document.getElementById('pending-view-all')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+    });
+
+    document.querySelectorAll('.scout-card').forEach(card => {
+        card.addEventListener('click', function() {
+            selectedScoutId = this.dataset.id;
+            currentView = 'scout-detail';
+            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
+        });
+    });
 }
 
 // ─── All Scouts ──────────────────────────────────────────
