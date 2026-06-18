@@ -7,7 +7,7 @@ import {
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
 
-document.getElementById('leader-name').textContent = currentUser.username;
+document.getElementById('leader-name').textContent = currentUser.username.toUpperCase();
 document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
 
 let allScouts = [];
@@ -95,17 +95,22 @@ function updatePendingBadge() {
 
 // ─── Render Views ─────────────────────────────────────────
 function renderView() {
-    const container = document.getElementById('page-content');
-    if (currentView === 'dashboard') renderDashboard(container);
-    else if (currentView === 'scouts') renderAllScouts(container);
-    else if (currentView === 'pending') renderPending(container);
-    else if (currentView === 'sessions') renderSessions(container);
-    else if (currentView === 'export') renderExport(container);
-    else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+    if (currentView === 'dashboard') {
+        renderDashboard();
+        document.getElementById('page-content').style.display = 'none';
+    } else {
+        document.getElementById('page-content').style.display = 'block';
+        const container = document.getElementById('page-content');
+        if (currentView === 'scouts') renderAllScouts(container);
+        else if (currentView === 'pending') renderPending(container);
+        else if (currentView === 'sessions') renderSessions(container);
+        else if (currentView === 'export') renderExport(container);
+        else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+    }
 }
 
 // ─── Dashboard ────────────────────────────────────────────
-function renderDashboard(container) {
+function renderDashboard() {
     const total = allScouts.length;
     let completed = 0, onTrack = 0, needsHelp = 0, pendingCount = 0;
 
@@ -126,19 +131,72 @@ function renderDashboard(container) {
         if (pending > 0) pendingCount++;
     }
 
-    container.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card green"><div class="number">${completed}</div><div class="label">✅ Completed</div></div>
-            <div class="stat-card yellow"><div class="number">${onTrack}</div><div class="label">🟡 On Track</div></div>
-            <div class="stat-card red"><div class="number">${needsHelp}</div><div class="label">🔴 Needs Help</div></div>
-            <div class="stat-card blue"><div class="number">${pendingCount}</div><div class="label">✋ Pending</div></div>
+    // Stats cards
+    document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card green">
+            <div class="icon">✅</div>
+            <div class="number">${completed}</div>
+            <div class="label">Completed</div>
         </div>
-        <div class="scout-grid">
-            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
+        <div class="stat-card yellow">
+            <div class="icon">🟡</div>
+            <div class="number">${onTrack}</div>
+            <div class="label">On Track</div>
+        </div>
+        <div class="stat-card red">
+            <div class="icon">🔴</div>
+            <div class="number">${needsHelp}</div>
+            <div class="label">Needs Help</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="icon">✋</div>
+            <div class="number">${pendingCount}</div>
+            <div class="label">Pending</div>
         </div>
     `;
 
-    container.querySelectorAll('.scout-card').forEach(card => {
+    // Pending banner
+    const banner = document.getElementById('pending-banner');
+    if (pendingCount > 0) {
+        banner.style.display = 'block';
+        document.getElementById('pending-count-text').textContent = pendingCount;
+        document.getElementById('pending-banner-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+        });
+    } else {
+        banner.style.display = 'none';
+    }
+
+    // Scout grid
+    const grid = document.getElementById('scout-grid');
+    if (allScouts.length === 0) {
+        grid.innerHTML = `<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>`;
+        return;
+    }
+    grid.innerHTML = allScouts.map(scout => {
+        const status = allStatus[scout.id] || {};
+        let done = 0;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
+            const value = status[key];
+            if (value && value.status === 'approved') done++;
+        }
+        const progress = Math.round((done / membershipReqs.length) * 100);
+        const color = getColor(scout.username);
+        return `
+            <div class="scout-card" data-id="${scout.id}" style="cursor:pointer;">
+                <div class="scout-top">
+                    <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
+                    <span class="scout-name">${scout.username}</span>
+                </div>
+                <div class="scout-progress-text">${progress}%</div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
+            </div>
+        `;
+    }).join('');
+
+    document.querySelectorAll('#scout-grid .scout-card').forEach(card => {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
