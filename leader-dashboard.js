@@ -45,23 +45,8 @@ document.querySelectorAll('.sidebar-nav a').forEach(link => {
         e.preventDefault();
         document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
         this.classList.add('active');
-        const view = this.dataset.view;
-        if (view === 'dashboard') {
-            currentView = 'dashboard';
-            renderView();
-        } else if (view === 'scouts') {
-            currentView = 'scouts';
-            renderView();
-        } else if (view === 'pending') {
-            currentView = 'pending';
-            renderView();
-        } else if (view === 'sessions') {
-            currentView = 'sessions';
-            renderView();
-        } else if (view === 'export') {
-            currentView = 'export';
-            renderView();
-        }
+        currentView = this.dataset.view;
+        renderView();
     });
 });
 
@@ -111,20 +96,36 @@ function updatePendingBadge() {
 // ─── Render Views ─────────────────────────────────────────
 function renderView() {
     const container = document.getElementById('page-content');
-    if (!container) {
-        console.error("page-content not found");
+    if (!container) return;
+    
+    // Dashboard renders directly into the main area
+    if (currentView === 'dashboard') {
+        container.style.display = 'none';
+        renderDashboard();
         return;
     }
-    if (currentView === 'dashboard') {
-        renderDashboard();
-        container.style.display = 'none';
-    } else {
-        container.style.display = 'block';
-        if (currentView === 'scouts') renderAllScouts(container);
-        else if (currentView === 'pending') renderPending(container);
-        else if (currentView === 'sessions') renderSessions(container);
-        else if (currentView === 'export') renderExport(container);
-        else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(container, selectedScoutId);
+    
+    // Other views render inside the container
+    container.style.display = 'block';
+    
+    switch(currentView) {
+        case 'scouts':
+            renderAllScouts(container);
+            break;
+        case 'pending':
+            renderPending(container);
+            break;
+        case 'sessions':
+            renderSessions(container);
+            break;
+        case 'export':
+            renderExport(container);
+            break;
+        case 'scout-detail':
+            if (selectedScoutId) renderScoutDetail(container, selectedScoutId);
+            break;
+        default:
+            container.innerHTML = `<p style="color:#5a7c6e;">View "${currentView}" not found.</p>`;
     }
 }
 
