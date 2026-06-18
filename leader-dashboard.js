@@ -39,15 +39,36 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
-// ─── Navigation ──────────────────────────────────────────
+// ─── Navigation using URL hash ──────────────────────────
+function navigateTo(view) {
+    window.location.hash = view;
+}
+
+function getViewFromHash() {
+    const hash = window.location.hash.replace('#', '');
+    return hash || 'dashboard';
+}
+
+// ─── Sidebar click handlers ─────────────────────────────
 document.querySelectorAll('.sidebar-nav a').forEach(link => {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-        this.classList.add('active');
-        currentView = this.dataset.view;
-        renderView();
+        const view = this.dataset.view;
+        if (view) navigateTo(view);
     });
+});
+
+// ─── Hash change listener ───────────────────────────────
+window.addEventListener('hashchange', () => {
+    const view = getViewFromHash();
+    currentView = view;
+    
+    // Update active link
+    document.querySelectorAll('.sidebar-nav a').forEach(l => {
+        l.classList.toggle('active', l.dataset.view === view);
+    });
+    
+    renderView();
 });
 
 // ─── Load Scouts ─────────────────────────────────────────
@@ -178,7 +199,7 @@ function renderDashboard() {
         document.getElementById('pending-count-text').textContent = pendingCount;
         document.getElementById('pending-banner-link').onclick = (e) => {
             e.preventDefault();
-            document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+            navigateTo('pending');
         };
     } else {
         banner.style.display = 'none';
@@ -234,8 +255,7 @@ function renderDashboard() {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-            renderView();
+            navigateTo('scout-detail');
         });
     });
 }
@@ -267,8 +287,7 @@ function renderAllScouts(container) {
         card.addEventListener('click', () => {
             selectedScoutId = card.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-            renderView();
+            navigateTo('scout-detail');
         });
     });
 }
@@ -435,7 +454,7 @@ function renderSessionsList() {
 // ─── Scout Detail ─────────────────────────────────────────
 function renderScoutDetail(container, scoutId) {
     const scout = allScouts.find(s => s.id === scoutId);
-    if (!scout) { currentView = 'dashboard'; renderView(); return; }
+    if (!scout) { currentView = 'dashboard'; navigateTo('dashboard'); return; }
 
     const status = allStatus[scoutId] || {};
     const done = membershipReqs.filter(r => status[`membership_${r}`] && status[`membership_${r}`].status === 'approved').length;
@@ -474,8 +493,7 @@ function renderScoutDetail(container, scoutId) {
 
     document.getElementById('detail-back').addEventListener('click', () => {
         currentView = 'dashboard';
-        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
-        renderView();
+        navigateTo('dashboard');
     });
 
     document.getElementById('save-note-btn').addEventListener('click', async () => {
@@ -581,6 +599,15 @@ async function approveRequirement(scoutId, reqName) {
 
 // ─── Init ──────────────────────────────────────────────────
 async function init() {
+    // Set initial view from URL hash
+    const initialView = getViewFromHash();
+    currentView = initialView;
+    
+    // Update active link
+    document.querySelectorAll('.sidebar-nav a').forEach(l => {
+        l.classList.toggle('active', l.dataset.view === initialView);
+    });
+    
     await loadScouts();
     listenToStatus();
     renderView();
