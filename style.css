@@ -1,403 +1,5 @@
-/* ===== RESET & BASE ===== */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #f5f3f0;
-    color: #2d5a4a;
-    display: flex;
-    min-height: 100vh;
-}
-
-a {
-    text-decoration: none;
-}
-
-/* ===== SIDEBAR (DESKTOP) ===== */
-.sidebar {
-    width: 220px;
-    background: #2d5a4a;
-    color: #e8f0ec;
-    padding: 28px 20px;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    overflow-y: auto;
-    flex-shrink: 0;
-}
-
-.sidebar-brand {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 32px;
-    color: white;
-}
-.sidebar-brand span {
-    color: #a8c4d4;
-}
-
-/* ===== SIDEBAR PROFILE ===== */
-.sidebar-profile {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 0 20px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    margin-bottom: 20px;
-}
-
-.person-avatar {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    background: #7a9e8a;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    flex-shrink: 0;
-    margin-bottom: 8px;
-}
-.person-avatar .head {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: white;
-    position: absolute;
-    top: 12px;
-}
-.person-avatar .body {
-    width: 28px;
-    height: 16px;
-    border-radius: 50% 50% 0 0;
-    background: white;
-    position: absolute;
-    bottom: 10px;
-}
-
-.sidebar-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: #e8f0ec;
-}
-.sidebar-role {
-    font-size: 12px;
-    color: #a8c4d4;
-    margin-top: 2px;
-}
-
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    flex: 1;
-}
-
-.sidebar-nav a {
-    color: #c4d9ce;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.sidebar-nav a:hover {
-    background: rgba(255,255,255,0.08);
-    color: white;
-}
-
-.sidebar-nav a.active {
-    background: #3d6e5c;
-    color: white;
-}
-
-.sidebar-nav .badge {
-    background: #d4a86a;
-    color: #2d5a4a;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 40px;
-    margin-left: auto;
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-.sidebar-footer a {
-    color: #c4d9ce;
-    padding: 12px 16px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.sidebar-footer a:hover {
-    background: rgba(255,255,255,0.08);
-    color: white;
-}
-
-/* ===== MAIN CONTENT ===== */
-.main-content {
-    flex: 1;
-    padding: 32px 40px;
-}
-
-/* ===== HEADER ===== */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-}
-
-.header-left h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: #2d5a4a;
-    margin: 0;
-}
-
-.header-left p {
-    color: #5a7c6e;
-    font-size: 16px;
-    margin-top: 4px;
-}
-
-.header-right .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #7a9e8a;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 18px;
-}
-
-/* ===== STATS CARDS ===== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-}
-
-.stat-card {
-    background: white;
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    text-align: center;
-}
-
-.stat-card .number {
-    font-size: 32px;
-    font-weight: 700;
-    line-height: 1;
-}
-
-.stat-card .label {
-    font-size: 14px;
-    color: #5a7c6e;
-    margin-top: 8px;
-    font-weight: 500;
-}
-
-.stat-card .icon {
-    font-size: 24px;
-    margin-bottom: 4px;
-}
-
-.stat-card.green .number { color: #8fbcbb; }
-.stat-card.yellow .number { color: #d4a86a; }
-.stat-card.red .number { color: #c47a7a; }
-.stat-card.blue .number { color: #7a9ec4; }
-
-/* ===== SCOUT GRID ===== */
-.scout-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-}
-
-.scout-card {
-    background: white;
-    border-radius: 20px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.scout-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-}
-
-.scout-card .scout-top {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.scout-card .scout-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 18px;
-    color: white;
-}
-
-.scout-card .scout-name {
-    font-weight: 600;
-    font-size: 15px;
-    color: #2d5a4a;
-}
-
-.scout-card .scout-progress-text {
-    font-size: 13px;
-    color: #5a7c6e;
-    margin-bottom: 6px;
-}
-
-.scout-card .progress-bar-bg {
-    background: #e8f0ec;
-    border-radius: 20px;
-    height: 6px;
-    overflow: hidden;
-}
-
-.scout-card .progress-bar-fill {
-    background: #8fbcbb;
-    height: 100%;
-    border-radius: 20px;
-    transition: width 0.4s;
-}
-
-/* ===== PENDING ===== */
-.pending-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.pending-item {
-    background: white;
-    border-radius: 16px;
-    padding: 16px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.pending-item .pending-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.pending-item .pending-name {
-    font-weight: 500;
-    color: #2d5a4a;
-}
-
-.pending-item .pending-req {
-    color: #5a7c6e;
-    font-size: 14px;
-}
-
-.pending-item .approve-btn {
-    background: #8fbcbb;
-    color: white;
-    border: none;
-    padding: 6px 18px;
-    border-radius: 40px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-/* ===== EXPORT ===== */
-.export-btn {
-    background: #a8c4d4;
-    color: #2d5a4a;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 40px;
-    font-weight: 500;
-    cursor: pointer;
-}
-
-/* ===== TOOLBAR ===== */
-.toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.search-box {
-    background: white;
-    padding: 10px 18px;
-    border-radius: 40px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    max-width: 320px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.search-box input {
-    border: none;
-    background: none;
-    outline: none;
-    font-size: 14px;
-    color: #2d5a4a;
-    width: 100%;
-}
-
-.filter-select {
-    background: white;
-    padding: 10px 18px;
-    border-radius: 40px;
-    border: none;
-    font-size: 14px;
-    color: #2d5a4a;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    cursor: pointer;
-}
-
 /* ============================================================
-   📱 MOBILE — FULL REDESIGN (DESKTOP UNCHANGED)
+   📱 MOBILE EMERGENCY FIX — OVERRIDE EVERYTHING
    ============================================================ */
 
 @media (max-width: 768px) {
@@ -408,20 +10,30 @@ a {
 
     /* ─── Main content: full width ─── */
     .main-content {
-        padding: 16px !important;
+        padding: 12px !important;
         max-width: 100% !important;
     }
 
-    /* ─── Header: smaller ─── */
+    /* ─── Header: fix alignment ─── */
     .header {
-        margin-bottom: 16px !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 12px !important;
+    }
+    .header-left {
+        flex: 1 !important;
     }
     .header-left h1 {
-        font-size: 20px !important;
+        font-size: 18px !important;
+        white-space: nowrap !important;
     }
     .header-left p {
-        font-size: 13px !important;
-        margin-top: 2px !important;
+        font-size: 12px !important;
+        margin-top: 0 !important;
+    }
+    .header-right {
+        flex-shrink: 0 !important;
     }
     .header-right .avatar {
         width: 32px !important;
@@ -429,87 +41,60 @@ a {
         font-size: 14px !important;
     }
 
-    /* ─── Stats: 3 per row, smaller ─── */
+    /* ─── Stats: 2 per row ─── */
     .stats-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        margin-bottom: 16px !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
     }
     .stat-card {
         padding: 10px !important;
         border-radius: 16px !important;
     }
     .stat-card .number {
-        font-size: 18px !important;
+        font-size: 20px !important;
     }
     .stat-card .label {
-        font-size: 9px !important;
+        font-size: 10px !important;
         margin-top: 2px !important;
     }
 
-    /* ─── Pending: full width ─── */
+    /* ─── Scout cards: full width ─── */
+    .scout-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .scout-card {
+        padding: 10px !important;
+    }
+
+    /* ─── Pending items: stack ─── */
     .pending-item {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 6px !important;
-        padding: 12px !important;
-    }
-    .pending-item .pending-info {
-        justify-content: center !important;
+        padding: 10px !important;
     }
     .pending-item .approve-btn {
         width: 100% !important;
         padding: 8px !important;
         text-align: center !important;
-        font-size: 13px !important;
     }
 
     /* ─── Attendance + Levels: side-by-side ─── */
     .attendance-levels-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
-        margin-bottom: 16px !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
     }
     .attendance-levels-grid > div {
-        padding: 12px !important;
+        padding: 10px !important;
     }
 
-    /* ─── Scout cards: full width, shorter ─── */
-    .scout-grid {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-    }
-    .scout-card {
-        padding: 12px !important;
-    }
-    .scout-card .scout-avatar {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 12px !important;
-    }
-    .scout-card .scout-name {
-        font-size: 13px !important;
-        max-width: 65% !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-    .scout-card .scout-progress-text {
-        font-size: 11px !important;
-        margin-bottom: 4px !important;
-    }
-    .scout-card .progress-bar-bg {
-        height: 4px !important;
-    }
-
-    /* ─── Section titles ─── */
-    .section-title {
-        font-size: 15px !important;
-        margin-bottom: 10px !important;
-    }
-
-    /* ─── Bottom navigation bar ─── */
+    /* ─── Bottom nav ─── */
     .bottom-nav {
         position: fixed !important;
         bottom: 0 !important;
@@ -552,7 +137,7 @@ a {
         border-radius: 40px !important;
     }
 
-    /* ─── Add padding at bottom for nav ─── */
+    /* ─── Padding for bottom nav ─── */
     .main-content {
         padding-bottom: 70px !important;
     }
