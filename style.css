@@ -1,39 +1,30 @@
 /* ============================================================
-   📱 MOBILE EMERGENCY FIX — OVERRIDE EVERYTHING
+   📱 MOBILE — BOTTOM NAV
    ============================================================ */
 
 @media (max-width: 768px) {
-    /* ─── Hide desktop sidebar ─── */
     .sidebar {
         display: none !important;
     }
 
-    /* ─── Main content: full width ─── */
     .main-content {
         padding: 12px !important;
+        padding-bottom: 70px !important;
         max-width: 100% !important;
     }
 
-    /* ─── Header: fix alignment ─── */
     .header {
         flex-direction: row !important;
         justify-content: space-between !important;
         align-items: center !important;
         margin-bottom: 12px !important;
     }
-    .header-left {
-        flex: 1 !important;
-    }
     .header-left h1 {
         font-size: 18px !important;
-        white-space: nowrap !important;
     }
     .header-left p {
         font-size: 12px !important;
         margin-top: 0 !important;
-    }
-    .header-right {
-        flex-shrink: 0 !important;
     }
     .header-right .avatar {
         width: 32px !important;
@@ -41,7 +32,6 @@
         font-size: 14px !important;
     }
 
-    /* ─── Stats: 2 per row ─── */
     .stats-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
@@ -50,19 +40,15 @@
     }
     .stat-card {
         padding: 10px !important;
-        border-radius: 16px !important;
     }
     .stat-card .number {
         font-size: 20px !important;
     }
     .stat-card .label {
         font-size: 10px !important;
-        margin-top: 2px !important;
     }
 
-    /* ─── Scout cards: full width ─── */
     .scout-grid {
-        display: grid !important;
         grid-template-columns: 1fr !important;
         gap: 8px !important;
     }
@@ -70,12 +56,10 @@
         padding: 10px !important;
     }
 
-    /* ─── Pending items: stack ─── */
     .pending-item {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 6px !important;
-        padding: 10px !important;
     }
     .pending-item .approve-btn {
         width: 100% !important;
@@ -83,18 +67,13 @@
         text-align: center !important;
     }
 
-    /* ─── Attendance + Levels: side-by-side ─── */
     .attendance-levels-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 8px !important;
         margin-bottom: 12px !important;
     }
-    .attendance-levels-grid > div {
-        padding: 10px !important;
-    }
 
-    /* ─── Bottom nav ─── */
     .bottom-nav {
         position: fixed !important;
         bottom: 0 !important;
@@ -110,7 +89,6 @@
     }
     .bottom-nav a {
         color: #c4d9ce !important;
-        font-size: 22px !important;
         text-decoration: none !important;
         display: flex !important;
         flex-direction: column !important;
@@ -135,10 +113,5 @@
         font-weight: 700 !important;
         padding: 1px 6px !important;
         border-radius: 40px !important;
-    }
-
-    /* ─── Padding for bottom nav ─── */
-    .main-content {
-        padding-bottom: 70px !important;
     }
 }
