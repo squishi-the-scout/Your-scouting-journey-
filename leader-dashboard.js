@@ -17,8 +17,6 @@ const pageContent = document.getElementById('page-content');
 if (leaderNameEl) leaderNameEl.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 if (leaderAvatarEl) leaderAvatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
 
-// Sidebar profile
-const sidebarAvatar = document.getElementById('sidebar-avatar');
 const sidebarName = document.getElementById('sidebar-name');
 if (sidebarName) sidebarName.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 
@@ -52,23 +50,16 @@ function truncateName(name) {
     return parts[0] + ' ' + parts[1].charAt(0) + '.';
 }
 
-// ─── Logout ──────────────────────────────────────────────
-const logoutBtn = document.getElementById('logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', function() {
-        localStorage.removeItem('currentUser');
-        window.location.href = 'index.html';
-    });
-}
+document.getElementById('logout-btn')?.addEventListener('click', () => {
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+});
 
-// ─── Navigation ──────────────────────────────────────────
 function setupNavigation() {
-    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(link) {
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
-                l.classList.remove('active');
-            });
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
             this.classList.add('active');
             currentView = this.dataset.view;
             renderView();
@@ -76,11 +67,10 @@ function setupNavigation() {
     });
 }
 
-// ─── Load Scouts ─────────────────────────────────────────
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
     allScouts = [];
-    snapshot.forEach(function(doc) {
+    snapshot.forEach(doc => {
         const data = doc.data();
         if (data.role === 'scout') {
             allScouts.push({ id: doc.id, username: data.username });
@@ -89,12 +79,11 @@ async function loadScouts() {
     return allScouts;
 }
 
-// ─── Live Status Listener ────────────────────────────────
 function listenToStatus() {
     if (unsubscribeStatus) unsubscribeStatus();
-    unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), function(snapshot) {
+    unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
         allStatus = {};
-        snapshot.forEach(function(doc) {
+        snapshot.forEach(doc => {
             allStatus[doc.id] = doc.data();
         });
         renderView();
@@ -104,12 +93,10 @@ function listenToStatus() {
 
 function updatePendingBadge() {
     let count = 0;
-    for (let i = 0; i < allScouts.length; i++) {
-        const scout = allScouts[i];
+    for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
-        for (let j = 0; j < membershipReqs.length; j++) {
-            const req = membershipReqs[j];
-            const key = 'membership_' + req;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
                 count++;
@@ -121,47 +108,33 @@ function updatePendingBadge() {
     if (bottomPendingBadgeEl) bottomPendingBadgeEl.textContent = count;
 }
 
-// ─── Render Views ─────────────────────────────────────────
 function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
-
-    if (currentView === 'dashboard') {
-        renderDashboard();
-    } else if (currentView === 'scouts') {
-        renderAllScouts();
-    } else if (currentView === 'pending') {
-        renderPending();
-    } else if (currentView === 'sessions') {
-        renderSessions();
-    } else if (currentView === 'export') {
-        renderExport();
-    } else if (currentView === 'scout-detail' && selectedScoutId) {
-        renderScoutDetail(selectedScoutId);
-    } else {
-        pageContent.innerHTML = '<p style="color:#5a7c6e;">View "' + currentView + '" not found.</p>';
-    }
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'scouts') renderAllScouts();
+    else if (currentView === 'pending') renderPending();
+    else if (currentView === 'sessions') renderSessions();
+    else if (currentView === 'export') renderExport();
+    else if (currentView === 'scout-detail' && selectedScoutId) renderScoutDetail(selectedScoutId);
+    else pageContent.innerHTML = '<p style="color:#5a7c6e;">View not found.</p>';
 }
 
-// ─── Dashboard ────────────────────────────────────────────
 function renderDashboard() {
-    // ─── Calculate stats ──────────────────────────────────────
     let totalScouts = allScouts.length;
     let totalRequirementsDone = 0;
     let totalPossible = membershipReqs.length * totalScouts;
     const pendingItems = [];
 
-    for (let i = 0; i < allScouts.length; i++) {
-        const scout = allScouts[i];
+    for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
         let done = 0, pending = 0;
-        for (let j = 0; j < membershipReqs.length; j++) {
-            const req = membershipReqs[j];
-            const key = 'membership_' + req;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
                 pending++;
-                pendingItems.push({ scout: scout, req: req, key: key });
+                pendingItems.push({ scout, req });
             } else if (value && value.status === 'approved') {
                 done++;
             }
@@ -172,7 +145,6 @@ function renderDashboard() {
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
-    // ─── Build pending HTML ──────────────────────────────────
     let pendingHTML = '';
     const showCount = 3;
     const visibleItems = pendingItems.slice(0, showCount);
@@ -180,7 +152,7 @@ function renderDashboard() {
 
     if (pendingItems.length > 0) {
         pendingHTML = `
-            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px; height:100%;">
+            <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px;">
                 <div style="font-weight:600; color:#2d5a4a; margin-bottom:10px;">✋ ${pendingItems.length} scout(s) need your approval</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     ${visibleItems.map(({ scout, req }) => `
@@ -194,16 +166,10 @@ function renderDashboard() {
             </div>
         `;
     } else {
-        pendingHTML = `
-            <div style="background:#e8f0ec; border-radius:16px; padding:16px 20px; height:100%; display:flex; align-items:center;">
-                <span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span>
-            </div>
-        `;
+        pendingHTML = `<div style="background:#e8f0ec; border-radius:16px; padding:16px 20px;"><span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span></div>`;
     }
 
-    // ─── Build full HTML ─────────────────────────────────────
     let html = `
-        <!-- HEADER -->
         <div class="header">
             <div class="header-left">
                 <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
@@ -214,29 +180,16 @@ function renderDashboard() {
             </div>
         </div>
 
-        <!-- ROW 1: STATS CARDS (3 columns) -->
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; margin-bottom:24px;">
-            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:32px; font-weight:700; color:#8fbcbb;">${totalScouts}</div>
-                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">🏕️ Total Scouts</div>
-            </div>
-            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:32px; font-weight:700; color:#d4a86a;">${totalRequirementsDone} / ${totalPossible}</div>
-                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">📋 Requirements Done</div>
-            </div>
-            <div style="background:white; border-radius:24px; padding:20px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:32px; font-weight:700; color:#b0c4b8;">0</div>
-                <div style="font-size:14px; color:#5a7c6e; margin-top:8px;">⏱️ Active Scouting Hours</div>
-            </div>
+        <div class="stats-grid">
+            <div class="stat-card green"><div class="number">${totalScouts}</div><div class="label">🏕️ Total Scouts</div></div>
+            <div class="stat-card yellow"><div class="number">${totalRequirementsDone} / ${totalPossible}</div><div class="label">📋 Requirements Done</div></div>
+            <div class="stat-card blue"><div class="number">0</div><div class="label">⏱️ Active Scouting Hours</div></div>
         </div>
 
-        <!-- ROW 2: PENDING (spans col 1 & 2) + ATTENDANCE + SCOUT LEVELS (col 3) -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px; margin-bottom:28px;">
-            <div style="grid-column: span 2;">
-                ${pendingHTML}
-            </div>
+        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
+            <div>${pendingHTML}</div>
             <div style="display:flex; flex-direction:column; gap:16px;">
-                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); text-align:center;">
+                <div style="background:white; border-radius:24px; padding:16px; text-align:center;">
                     <div style="position:relative; width:100px; height:100px; margin:0 auto;">
                         <svg viewBox="0 0 120 120" style="transform:rotate(-90deg); width:100%; height:100%;">
                             <circle cx="60" cy="60" r="50" fill="none" stroke="#e8f0ec" stroke-width="12"/>
@@ -250,52 +203,38 @@ function renderDashboard() {
                     </div>
                     <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
                 </div>
-
-                <div style="background:white; border-radius:24px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="background:white; border-radius:24px; padding:16px;">
                     <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
-                            <span>🏅 Membership</span>
-                            <span style="font-weight:600;">${totalScouts}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0; border-bottom:1px solid #e8f0ec;">
-                            <span>⭐ Second Class</span>
-                            <span style="font-weight:600; color:#b0c4b8;">0</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; padding:6px 0;">
-                            <span>🌟 First Class</span>
-                            <span style="font-weight:600; color:#b0c4b8;">0</span>
-                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>🏅 Membership</span><span style="font-weight:600;">${totalScouts}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>⭐ Second Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0;"><span>🌟 First Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ROW 3: SCOUT CARDS (3 columns) -->
         <div>
-            <h2 style="color:#2d5a4a; font-size:18px; font-weight:600; margin-bottom:16px;">📋 All Scouts</h2>
-            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
-                ${allScouts.length > 0 ? allScouts.map(function(scout) {
+            <h2 style="color:#2d5a4a; font-size:18px; margin-bottom:16px;">📋 All Scouts</h2>
+            <div class="scout-grid">
+                ${allScouts.length > 0 ? allScouts.map(scout => {
                     const status = allStatus[scout.id] || {};
                     let done = 0;
-                    for (let j = 0; j < membershipReqs.length; j++) {
-                        const req = membershipReqs[j];
-                        const key = 'membership_' + req;
+                    for (const req of membershipReqs) {
+                        const key = `membership_${req}`;
                         const value = status[key];
                         if (value && value.status === 'approved') done++;
                     }
-                    const progress = membershipReqs.length > 0 ? Math.round((done / membershipReqs.length) * 100) : 0;
+                    const progress = Math.round((done / membershipReqs.length) * 100);
                     const color = getColor(scout.username);
                     return `
-                        <div class="scout-card" data-id="${scout.id}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
-                            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
-                                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${truncateName(scout.username)}</span>
+                        <div class="scout-card" data-id="${scout.id}">
+                            <div class="scout-top">
+                                <div class="scout-avatar" style="background:${color}">${scout.username.charAt(0).toUpperCase()}</div>
+                                <span class="scout-name">${truncateName(scout.username)}</span>
                             </div>
-                            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${progress}%</div>
-                            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;">
-                                <div style="background:#8fbcbb; height:100%; width:${progress}%; border-radius:20px;"></div>
-                            </div>
+                            <div class="scout-progress-text">${progress}%</div>
+                            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%"></div></div>
                         </div>
                     `;
                 }).join('') : '<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>'}
@@ -306,8 +245,7 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
 
-    // ─── Event Listeners ──────────────────────────────────────
-    document.querySelectorAll('.pending-approve-btn').forEach(function(btn) {
+    document.querySelectorAll('.pending-approve-btn').forEach(btn => {
         btn.addEventListener('click', async function(e) {
             e.stopPropagation();
             const scoutId = this.dataset.scout;
@@ -317,22 +255,16 @@ function renderDashboard() {
         });
     });
 
-    const viewAllLink = document.getElementById('pending-view-all');
-    if (viewAllLink) {
-        viewAllLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            const pendingLink = document.querySelector('.sidebar-nav a[data-view="pending"]');
-            if (pendingLink) pendingLink.click();
-        });
-    }
+    document.getElementById('pending-view-all')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelector('.sidebar-nav a[data-view="pending"]')?.click();
+    });
 
-    document.querySelectorAll('.scout-card').forEach(function(card) {
+    document.querySelectorAll('.scout-card').forEach(card => {
         card.addEventListener('click', function() {
             selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
-                l.classList.remove('active');
-            });
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
             renderView();
         });
     });
@@ -359,24 +291,20 @@ function renderAllScouts() {
                 <option value="at-trailhead">At the Trailhead</option>
             </select>
         </div>
-        <div id="scout-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
-            ${allScouts.map(function(scout) { return scoutCardHTML(scout); }).join('')}
+        <div class="scout-grid" id="scout-grid">
+            ${allScouts.map(scout => scoutCardHTML(scout)).join('')}
         </div>
     `;
     pageContent.innerHTML = html;
 
-    const searchInput = document.getElementById('search-input');
-    const filterSelect = document.getElementById('filter-select');
-    if (searchInput) searchInput.addEventListener('input', filterScouts);
-    if (filterSelect) filterSelect.addEventListener('change', filterScouts);
+    document.getElementById('search-input')?.addEventListener('input', filterScouts);
+    document.getElementById('filter-select')?.addEventListener('change', filterScouts);
 
-    document.querySelectorAll('.scout-card').forEach(function(card) {
+    document.querySelectorAll('.scout-card').forEach(card => {
         card.addEventListener('click', function() {
             selectedScoutId = this.dataset.id;
             currentView = 'scout-detail';
-            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) {
-                l.classList.remove('active');
-            });
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
             renderView();
         });
     });
@@ -388,7 +316,7 @@ function filterScouts() {
     const grid = document.getElementById('scout-grid');
     if (!grid) return;
     const cards = grid.querySelectorAll('.scout-card');
-    cards.forEach(function(card) {
+    cards.forEach(card => {
         const name = card.dataset.name.toLowerCase();
         const progress = parseFloat(card.dataset.progress);
         let show = true;
@@ -403,15 +331,13 @@ function filterScouts() {
 // ─── Pending ──────────────────────────────────────────────
 function renderPending() {
     const pendingItems = [];
-    for (let i = 0; i < allScouts.length; i++) {
-        const scout = allScouts[i];
+    for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
-        for (let j = 0; j < membershipReqs.length; j++) {
-            const req = membershipReqs[j];
-            const key = 'membership_' + req;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
             const value = status[key];
             if (value === 'pending' || (value && value.status === 'pending')) {
-                pendingItems.push({ scout: scout, req: req, key: key });
+                pendingItems.push({ scout, req });
             }
         }
     }
@@ -429,25 +355,21 @@ function renderPending() {
             </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px;">
-    `;
-    for (let i = 0; i < pendingItems.length; i++) {
-        const item = pendingItems[i];
-        const color = getColor(item.scout.username);
-        html += `
-            <div style="background:white; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; color:white; background:${color};">${item.scout.username.charAt(0).toUpperCase()}</div>
-                    <span style="font-weight:500; color:#2d5a4a;">${item.scout.username}</span>
-                    <span style="color:#5a7c6e; font-size:14px;">— ${item.req}</span>
+            ${pendingItems.map(({ scout, req }) => `
+                <div style="background:white; border-radius:16px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; color:white; background:${getColor(scout.username)};">${scout.username.charAt(0).toUpperCase()}</div>
+                        <span style="font-weight:500; color:#2d5a4a;">${scout.username}</span>
+                        <span style="color:#5a7c6e; font-size:14px;">— ${req}</span>
+                    </div>
+                    <button class="approve-btn" data-scout="${scout.id}" data-req="${req}" style="background:#8fbcbb; color:white; border:none; padding:6px 18px; border-radius:40px; font-weight:500; cursor:pointer;">Approve</button>
                 </div>
-                <button class="approve-btn" data-scout="${item.scout.id}" data-req="${item.req}" style="background:#8fbcbb; color:white; border:none; padding:6px 18px; border-radius:40px; font-weight:500; cursor:pointer;">Approve</button>
-            </div>
-        `;
-    }
-    html += '</div>';
+            `).join('')}
+        </div>
+    `;
     pageContent.innerHTML = html;
 
-    document.querySelectorAll('.approve-btn').forEach(function(btn) {
+    document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function(e) {
             e.stopPropagation();
             const scoutId = this.dataset.scout;
@@ -470,29 +392,19 @@ function renderSessions() {
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
             <button id="sessions-new-btn" style="background:#8fbcbb; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">➕ New Session</button>
         </div>
-        <div id="sessions-list-container">
-            <p style="color:#5a7c6e;">Loading sessions...</p>
-        </div>
+        <div id="sessions-list-container"><p style="color:#5a7c6e;">Loading sessions...</p></div>
     `;
     pageContent.innerHTML = html;
 
-    const newBtn = document.getElementById('sessions-new-btn');
-    if (newBtn) {
-        newBtn.addEventListener('click', function() {
-            window.location.href = 'new-session.html';
-        });
-    }
+    document.getElementById('sessions-new-btn')?.addEventListener('click', () => window.location.href = 'new-session.html');
 
     if (sessionsUnsubscribe) sessionsUnsubscribe();
-    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), function(snapshot) {
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
         allSessions = [];
-        snapshot.forEach(function(doc) {
-            allSessions.push({ id: doc.id, ...doc.data() });
-        });
+        snapshot.forEach(doc => allSessions.push({ id: doc.id, ...doc.data() }));
         renderSessionsList();
-    }, function(error) {
-        const container = document.getElementById('sessions-list-container');
-        if (container) container.innerHTML = '<p style="color:#c47a7a;">❌ Error: ' + error.message + '</p>';
+    }, (error) => {
+        document.getElementById('sessions-list-container').innerHTML = `<p style="color:#c47a7a;">❌ Error: ${error.message}</p>`;
         console.error(error);
     });
 }
@@ -500,28 +412,13 @@ function renderSessions() {
 function renderSessionsList() {
     const container = document.getElementById('sessions-list-container');
     if (!container) return;
-
     if (allSessions.length === 0) {
-        container.innerHTML = `
-            <div style="background:white; border-radius:20px; padding:40px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <p style="color:#5a7c6e; font-size:18px;">📋 No sessions yet.</p>
-                <p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p>
-            </div>
-        `;
+        container.innerHTML = `<div style="background:white; border-radius:20px; padding:40px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);"><p style="color:#5a7c6e; font-size:18px;">📋 No sessions yet.</p><p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p></div>`;
         return;
     }
-
-    const sorted = allSessions.slice().sort(function(a, b) {
-        if (a.date > b.date) return -1;
-        if (a.date < b.date) return 1;
-        if (a.time > b.time) return -1;
-        if (a.time < b.time) return 1;
-        return 0;
-    });
-
+    const sorted = [...allSessions].sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : a.time > b.time ? -1 : a.time < b.time ? 1 : 0));
     let html = '<div style="display:flex; flex-direction:column; gap:16px;">';
-    for (let i = 0; i < sorted.length; i++) {
-        const session = sorted[i];
+    for (const session of sorted) {
         const scoutCount = allScouts.length;
         let attended = 0;
         if (session.attendance) {
@@ -535,15 +432,11 @@ function renderSessionsList() {
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <div style="font-weight:600; font-size:18px; color:#2d5a4a;">${session.name}</div>
-                        <div style="color:#5a7c6e; font-size:14px;">
-                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
-                        </div>
-                        <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">
-                            👥 ${attended}/${scoutCount} scouts attended (${percent}%)
-                        </div>
+                        <div style="color:#5a7c6e; font-size:14px;">📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}</div>
+                        <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">👥 ${attended}/${scoutCount} scouts attended (${percent}%)</div>
                     </div>
                     <div style="font-size:14px; color:#5a7c6e; text-align:right;">
-                        ${session.purpose ? '<div style="max-width:200px; font-style:italic;">' + session.purpose.substring(0, 60) + (session.purpose.length > 60 ? '...' : '') + '</div>' : ''}
+                        ${session.purpose ? `<div style="max-width:200px; font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
                         <div style="font-size:12px; color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
                     </div>
                 </div>
@@ -552,39 +445,23 @@ function renderSessionsList() {
     }
     html += '</div>';
     container.innerHTML = html;
-
-    document.querySelectorAll('[data-id]').forEach(function(card) {
-        card.addEventListener('click', function() {
-            window.location.href = 'session-detail.html?id=' + this.dataset.id;
-        });
+    document.querySelectorAll('[data-id]').forEach(card => {
+        card.addEventListener('click', () => window.location.href = `session-detail.html?id=${card.dataset.id}`);
     });
 }
 
 // ─── Scout Detail ─────────────────────────────────────────
 function renderScoutDetail(scoutId) {
-    let scout = null;
-    for (let i = 0; i < allScouts.length; i++) {
-        if (allScouts[i].id === scoutId) {
-            scout = allScouts[i];
-            break;
-        }
-    }
-    if (!scout) {
-        currentView = 'dashboard';
-        renderView();
-        return;
-    }
-
+    const scout = allScouts.find(s => s.id === scoutId);
+    if (!scout) { currentView = 'dashboard'; renderView(); return; }
     const status = allStatus[scoutId] || {};
     let done = 0;
-    for (let j = 0; j < membershipReqs.length; j++) {
-        const req = membershipReqs[j];
-        const key = 'membership_' + req;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
         const data = status[key];
         if (data && data.status === 'approved') done++;
     }
     const progress = membershipReqs.length > 0 ? done / membershipReqs.length : 0;
-
     let html = `
         <div class="header">
             <div class="header-left">
@@ -594,13 +471,8 @@ function renderScoutDetail(scoutId) {
         </div>
         <span id="detail-back" style="cursor:pointer; color:#5a7c6e; font-weight:500; display:inline-block; margin-bottom:16px;">← Back</span>
         <div style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; margin-bottom:8px;">
-                <span>Progress</span>
-                <span>${Math.round(progress * 100)}%</span>
-            </div>
-            <div style="background:#e8f0ec; border-radius:20px; height:8px; overflow:hidden;">
-                <div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div>
-            </div>
+            <div style="display:flex; justify-content:space-between; font-size:14px; color:#2d5a4a; margin-bottom:8px;"><span>Progress</span><span>${Math.round(progress * 100)}%</span></div>
+            <div style="background:#e8f0ec; border-radius:20px; height:8px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div></div>
         </div>
         <div style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <label style="font-weight:600; color:#2d5a4a;">📝 Private Note <span style="font-weight:400; color:#5a7c6e;">(only you can see this)</span></label>
@@ -609,43 +481,26 @@ function renderScoutDetail(scoutId) {
         </div>
         <div style="background:white; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <h3 style="color:#2d5a4a; margin-bottom:12px;">Requirements</h3>
-            ${membershipReqs.map(function(req) {
-                const data = status['membership_' + req];
+            ${membershipReqs.map(req => {
+                const data = status[`membership_${req}`];
                 const stat = data ? data.status : 'todo';
                 const icon = stat === 'approved' ? '✅' : stat === 'pending' ? '✋' : '⭕';
                 const label = stat === 'approved' ? 'Completed' : stat === 'pending' ? 'Pending' : 'Not started';
-                let meta = '';
-                if (stat === 'approved') {
-                    meta = 'Approved by ' + (data.approvedBy || 'leader') + ' · ' + (data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently');
-                }
-                return '<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>' + icon + ' ' + req + '</span><span style="font-weight:500; ' + (stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8') + ';">' + label + (meta ? ' <span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ' + meta + '</span>' : '') + '</span></div>';
+                const meta = stat === 'approved' ? `Approved by ${data.approvedBy || 'leader'} · ${data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently'}` : '';
+                return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>${icon} ${req}</span><span style="font-weight:500; ${stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8'};">${label} ${meta ? `<span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ${meta}</span>` : ''}</span></div>`;
             }).join('')}
         </div>
     `;
     pageContent.innerHTML = html;
-
-    const backBtn = document.getElementById('detail-back');
-    if (backBtn) {
-        backBtn.addEventListener('click', function() {
-            currentView = 'dashboard';
-            const dashboardLink = document.querySelector('.sidebar-nav a[data-view="dashboard"]');
-            if (dashboardLink) dashboardLink.classList.add('active');
-            renderView();
-        });
-    }
-
-    const saveBtn = document.getElementById('save-note-btn');
-    if (saveBtn) {
-        saveBtn.addEventListener('click', async function() {
-            const note = document.getElementById('note-textarea').value;
-            const ref = doc(db, 'scoutStatus', scoutId);
-            const docSnap = await getDoc(ref);
-            const current = docSnap.exists() ? docSnap.data() : {};
-            current.leaderNote = note;
-            await setDoc(ref, current);
-            alert('✅ Note saved!');
-        });
-    }
+    document.getElementById('detail-back')?.addEventListener('click', () => { currentView = 'dashboard'; renderView(); });
+    document.getElementById('save-note-btn')?.addEventListener('click', async function() {
+        const note = document.getElementById('note-textarea').value;
+        const ref = doc(db, 'scoutStatus', scoutId);
+        const current = (await getDoc(ref)).data() || {};
+        current.leaderNote = note;
+        await setDoc(ref, current);
+        alert('✅ Note saved!');
+    });
 }
 
 // ─── Export ────────────────────────────────────────────────
@@ -665,21 +520,16 @@ function renderExport() {
         </div>
     `;
     pageContent.innerHTML = html;
-
-    const allBtn = document.getElementById('export-all-btn');
-    const pendingBtn = document.getElementById('export-pending-btn');
-    if (allBtn) allBtn.addEventListener('click', function() { exportCSV('all'); });
-    if (pendingBtn) pendingBtn.addEventListener('click', function() { exportCSV('pending'); });
+    document.getElementById('export-all-btn')?.addEventListener('click', () => exportCSV('all'));
+    document.getElementById('export-pending-btn')?.addEventListener('click', () => exportCSV('pending'));
 }
 
 function exportCSV(type) {
     const rows = [['Scout', 'Requirement', 'Status', 'Approved By', 'Approved At']];
-    for (let i = 0; i < allScouts.length; i++) {
-        const scout = allScouts[i];
+    for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
-        for (let j = 0; j < membershipReqs.length; j++) {
-            const req = membershipReqs[j];
-            const key = 'membership_' + req;
+        for (const req of membershipReqs) {
+            const key = `membership_${req}`;
             const data = status[key];
             if (type === 'pending' && (!data || data.status !== 'pending')) continue;
             const stat = data ? data.status : 'todo';
@@ -689,69 +539,59 @@ function exportCSV(type) {
         }
     }
     let csv = '';
-    for (let i = 0; i < rows.length; i++) {
-        csv += rows[i].join(',') + '\n';
-    }
+    for (const row of rows) csv += row.join(',') + '\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'scout-progress-' + type + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    const statusEl = document.getElementById('export-status');
-    if (statusEl) statusEl.textContent = '✅ ' + (type === 'all' ? 'All' : 'Pending') + ' report downloaded!';
+    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
 }
 
 function getColor(name) {
     const colors = ['#7a9e8a', '#a8c4d4', '#d4a86a', '#8fbcbb', '#c47a7a', '#b0a8c4'];
     let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
 }
 
 function scoutCardHTML(scout) {
     const status = allStatus[scout.id] || {};
     let done = 0, pending = 0;
-    for (let j = 0; j < membershipReqs.length; j++) {
-        const req = membershipReqs[j];
-        const key = 'membership_' + req;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
         const value = status[key];
-        if (value === 'pending' || (value && value.status === 'pending')) {
-            pending++;
-        } else if (value && value.status === 'approved') {
-            done++;
-        }
+        if (value === 'pending' || (value && value.status === 'pending')) pending++;
+        else if (value && value.status === 'approved') done++;
     }
     const total = membershipReqs.length;
     const progress = total > 0 ? done / total : 0;
     const hasNote = !!status.leaderNote;
     const color = getColor(scout.username);
-    let html = '';
-    html += '<div class="scout-card" data-id="' + scout.id + '" data-name="' + scout.username.toLowerCase() + '" data-progress="' + progress + '" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">';
-    html += '<div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">';
-    html += '<div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:' + color + ';">' + scout.username.charAt(0).toUpperCase() + '</div>';
-    html += '<span style="font-weight:600; font-size:15px; color:#2d5a4a;">' + truncateName(scout.username) + '</span>';
-    html += '</div>';
-    html += '<div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">' + done + '/' + total + ' done</div>';
-    html += '<div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:' + (progress * 100) + '%; border-radius:20px;"></div></div>';
-    html += '<div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">';
-    html += '<span style="color:#8fbcbb;">🟢 ' + done + ' done</span>';
-    if (pending > 0) html += '<span style="color:#d4a86a;">✋ ' + pending + ' pending</span>';
-    html += '<span style="color:#c47a7a;">⚠️ ' + (total - done - pending) + ' missing</span>';
-    html += '</div>';
-    if (hasNote) html += '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>';
-    html += '</div>';
-    return html;
+    return `
+        <div class="scout-card" data-id="${scout.id}" data-name="${scout.username.toLowerCase()}" data-progress="${progress}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
+                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${truncateName(scout.username)}</span>
+            </div>
+            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${done}/${total} done</div>
+            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div></div>
+            <div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">
+                <span style="color:#8fbcbb;">🟢 ${done} done</span>
+                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
+                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
+            </div>
+            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>' : ''}
+        </div>
+    `;
 }
 
 async function approveRequirement(scoutId, reqName) {
     const ref = doc(db, 'scoutStatus', scoutId);
-    const docSnap = await getDoc(ref);
-    const current = docSnap.exists() ? docSnap.data() : {};
-    current['membership_' + reqName] = {
+    const current = (await getDoc(ref)).data() || {};
+    current[`membership_${reqName}`] = {
         status: 'approved',
         approvedBy: currentUser.username,
         approvedAt: new Date().toISOString()
@@ -760,7 +600,6 @@ async function approveRequirement(scoutId, reqName) {
     renderView();
 }
 
-// ─── Init ──────────────────────────────────────────────────
 async function init() {
     await loadScouts();
     listenToStatus();
