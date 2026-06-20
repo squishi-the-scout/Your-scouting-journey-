@@ -167,9 +167,9 @@ function renderDashboard() {
     let totalServiceHours = 0;
     const pendingItems = [];
 
-    // Sum service hours from all sessions
+    // Sum service hours from all sessions (convert string to number)
     for (const session of allSessions) {
-        totalServiceHours += session.serviceHours || 0;
+        totalServiceHours += parseFloat(session.serviceHours) || 0;
     }
 
     for (const scout of allScouts) {
@@ -645,7 +645,7 @@ async function approveRequirement(scoutId, reqName) {
 
 async function init() {
     await loadScouts();
-    await loadSessions(); // ← loads sessions so service hours are counted
+    await loadSessions();
     listenToStatus();
     injectBottomNav();
     setupNavigation();
