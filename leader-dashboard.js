@@ -81,7 +81,6 @@ function injectBottomNav() {
     `;
 
     document.body.insertAdjacentHTML('beforeend', navHtml);
-    setupNavigation();
 }
 
 async function loadScouts() {
@@ -617,6 +616,7 @@ async function init() {
     await loadScouts();
     listenToStatus();
     injectBottomNav(); // Only creates bottom nav on mobile
+    setupNavigation(); // <-- THIS IS THE FIX — runs AFTER both navs exist
     renderView();
 }
 
