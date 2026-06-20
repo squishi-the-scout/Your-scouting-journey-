@@ -109,6 +109,14 @@ async function loadScouts() {
     return allScouts;
 }
 
+async function loadSessions() {
+    const snapshot = await getDocs(collection(db, 'sessions'));
+    allSessions = [];
+    snapshot.forEach(doc => {
+        allSessions.push({ id: doc.id, ...doc.data() });
+    });
+}
+
 function listenToStatus() {
     if (unsubscribeStatus) unsubscribeStatus();
     unsubscribeStatus = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
@@ -152,10 +160,17 @@ function renderView() {
 }
 
 function renderDashboard() {
+    // ─── Calculate stats ──────────────────────────────────────
     let totalScouts = allScouts.length;
     let totalRequirementsDone = 0;
     let totalPossible = membershipReqs.length * totalScouts;
+    let totalServiceHours = 0;
     const pendingItems = [];
+
+    // Sum service hours from all sessions
+    for (const session of allSessions) {
+        totalServiceHours += session.serviceHours || 0;
+    }
 
     for (const scout of allScouts) {
         const status = allStatus[scout.id] || {};
@@ -176,6 +191,7 @@ function renderDashboard() {
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
+    // ─── Build pending HTML ──────────────────────────────────
     let pendingHTML = '';
     const showCount = 3;
     const visibleItems = pendingItems.slice(0, showCount);
@@ -200,6 +216,7 @@ function renderDashboard() {
         pendingHTML = `<div style="background:#e8f0ec; border-radius:16px; padding:16px 20px;"><span style="font-size:16px; color:#5a7c6e;">No pending approvals — all caught up!</span></div>`;
     }
 
+    // ─── Build full HTML ─────────────────────────────────────
     let html = `
         <div class="header">
             <div class="header-left">
@@ -214,7 +231,7 @@ function renderDashboard() {
         <div class="stats-grid">
             <div class="stat-card green"><div class="number">${totalScouts}</div><div class="label">Total Scouts</div></div>
             <div class="stat-card yellow"><div class="number">${totalRequirementsDone} / ${totalPossible}</div><div class="label">Requirements Done</div></div>
-            <div class="stat-card blue"><div class="number">0</div><div class="label">Active Scouting Hours</div></div>
+            <div class="stat-card blue"><div class="number">${totalServiceHours}</div><div class="label">Active Scouting Hours</div></div>
         </div>
 
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
@@ -628,6 +645,7 @@ async function approveRequirement(scoutId, reqName) {
 
 async function init() {
     await loadScouts();
+    await loadSessions(); // ← loads sessions so service hours are counted
     listenToStatus();
     injectBottomNav();
     setupNavigation();
