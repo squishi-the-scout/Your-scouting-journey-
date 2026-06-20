@@ -9,7 +9,6 @@ if (!currentUser || currentUser.role !== 'leader') {
 }
 
 const leaderNameEl = document.getElementById('leader-name');
-const leaderAvatarEl = document.getElementById('leader-avatar');
 const pendingBadgeEl = document.getElementById('pending-badge');
 const pageContent = document.getElementById('page-content');
 
@@ -159,14 +158,12 @@ function renderView() {
 }
 
 function renderDashboard() {
-    // ─── Calculate stats ──────────────────────────────────────
     let totalScouts = allScouts.length;
     let totalRequirementsDone = 0;
     let totalPossible = membershipReqs.length * totalScouts;
     let totalServiceHours = 0;
     const pendingItems = [];
 
-    // Sum service hours from all sessions (convert string to number)
     for (const session of allSessions) {
         totalServiceHours += parseFloat(session.serviceHours) || 0;
     }
@@ -190,7 +187,6 @@ function renderDashboard() {
     const attendedThisWeek = Math.floor(totalScouts * 0.6);
     const percent = totalScouts > 0 ? Math.round((attendedThisWeek / totalScouts) * 100) : 0;
 
-    // ─── Build pending HTML ──────────────────────────────────
     let pendingHTML = '';
     const showCount = 3;
     const visibleItems = pendingItems.slice(0, showCount);
@@ -215,16 +211,13 @@ function renderDashboard() {
         pendingHTML = `<div style="background:#e8f0ec; border-radius:16px; padding:16px 20px;"><span style="font-size:16px; color:#5a7c6e;">No pending approvals — all caught up!</span></div>`;
     }
 
-    // ─── Build full HTML ─────────────────────────────────────
     let html = `
         <div class="header">
             <div class="header-left">
                 <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}!</h1>
                 <p>welcome back</p>
             </div>
-            <div class="header-right">
-                <span class="avatar" id="leader-avatar">${currentUser.username.charAt(0).toUpperCase()}</span>
-            </div>
+            <div class="header-right"></div>
         </div>
 
         <div class="stats-grid">
