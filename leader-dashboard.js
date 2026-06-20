@@ -11,7 +11,6 @@ if (!currentUser || currentUser.role !== 'leader') {
 const leaderNameEl = document.getElementById('leader-name');
 const leaderAvatarEl = document.getElementById('leader-avatar');
 const pendingBadgeEl = document.getElementById('pending-badge');
-const bottomPendingBadgeEl = document.getElementById('bottom-pending-badge');
 const pageContent = document.getElementById('page-content');
 
 if (leaderNameEl) leaderNameEl.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
@@ -67,6 +66,24 @@ function setupNavigation() {
     });
 }
 
+function injectBottomNav() {
+    // Only inject on mobile
+    if (window.innerWidth > 768) return;
+
+    const navHtml = `
+        <div class="bottom-nav">
+            <a href="#" class="active" data-view="dashboard">📊<span>Home</span></a>
+            <a href="#" data-view="scouts">👥<span>Scouts</span></a>
+            <a href="#" data-view="pending">✋<span>Pending</span> <span class="badge" id="bottom-pending-badge">0</span></a>
+            <a href="#" data-view="sessions">📋<span>Sessions</span></a>
+            <a href="#" data-view="export">📤<span>Export</span></a>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', navHtml);
+    setupNavigation();
+}
+
 async function loadScouts() {
     const snapshot = await getDocs(collection(db, 'users'));
     allScouts = [];
@@ -105,7 +122,8 @@ function updatePendingBadge() {
         }
     }
     if (pendingBadgeEl) pendingBadgeEl.textContent = count;
-    if (bottomPendingBadgeEl) bottomPendingBadgeEl.textContent = count;
+    const bottomBadge = document.getElementById('bottom-pending-badge');
+    if (bottomBadge) bottomBadge.textContent = count;
 }
 
 function renderView() {
@@ -270,7 +288,6 @@ function renderDashboard() {
     });
 }
 
-// ─── All Scouts ──────────────────────────────────────────
 function renderAllScouts() {
     let html = `
         <div class="header">
@@ -328,7 +345,6 @@ function filterScouts() {
     });
 }
 
-// ─── Pending ──────────────────────────────────────────────
 function renderPending() {
     const pendingItems = [];
     for (const scout of allScouts) {
@@ -380,7 +396,6 @@ function renderPending() {
     });
 }
 
-// ─── Sessions ──────────────────────────────────────────────
 function renderSessions() {
     let html = `
         <div class="header">
@@ -450,7 +465,6 @@ function renderSessionsList() {
     });
 }
 
-// ─── Scout Detail ─────────────────────────────────────────
 function renderScoutDetail(scoutId) {
     const scout = allScouts.find(s => s.id === scoutId);
     if (!scout) { currentView = 'dashboard'; renderView(); return; }
@@ -503,7 +517,6 @@ function renderScoutDetail(scoutId) {
     });
 }
 
-// ─── Export ────────────────────────────────────────────────
 function renderExport() {
     let html = `
         <div class="header">
@@ -603,7 +616,7 @@ async function approveRequirement(scoutId, reqName) {
 async function init() {
     await loadScouts();
     listenToStatus();
-    setupNavigation();
+    injectBottomNav(); // Only creates bottom nav on mobile
     renderView();
 }
 
