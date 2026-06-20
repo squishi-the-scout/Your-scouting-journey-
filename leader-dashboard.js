@@ -184,7 +184,7 @@ function renderDashboard() {
     if (pendingItems.length > 0) {
         pendingHTML = `
             <div style="background:#fef9f0; border-left:4px solid #d4a86a; border-radius:16px; padding:16px 20px;">
-                <div style="font-weight:600; color:#2d5a4a; margin-bottom:10px;">✋ ${pendingItems.length} scout(s) need your approval</div>
+                <div style="font-weight:600; color:#2d5a4a; margin-bottom:10px;">${pendingItems.length} scout(s) need your approval</div>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     ${visibleItems.map(({ scout, req }) => `
                         <div style="display:flex; justify-content:space-between; align-items:center; background:white; border-radius:12px; padding:8px 12px; flex-wrap:wrap; gap:8px;">
@@ -197,14 +197,14 @@ function renderDashboard() {
             </div>
         `;
     } else {
-        pendingHTML = `<div style="background:#e8f0ec; border-radius:16px; padding:16px 20px;"><span style="font-size:16px; color:#5a7c6e;">✅ No pending approvals — all caught up!</span></div>`;
+        pendingHTML = `<div style="background:#e8f0ec; border-radius:16px; padding:16px 20px;"><span style="font-size:16px; color:#5a7c6e;">No pending approvals — all caught up!</span></div>`;
     }
 
     let html = `
         <div class="header">
             <div class="header-left">
-                <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}! 🎉</h1>
-                <p>welcome back ~</p>
+                <h1>Good morning, ${currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1)}!</h1>
+                <p>welcome back</p>
             </div>
             <div class="header-right">
                 <span class="avatar" id="leader-avatar">${currentUser.username.charAt(0).toUpperCase()}</span>
@@ -212,9 +212,9 @@ function renderDashboard() {
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card green"><div class="number">${totalScouts}</div><div class="label">🏕️ Total Scouts</div></div>
-            <div class="stat-card yellow"><div class="number">${totalRequirementsDone} / ${totalPossible}</div><div class="label">📋 Requirements Done</div></div>
-            <div class="stat-card blue"><div class="number">0</div><div class="label">⏱️ Active Scouting Hours</div></div>
+            <div class="stat-card green"><div class="number">${totalScouts}</div><div class="label">Total Scouts</div></div>
+            <div class="stat-card yellow"><div class="number">${totalRequirementsDone} / ${totalPossible}</div><div class="label">Requirements Done</div></div>
+            <div class="stat-card blue"><div class="number">0</div><div class="label">Active Scouting Hours</div></div>
         </div>
 
         <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px; margin-bottom:28px;">
@@ -235,18 +235,18 @@ function renderDashboard() {
                     <div style="font-size:12px; color:#5a7c6e; margin-top:8px;">${attendedThisWeek} of ${totalScouts} attended this week</div>
                 </div>
                 <div style="background:white; border-radius:24px; padding:16px;">
-                    <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">📊 Scout Levels</div>
+                    <div style="font-weight:600; color:#2d5a4a; font-size:14px; margin-bottom:12px;">Scout Levels</div>
                     <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>🏅 Membership</span><span style="font-weight:600;">${totalScouts}</span></div>
-                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>⭐ Second Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
-                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0;"><span>🌟 First Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>Membership</span><span style="font-weight:600;">${totalScouts}</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px solid #e8f0ec;"><span>Second Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
+                        <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0;"><span>First Class</span><span style="font-weight:600; color:#b0c4b8;">0</span></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div>
-            <h2 style="color:#2d5a4a; font-size:18px; margin-bottom:16px;">📋 All Scouts</h2>
+            <h2 style="color:#2d5a4a; font-size:18px; margin-bottom:16px;">All Scouts</h2>
             <div class="scout-grid">
                 ${allScouts.length > 0 ? allScouts.map(scout => {
                     const status = allStatus[scout.id] || {};
@@ -270,7 +270,7 @@ function renderDashboard() {
                     `;
                 }).join('') : '<p style="color:#5a7c6e; text-align:center; padding:40px;">No scouts found.</p>'}
             </div>
-            <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">👆 Click any scout to view their progress</p>
+            <p style="text-align:center; color:#b0c4b8; font-size:13px; margin-top:12px;">Click any scout to view their progress</p>
         </div>
     `;
 
@@ -305,7 +305,7 @@ function renderAllScouts() {
     let html = `
         <div class="header">
             <div class="header-left">
-                <h1>👥 All Scouts</h1>
+                <h1>All Scouts</h1>
                 <p>Manage your scout roster</p>
             </div>
         </div>
@@ -372,14 +372,14 @@ function renderPending() {
     }
 
     if (pendingItems.length === 0) {
-        pageContent.innerHTML = '<p style="color:#5a7c6e;">✅ No pending approvals — you\'re all caught up!</p>';
+        pageContent.innerHTML = '<p style="color:#5a7c6e;">No pending approvals — you\'re all caught up!</p>';
         return;
     }
 
     let html = `
         <div class="header">
             <div class="header-left">
-                <h1>✋ Pending Approvals</h1>
+                <h1>Pending Approvals</h1>
                 <p>Scouts waiting for your sign-off</p>
             </div>
         </div>
@@ -413,12 +413,12 @@ function renderSessions() {
     let html = `
         <div class="header">
             <div class="header-left">
-                <h1>📋 Sessions</h1>
+                <h1>Sessions</h1>
                 <p>Manage your scout activities and attendance</p>
             </div>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-            <button id="sessions-new-btn" style="background:#8fbcbb; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">➕ New Session</button>
+            <button id="sessions-new-btn" style="background:#8fbcbb; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">New Session</button>
         </div>
         <div id="sessions-list-container"><p style="color:#5a7c6e;">Loading sessions...</p></div>
     `;
@@ -432,7 +432,7 @@ function renderSessions() {
         snapshot.forEach(doc => allSessions.push({ id: doc.id, ...doc.data() }));
         renderSessionsList();
     }, (error) => {
-        document.getElementById('sessions-list-container').innerHTML = `<p style="color:#c47a7a;">❌ Error: ${error.message}</p>`;
+        document.getElementById('sessions-list-container').innerHTML = `<p style="color:#c47a7a;">Error: ${error.message}</p>`;
         console.error(error);
     });
 }
@@ -441,7 +441,7 @@ function renderSessionsList() {
     const container = document.getElementById('sessions-list-container');
     if (!container) return;
     if (allSessions.length === 0) {
-        container.innerHTML = `<div style="background:white; border-radius:20px; padding:40px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);"><p style="color:#5a7c6e; font-size:18px;">📋 No sessions yet.</p><p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p></div>`;
+        container.innerHTML = `<div style="background:white; border-radius:20px; padding:40px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.04);"><p style="color:#5a7c6e; font-size:18px;">No sessions yet.</p><p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p></div>`;
         return;
     }
     const sorted = [...allSessions].sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : a.time > b.time ? -1 : a.time < b.time ? 1 : 0));
@@ -460,8 +460,8 @@ function renderSessionsList() {
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <div style="font-weight:600; font-size:18px; color:#2d5a4a;">${session.name}</div>
-                        <div style="color:#5a7c6e; font-size:14px;">📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}</div>
-                        <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">👥 ${attended}/${scoutCount} scouts attended (${percent}%)</div>
+                        <div style="color:#5a7c6e; font-size:14px;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
+                        <div style="color:#5a7c6e; font-size:14px; margin-top:4px;">${attended}/${scoutCount} scouts attended (${percent}%)</div>
                     </div>
                     <div style="font-size:14px; color:#5a7c6e; text-align:right;">
                         ${session.purpose ? `<div style="max-width:200px; font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
@@ -502,9 +502,9 @@ function renderScoutDetail(scoutId) {
             <div style="background:#e8f0ec; border-radius:20px; height:8px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div></div>
         </div>
         <div style="background:white; border-radius:20px; padding:20px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <label style="font-weight:600; color:#2d5a4a;">📝 Private Note <span style="font-weight:400; color:#5a7c6e;">(only you can see this)</span></label>
+            <label style="font-weight:600; color:#2d5a4a;">Private Note <span style="font-weight:400; color:#5a7c6e;">(only you can see this)</span></label>
             <textarea id="note-textarea" style="width:100%; padding:12px; border:1px solid #e0ece4; border-radius:16px; font-family:inherit; font-size:14px; resize:vertical; min-height:80px; margin-top:8px;">${status.leaderNote || ''}</textarea>
-            <button id="save-note-btn" style="background:#7a9e8a; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-top:10px;">💾 Save Note</button>
+            <button id="save-note-btn" style="background:#7a9e8a; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-top:10px;">Save Note</button>
         </div>
         <div style="background:white; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <h3 style="color:#2d5a4a; margin-bottom:12px;">Requirements</h3>
@@ -526,7 +526,7 @@ function renderScoutDetail(scoutId) {
         const current = (await getDoc(ref)).data() || {};
         current.leaderNote = note;
         await setDoc(ref, current);
-        alert('✅ Note saved!');
+        alert('Note saved!');
     });
 }
 
@@ -534,14 +534,14 @@ function renderExport() {
     let html = `
         <div class="header">
             <div class="header-left">
-                <h1>📤 Export Reports</h1>
+                <h1>Export Reports</h1>
                 <p>Download scout progress data</p>
             </div>
         </div>
         <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <p style="color:#5a7c6e; margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
-            <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">📥 Export All Scouts</button>
-            <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">📥 Export Pending Only</button>
+            <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">Export All Scouts</button>
+            <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">Export Pending Only</button>
             <div id="export-status" style="margin-top:16px; color:#5a7c6e;"></div>
         </div>
     `;
@@ -573,7 +573,7 @@ function exportCSV(type) {
     a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
+    document.getElementById('export-status').textContent = `${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
 }
 
 function getColor(name) {
@@ -605,11 +605,11 @@ function scoutCardHTML(scout) {
             <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${done}/${total} done</div>
             <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div></div>
             <div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">
-                <span style="color:#8fbcbb;">🟢 ${done} done</span>
-                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
-                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
+                <span style="color:#8fbcbb;">${done} done</span>
+                ${pending > 0 ? `<span style="color:#d4a86a;">${pending} pending</span>` : ''}
+                <span style="color:#c47a7a;">${total - done - pending} missing</span>
             </div>
-            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>' : ''}
+            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">Has private note</div>' : ''}
         </div>
     `;
 }
