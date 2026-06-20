@@ -475,3 +475,34 @@ a {
         margin-left: 4px !important;
     }
 }
+/* ===== SVG ICONS ===== */
+.icon {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    color: currentColor;
+}
+
+.sidebar-nav a .icon {
+    color: #c4d9ce;
+}
+
+.sidebar-nav a.active .icon {
+    color: white;
+}
+
+.sidebar-footer a .icon {
+    color: #c4d9ce;
+}
+
+.sidebar-footer a:hover .icon {
+    color: white;
+}
+
+.bottom-nav a .icon {
+    color: #c4d9ce;
+}
+
+.bottom-nav a.active .icon {
+    color: white;
+}
