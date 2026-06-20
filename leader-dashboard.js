@@ -14,7 +14,6 @@ const pendingBadgeEl = document.getElementById('pending-badge');
 const pageContent = document.getElementById('page-content');
 
 if (leaderNameEl) leaderNameEl.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-if (leaderAvatarEl) leaderAvatarEl.textContent = currentUser.username.charAt(0).toUpperCase();
 
 const sidebarName = document.getElementById('sidebar-name');
 if (sidebarName) sidebarName.textContent = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
