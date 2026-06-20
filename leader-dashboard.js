@@ -67,16 +67,30 @@ function setupNavigation() {
 }
 
 function injectBottomNav() {
-    // Only inject on mobile
     if (window.innerWidth > 768) return;
 
     const navHtml = `
         <div class="bottom-nav">
-            <a href="#" class="active" data-view="dashboard">📊<span>Home</span></a>
-            <a href="#" data-view="scouts">👥<span>Scouts</span></a>
-            <a href="#" data-view="pending">✋<span>Pending</span> <span class="badge" id="bottom-pending-badge">0</span></a>
-            <a href="#" data-view="sessions">📋<span>Sessions</span></a>
-            <a href="#" data-view="export">📤<span>Export</span></a>
+            <a href="#" class="active" data-view="dashboard">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span>Home</span>
+            </a>
+            <a href="#" data-view="scouts">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span>Scouts</span>
+            </a>
+            <a href="#" data-view="pending">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Pending</span> <span class="badge" id="bottom-pending-badge">0</span>
+            </a>
+            <a href="#" data-view="sessions">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span>Sessions</span>
+            </a>
+            <a href="#" data-view="export">
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:24px; height:24px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                <span>Export</span>
+            </a>
         </div>
     `;
 
@@ -492,132 +506,4 @@ function renderScoutDetail(scoutId) {
             <textarea id="note-textarea" style="width:100%; padding:12px; border:1px solid #e0ece4; border-radius:16px; font-family:inherit; font-size:14px; resize:vertical; min-height:80px; margin-top:8px;">${status.leaderNote || ''}</textarea>
             <button id="save-note-btn" style="background:#7a9e8a; color:white; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-top:10px;">💾 Save Note</button>
         </div>
-        <div style="background:white; border-radius:20px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <h3 style="color:#2d5a4a; margin-bottom:12px;">Requirements</h3>
-            ${membershipReqs.map(req => {
-                const data = status[`membership_${req}`];
-                const stat = data ? data.status : 'todo';
-                const icon = stat === 'approved' ? '✅' : stat === 'pending' ? '✋' : '⭕';
-                const label = stat === 'approved' ? 'Completed' : stat === 'pending' ? 'Pending' : 'Not started';
-                const meta = stat === 'approved' ? `Approved by ${data.approvedBy || 'leader'} · ${data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'recently'}` : '';
-                return `<div style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #e8f0ec; flex-wrap:wrap; gap:8px;"><span>${icon} ${req}</span><span style="font-weight:500; ${stat === 'approved' ? 'color:#8fbcbb' : stat === 'pending' ? 'color:#d4a86a' : 'color:#b0c4b8'};">${label} ${meta ? `<span style="font-size:13px; color:#5a7c6e; font-weight:400;">— ${meta}</span>` : ''}</span></div>`;
-            }).join('')}
-        </div>
-    `;
-    pageContent.innerHTML = html;
-    document.getElementById('detail-back')?.addEventListener('click', () => { currentView = 'dashboard'; renderView(); });
-    document.getElementById('save-note-btn')?.addEventListener('click', async function() {
-        const note = document.getElementById('note-textarea').value;
-        const ref = doc(db, 'scoutStatus', scoutId);
-        const current = (await getDoc(ref)).data() || {};
-        current.leaderNote = note;
-        await setDoc(ref, current);
-        alert('✅ Note saved!');
-    });
-}
-
-function renderExport() {
-    let html = `
-        <div class="header">
-            <div class="header-left">
-                <h1>📤 Export Reports</h1>
-                <p>Download scout progress data</p>
-            </div>
-        </div>
-        <div style="background:white; border-radius:20px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <p style="color:#5a7c6e; margin-bottom:20px;">Download scout progress as a CSV file for reports, parents, or school records.</p>
-            <button id="export-all-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer;">📥 Export All Scouts</button>
-            <button id="export-pending-btn" style="background:#a8c4d4; color:#2d5a4a; border:none; padding:8px 20px; border-radius:40px; font-weight:500; cursor:pointer; margin-left:12px;">📥 Export Pending Only</button>
-            <div id="export-status" style="margin-top:16px; color:#5a7c6e;"></div>
-        </div>
-    `;
-    pageContent.innerHTML = html;
-    document.getElementById('export-all-btn')?.addEventListener('click', () => exportCSV('all'));
-    document.getElementById('export-pending-btn')?.addEventListener('click', () => exportCSV('pending'));
-}
-
-function exportCSV(type) {
-    const rows = [['Scout', 'Requirement', 'Status', 'Approved By', 'Approved At']];
-    for (const scout of allScouts) {
-        const status = allStatus[scout.id] || {};
-        for (const req of membershipReqs) {
-            const key = `membership_${req}`;
-            const data = status[key];
-            if (type === 'pending' && (!data || data.status !== 'pending')) continue;
-            const stat = data ? data.status : 'todo';
-            const by = data?.approvedBy || '';
-            const at = data?.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : '';
-            rows.push([scout.username, req, stat, by, at]);
-        }
-    }
-    let csv = '';
-    for (const row of rows) csv += row.join(',') + '\n';
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `scout-progress-${type}-${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    document.getElementById('export-status').textContent = `✅ ${type === 'all' ? 'All' : 'Pending'} report downloaded!`;
-}
-
-function getColor(name) {
-    const colors = ['#7a9e8a', '#a8c4d4', '#d4a86a', '#8fbcbb', '#c47a7a', '#b0a8c4'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
-}
-
-function scoutCardHTML(scout) {
-    const status = allStatus[scout.id] || {};
-    let done = 0, pending = 0;
-    for (const req of membershipReqs) {
-        const key = `membership_${req}`;
-        const value = status[key];
-        if (value === 'pending' || (value && value.status === 'pending')) pending++;
-        else if (value && value.status === 'approved') done++;
-    }
-    const total = membershipReqs.length;
-    const progress = total > 0 ? done / total : 0;
-    const hasNote = !!status.leaderNote;
-    const color = getColor(scout.username);
-    return `
-        <div class="scout-card" data-id="${scout.id}" data-name="${scout.username.toLowerCase()}" data-progress="${progress}" style="background:white; border-radius:20px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,0.04); cursor:pointer; transition:all 0.2s;">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                <div style="width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:18px; color:white; background:${color};">${scout.username.charAt(0).toUpperCase()}</div>
-                <span style="font-weight:600; font-size:15px; color:#2d5a4a;">${truncateName(scout.username)}</span>
-            </div>
-            <div style="font-size:13px; color:#5a7c6e; margin-bottom:6px;">${done}/${total} done</div>
-            <div style="background:#e8f0ec; border-radius:20px; height:6px; overflow:hidden;"><div style="background:#8fbcbb; height:100%; width:${progress * 100}%; border-radius:20px;"></div></div>
-            <div style="display:flex; gap:12px; font-size:12px; color:#5a7c6e; margin-top:8px; flex-wrap:wrap;">
-                <span style="color:#8fbcbb;">🟢 ${done} done</span>
-                ${pending > 0 ? `<span style="color:#d4a86a;">✋ ${pending} pending</span>` : ''}
-                <span style="color:#c47a7a;">⚠️ ${total - done - pending} missing</span>
-            </div>
-            ${hasNote ? '<div style="margin-top:6px; font-size:12px; color:#7a9ec4;">📝 Has private note</div>' : ''}
-        </div>
-    `;
-}
-
-async function approveRequirement(scoutId, reqName) {
-    const ref = doc(db, 'scoutStatus', scoutId);
-    const current = (await getDoc(ref)).data() || {};
-    current[`membership_${reqName}`] = {
-        status: 'approved',
-        approvedBy: currentUser.username,
-        approvedAt: new Date().toISOString()
-    };
-    await setDoc(ref, current);
-    renderView();
-}
-
-async function init() {
-    await loadScouts();
-    listenToStatus();
-    injectBottomNav(); // Only creates bottom nav on mobile
-    setupNavigation(); // <-- THIS IS THE FIX — runs AFTER both navs exist
-    renderView();
-}
-
-init();
+        <div style="background:white; border-radius:
