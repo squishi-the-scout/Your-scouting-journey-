@@ -216,11 +216,14 @@ async function renderProfile() {
 
     let html = `
         <div style="max-width:600px;margin:0 auto;">
-            <h2 style="color:var(--purple-dark);margin-bottom:24px;">👤 My Profile</h2>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+                <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
+                <h2 style="color:var(--purple-dark);margin:0;">👤 My Profile</h2>
+            </div>
 
             <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
-                    <div class="person-avatar" style="width:80px;height:80px;background:${avatarColor};">
+                    <div class="person-avatar" style="width:80px;height:80px;background:${avatarColor};border:2px solid var(--orange-light);">
                         <div class="head" style="width:24px;height:24px;top:16px;"></div>
                         <div class="body" style="width:38px;height:22px;bottom:14px;"></div>
                     </div>
@@ -285,6 +288,13 @@ async function renderProfile() {
     `;
 
     pageContent.innerHTML = html;
+
+    document.getElementById('profile-back').addEventListener('click', () => {
+        currentView = 'dashboard';
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
+        renderView();
+    });
 
     document.getElementById('profile-form').addEventListener('submit', async function(e) {
         e.preventDefault();
