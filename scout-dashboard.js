@@ -10,9 +10,7 @@ if (!currentUser || currentUser.role !== 'scout') {
 // ─── DOM refs ────────────────────────────────────────────
 const pageContent = document.getElementById('page-content');
 const scoutNameEl = document.getElementById('scout-name');
-const scoutSubtitle = document.getElementById('scout-subtitle');
 const sidebarName = document.getElementById('sidebar-name');
-const sidebarRank = document.getElementById('sidebar-rank');
 const headerAvatar = document.getElementById('header-avatar');
 const sidebarAvatar = document.getElementById('sidebar-avatar');
 
@@ -22,6 +20,9 @@ if (scoutNameEl) scoutNameEl.textContent = displayName;
 if (sidebarName) sidebarName.textContent = displayName;
 if (headerAvatar) headerAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
 if (sidebarAvatar) sidebarAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+
+// ─── IMPORTANT: Use email as document ID ──────────────
+const userEmail = `${currentUser.username}@gis-scout.local`;
 
 // ─── Requirements Data ──────────────────────────────────
 const membershipReqs = [
@@ -46,14 +47,14 @@ let allSessions = [];
 
 // ─── Load status ─────────────────────────────────────────
 async function loadStatus() {
-    const docRef = doc(db, 'scoutStatus', currentUser.uid);
+    const docRef = doc(db, 'scoutStatus', userEmail);
     const docSnap = await getDoc(docRef);
     scoutStatus = docSnap.exists() ? docSnap.data() : {};
 }
 
 // ─── Save status ─────────────────────────────────────────
 async function saveStatus() {
-    await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
+    await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
 }
 
 // ─── Load sessions ───────────────────────────────────────
@@ -62,7 +63,7 @@ async function loadSessions() {
     allSessions = [];
     snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.attendance && data.attendance[currentUser.uid] === true) {
+        if (data.attendance && data.attendance[userEmail] === true) {
             allSessions.push({ id: doc.id, ...data });
         }
     });
@@ -139,7 +140,6 @@ function renderRequirements(tab, reqs) {
 
     pageContent.innerHTML = html;
 
-    // ─── Mark Ready ──────────────────────────────────────
     document.querySelectorAll('.ready-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -152,7 +152,6 @@ function renderRequirements(tab, reqs) {
         });
     });
 
-    // ─── Undo Pending ────────────────────────────────────
     document.querySelectorAll('.pending-badge').forEach(badge => {
         badge.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -191,40 +190,6 @@ function renderPlaceholder(title) {
         <h2 style="color:var(--purple-dark);margin-bottom:16px;">${title}</h2>
         <p style="color:var(--text-muted);padding:40px;text-align:center;">Coming soon! Check back later.</p>
     `;
-}
-
-// ─── Confetti ────────────────────────────────────────────
-function checkAndTriggerConfetti() {
-    let completed = 0;
-    for (const req of membershipReqs) {
-        const key = `membership_${req}`;
-        const status = scoutStatus[key];
-        if (status && status.status === 'approved') completed++;
-    }
-    if (completed === membershipReqs.length) {
-        triggerConfetti();
-        // TODO: Send notification to leader
-    }
-}
-
-function triggerConfetti() {
-    const container = document.createElement('div');
-    container.className = 'confetti-container';
-    document.body.appendChild(container);
-    const colors = ['#6c3b8c', '#e67e22', '#f39c12', '#8a5aa8', '#d35400', '#f9f5fc'];
-    for (let i = 0; i < 120; i++) {
-        const piece = document.createElement('div');
-        piece.className = 'confetti-piece';
-        piece.style.left = Math.random() * 100 + '%';
-        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
-        piece.style.width = (Math.random() * 8 + 4) + 'px';
-        piece.style.height = (Math.random() * 8 + 4) + 'px';
-        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        piece.style.animationDelay = (Math.random() * 1.5) + 's';
-        container.appendChild(piece);
-    }
-    setTimeout(() => container.remove(), 4000);
 }
 
 // ─── Navigation ──────────────────────────────────────────
