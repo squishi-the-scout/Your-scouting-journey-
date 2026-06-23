@@ -85,7 +85,7 @@ function renderView() {
 function renderDashboard() {
     pageContent.innerHTML = `
         <div class="placeholder-heart">
-            ❤️
+            ✋
         </div>
     `;
 }
