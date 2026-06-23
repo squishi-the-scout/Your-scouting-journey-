@@ -157,11 +157,9 @@ function listenToUsers() {
                 allScouts.push({ email: doc.id, ...data });
             }
         });
-        // Re-render current view if not in profile
         if (!selectedScout) {
             renderView();
         } else {
-            // If in profile, refresh profile data
             renderScoutProfile(selectedScout);
         }
     }, (error) => {
@@ -205,6 +203,8 @@ function listenToSessions() {
         });
         if (currentView === 'sessions' && !selectedScout) {
             renderView();
+        } else if (currentView === 'dashboard' || currentView === 'scouts') {
+            renderView();
         }
     }, (error) => {
         console.error('Sessions listener error:', error);
@@ -243,6 +243,12 @@ function renderDashboard() {
         if (promo) readyForPromotion.push({ scout, promo });
     }
 
+    // ─── Calculate total service hours ─────────────────────
+    let totalServiceHours = 0;
+    for (const session of allSessions) {
+        totalServiceHours += session.duration || 0;
+    }
+
     let html = `
         <h2 style="color:var(--purple-dark);margin-bottom:24px;">📊 Leader Dashboard</h2>
         
@@ -262,7 +268,7 @@ function renderDashboard() {
             </div>
         `}
 
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
             <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
                 <div style="font-size:32px;font-weight:700;color:var(--purple);">${totalScouts}</div>
                 <div style="font-size:14px;color:var(--text-muted);">Total Scouts</div>
@@ -272,8 +278,12 @@ function renderDashboard() {
                 <div style="font-size:14px;color:var(--text-muted);">Pending Approvals</div>
             </div>
             <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
-                <div style="font-size:32px;font-weight:700;color:#8fbcbb;">${allScouts.length}</div>
-                <div style="font-size:14px;color:var(--text-muted);">Active Scouts</div>
+                <div style="font-size:32px;font-weight:700;color:#8fbcbb;">${allSessions.length}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Total Sessions</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
+                <div style="font-size:32px;font-weight:700;color:#4caf50;">${totalServiceHours}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
             </div>
         </div>
 
@@ -410,7 +420,7 @@ async function renderScoutProfile(email) {
     const promo = isReadyForPromotion(email);
 
     const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[email] === true);
-    const totalHours = attendedSessions.reduce((sum, s) => sum + (s.serviceHours || 0), 0);
+    const totalHours = attendedSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
 
     let html = `
         <div style="margin-bottom:24px;">
@@ -428,6 +438,7 @@ async function renderScoutProfile(email) {
                 <div style="text-align:right;">
                     <div style="font-size:14px;color:var(--text-muted);">DOB: ${scout.dob || 'Not set'}</div>
                     <div style="font-size:14px;color:var(--text-muted);">Joined: ${scout.joinDate || 'Not set'}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">⏱️ ${totalHours}h service</div>
                 </div>
             </div>
             ${scout.emergencyContact ? `
@@ -528,7 +539,7 @@ async function renderScoutProfile(email) {
             ${attendedSessions.map(s => `
                 <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f0f8;font-size:14px;">
                     <span>${s.name}</span>
-                    <span style="color:var(--text-muted);">${s.date} · ${s.serviceHours || 0}h</span>
+                    <span style="color:var(--text-muted);">${s.date} · ${s.duration || 0}h</span>
                 </div>
             `).join('')}
         </div>
@@ -556,7 +567,6 @@ async function renderScoutProfile(email) {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    // Listener will auto-update
                     alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
@@ -600,7 +610,6 @@ async function renderScoutProfile(email) {
                     approvedAt: new Date().toISOString()
                 };
                 await setDoc(docRef, data);
-                // Listener will auto-update
             } catch (error) {
                 alert('Error approving: ' + error.message);
             }
@@ -739,7 +748,6 @@ function renderPendingApprovals() {
                 approvedAt: new Date().toISOString()
             };
             await setDoc(docRef, data);
-            // Listener will auto-update
         });
     });
 
@@ -753,7 +761,6 @@ function renderPendingApprovals() {
             const data = docSnap.data() || {};
             data[field] = { status: 'todo' };
             await setDoc(docRef, data);
-            // Listener will auto-update
         });
     });
 
@@ -771,7 +778,6 @@ function renderPendingApprovals() {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    // Listener will auto-update
                     alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
@@ -817,7 +823,6 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
 
 // ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
-    // Clean up listeners
     if (usersUnsubscribe) usersUnsubscribe();
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
