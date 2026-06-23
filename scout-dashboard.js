@@ -68,12 +68,8 @@ function listenToStatus() {
     const docRef = doc(db, 'scoutStatus', userEmail);
     statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
         scoutStatus = docSnap.exists() ? docSnap.data() : {};
-        // Only re-render if not in profile view (or always if you want)
         if (currentView !== 'profile') {
             renderView();
-        } else {
-            // If in profile, just update data but don't re-render
-            // The profile will fetch fresh data when needed
         }
     }, (error) => {
         console.error('Status listener error:', error);
@@ -95,7 +91,7 @@ function listenToSessions() {
                 allSessions.push({ id: doc.id, ...data });
             }
         });
-        if (currentView === 'sessions') {
+        if (currentView === 'sessions' || currentView === 'dashboard') {
             renderView();
         }
     }, (error) => {
@@ -185,13 +181,19 @@ function renderDashboard() {
     const total = membershipRequirements.length;
     const progress = Math.round((completed / total) * 100);
 
+    // ─── Calculate scout's total service hours ─────────────
+    let scoutServiceHours = 0;
+    for (const session of allSessions) {
+        scoutServiceHours += session.duration || 0;
+    }
+
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
             <div style="font-size:48px;margin-bottom:16px;">👋</div>
             <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">Welcome back, ${displayName}!</h2>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Rank: ${scoutData.rank || 'Membership'}</p>
 
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
                 <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                     <div style="font-size:28px;font-weight:700;color:var(--purple);">${completed}</div>
                     <div style="font-size:14px;color:var(--text-muted);">Completed</div>
@@ -203,6 +205,10 @@ function renderDashboard() {
                 <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                     <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${total - completed - pending}</div>
                     <div style="font-size:14px;color:var(--text-muted);">Not Started</div>
+                </div>
+                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size:28px;font-weight:700;color:#4caf50;">${scoutServiceHours}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
                 </div>
             </div>
 
@@ -284,7 +290,6 @@ function renderRequirements(tab, reqs, title) {
             if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
             scoutStatus[key] = { status: 'pending' };
             await saveStatus();
-            // No need to renderView() - listener will handle it
         });
     });
 
@@ -295,7 +300,6 @@ function renderRequirements(tab, reqs, title) {
             const key = `${tabName}_${reqName}`;
             delete scoutStatus[key];
             await saveStatus();
-            // No need to renderView() - listener will handle it
         });
     });
 }
@@ -306,18 +310,45 @@ function renderSessions() {
         pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">You haven't attended any sessions yet.</p>`;
         return;
     }
-    let html = `<h2 style="color:var(--purple-dark);margin-bottom:16px;">📋 My Sessions</h2><div style="display:flex;flex-direction:column;gap:12px;">`;
+    
+    let totalHours = 0;
+    for (const session of allSessions) {
+        totalHours += session.duration || 0;
+    }
+
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
+            <span style="color:var(--text-muted);font-size:14px;">⏱️ ${totalHours} total hours</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+    `;
+    
     for (const session of allSessions) {
         html += `
-            <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${session.name}</div>
-                <div style="color:var(--text-muted);font-size:14px;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
-                <div style="margin-top:8px;"><span class="approved-badge">✅ Attended</span></div>
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${session.name}</div>
+                        <div style="color:var(--text-muted);font-size:14px;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>
+                        <span style="font-size:12px;color:var(--text-muted);">⏱️ ${session.duration || 0}h</span>
+                    </div>
+                </div>
             </div>
         `;
     }
     html += '</div>';
     pageContent.innerHTML = html;
+
+    document.querySelectorAll('.session-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const id = this.dataset.id;
+            window.location.href = `session-detail.html?id=${id}`;
+        });
+    });
 }
 
 // ─── Profile View ──────────────────────────────────────────
@@ -495,7 +526,6 @@ document.getElementById('header-avatar')?.addEventListener('click', () => {
 
 // ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
-    // Clean up listeners
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
     localStorage.removeItem('currentUser');
