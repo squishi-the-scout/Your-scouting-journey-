@@ -10,7 +10,9 @@ if (!currentUser || currentUser.role !== 'scout') {
 // ─── DOM refs ────────────────────────────────────────────
 const pageContent = document.getElementById('page-content');
 const scoutNameEl = document.getElementById('scout-name');
+const scoutSubtitle = document.getElementById('scout-subtitle');
 const sidebarName = document.getElementById('sidebar-name');
+const sidebarRank = document.getElementById('sidebar-rank');
 const headerAvatar = document.getElementById('header-avatar');
 const sidebarAvatar = document.getElementById('sidebar-avatar');
 
@@ -18,8 +20,18 @@ const sidebarAvatar = document.getElementById('sidebar-avatar');
 const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 if (scoutNameEl) scoutNameEl.textContent = displayName;
 if (sidebarName) sidebarName.textContent = displayName;
-if (headerAvatar) headerAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
-if (sidebarAvatar) sidebarAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+
+// ─── Avatar colors ──────────────────────────────────────
+const colors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
+function getColor(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
+
+const avatarColor = getColor(currentUser.username);
+if (headerAvatar) headerAvatar.style.background = avatarColor;
+if (sidebarAvatar) sidebarAvatar.style.background = avatarColor;
 
 // ─── IMPORTANT: Use email as document ID ──────────────
 const userEmail = `${currentUser.username}@gis-scout.local`;
@@ -79,13 +91,14 @@ function renderView() {
     else if (currentView === 'first') renderPlaceholder('First Class');
     else if (currentView === 'badges') renderPlaceholder('Badges');
     else if (currentView === 'sessions') renderSessions();
+    else if (currentView === 'profile') renderProfile();
 }
 
 // ─── Dashboard (placeholder ❤️) ─────────────────────────
 function renderDashboard() {
     pageContent.innerHTML = `
         <div class="placeholder-heart">
-            ✋
+            ❤️
         </div>
     `;
 }
@@ -182,6 +195,128 @@ function renderSessions() {
     }
     html += '</div>';
     pageContent.innerHTML = html;
+}
+
+// ─── Profile View ──────────────────────────────────────────
+async function renderProfile() {
+    const userDoc = await getDoc(doc(db, 'users', userEmail));
+    const data = userDoc.data();
+
+    if (!data) {
+        pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">Profile not found.</p>`;
+        return;
+    }
+
+    const fullName = data.fullName || currentUser.username;
+    const dob = data.dob || '';
+    const patrol = data.patrol || '';
+    const rank = data.rank || 'Membership';
+    const role = data.scoutRole || 'Scout';
+    const emergency = data.emergencyContact || {};
+
+    let html = `
+        <div style="max-width:600px;margin:0 auto;">
+            <h2 style="color:var(--purple-dark);margin-bottom:24px;">👤 My Profile</h2>
+
+            <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+                    <div class="person-avatar" style="width:80px;height:80px;background:${avatarColor};">
+                        <div class="head" style="width:24px;height:24px;top:16px;"></div>
+                        <div class="body" style="width:38px;height:22px;bottom:14px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${fullName}</div>
+                        <div style="color:var(--text-muted);">${patrol || 'No patrol'} · ${rank}</div>
+                    </div>
+                </div>
+
+                <form id="profile-form">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Full Name</label>
+                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Date of Birth</label>
+                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Patrol</label>
+                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Rank</label>
+                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8e0f0;font-size:14px;background:#f5f0f8;color:var(--text-muted);">
+                            <span style="font-size:12px;color:var(--text-muted);">(Set by leader)</span>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-bottom:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Name</label>
+                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Phone</label>
+                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Relation</label>
+                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
+                    </div>
+
+                    <button type="submit" style="background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">💾 Save Profile</button>
+                </form>
+
+                <div id="profile-message" style="margin-top:16px;color:var(--text-muted);text-align:center;"></div>
+
+                <div style="margin-top:16px;padding:12px;background:#f5f0f8;border-radius:12px;font-size:13px;color:var(--text-muted);text-align:center;">
+                    ⚠️ Rank and Role can only be changed by your leader.
+                </div>
+            </div>
+        </div>
+    `;
+
+    pageContent.innerHTML = html;
+
+    document.getElementById('profile-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const fullName = document.getElementById('profile-fullname').value.trim();
+        const dob = document.getElementById('profile-dob').value;
+        const patrol = document.getElementById('profile-patrol').value.trim();
+        const emergencyName = document.getElementById('profile-emergency-name').value.trim();
+        const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
+        const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
+
+        const updateData = {
+            fullName: fullName || currentUser.username,
+            dob: dob || null,
+            patrol: patrol || null,
+            emergencyContact: {
+                name: emergencyName || null,
+                phone: emergencyPhone || null,
+                relation: emergencyRelation || null
+            }
+        };
+
+        try {
+            await setDoc(doc(db, 'users', userEmail), updateData, { merge: true });
+            document.getElementById('profile-message').textContent = '✅ Profile saved successfully!';
+            document.getElementById('profile-message').style.color = '#8fbcbb';
+            setTimeout(() => renderProfile(), 1200);
+        } catch (error) {
+            document.getElementById('profile-message').textContent = '❌ Error saving profile: ' + error.message;
+            document.getElementById('profile-message').style.color = '#c47a7a';
+        }
+    });
 }
 
 // ─── Placeholder ─────────────────────────────────────────
