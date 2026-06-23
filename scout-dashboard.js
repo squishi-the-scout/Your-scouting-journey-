@@ -52,6 +52,25 @@ const membershipReqs = [
     "Investiture"
 ];
 
+const secondClassReqs = [
+    "Scouting History",
+    "Pitch Strike and Store a Hike or Patrol Tent",
+    "Knots and Lashing",
+    "Wood Craft Signs",
+    "Hand Axe, Froe and Kathi Valhi",
+    "Cooking",
+    "Fire Lighting",
+    "Hike",
+    "First Aid",
+    "Rules of Health",
+    "Swimming",
+    "Observation Skills",
+    "Common Trees, Birds and Fishes",
+    "Compass and the Safety Regulations of a Sea Going Vessel",
+    "Environmental Education",
+    "Re-test Scout Standard"
+];
+
 // ─── State ──────────────────────────────────────────────
 let currentView = 'dashboard';
 let scoutStatus = {};
@@ -86,25 +105,69 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'membership') renderRequirements('membership', membershipReqs);
-    else if (currentView === 'second') renderPlaceholder('Second Class');
-    else if (currentView === 'first') renderPlaceholder('First Class');
-    else if (currentView === 'badges') renderPlaceholder('Badges');
+    else if (currentView === 'membership') renderRequirements('membership', membershipReqs, '🏅 Membership Badge');
+    else if (currentView === 'second') renderRequirements('second', secondClassReqs, '⭐ Second Class Badge');
+    else if (currentView === 'first') renderPlaceholder('First Class', 'Complete Second Class to unlock First Class.');
+    else if (currentView === 'badges') renderPlaceholder('Proficiency Badges', 'Start earning badges for your skills!');
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
 }
 
-// ─── Dashboard (placeholder ❤️) ─────────────────────────
+// ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    pageContent.innerHTML = `
-        <div class="placeholder-heart">
-            ❤️
+    let completed = 0, pending = 0;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
+        const status = scoutStatus[key];
+        if (status && status.status === 'approved') completed++;
+        else if (status && status.status === 'pending') pending++;
+    }
+    const total = membershipReqs.length;
+    const progress = Math.round((completed / total) * 100);
+
+    let html = `
+        <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
+            <div style="font-size:48px;margin-bottom:16px;">👋</div>
+            <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">Welcome back, ${displayName}!</h2>
+            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your scouting journey starts here. 🌿</p>
+
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
+                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size:28px;font-weight:700;color:var(--purple);">${completed}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Completed</div>
+                </div>
+                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size:28px;font-weight:700;color:var(--orange);">${pending}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Pending</div>
+                </div>
+                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${total - completed - pending}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Not Started</div>
+                </div>
+            </div>
+
+            <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--text-dark);margin-bottom:8px;">
+                    <span>Membership Badge</span>
+                    <span>${completed}/${total}</span>
+                </div>
+                <div style="background:#e8e0f0;border-radius:20px;height:10px;overflow:hidden;">
+                    <div style="background:linear-gradient(90deg,var(--purple),var(--orange));height:100%;width:${progress}%;border-radius:20px;transition:width 0.6s ease;"></div>
+                </div>
+                ${completed === total ? `<p style="margin-top:16px;color:var(--purple);font-weight:600;">🎉 You've earned your Membership Badge! Amazing work.</p>` : `<p style="margin-top:16px;color:var(--text-muted);font-size:14px;">Keep going — you're making progress!</p>`}
+            </div>
+
+            <div style="margin-top:24px;padding:16px;background:#f0ebf5;border-radius:16px;font-size:14px;color:var(--text-muted);">
+                💡 Use the sidebar to explore your requirements, sessions, and profile.
+            </div>
         </div>
     `;
+
+    pageContent.innerHTML = html;
 }
 
 // ─── Requirements View ──────────────────────────────────
-function renderRequirements(tab, reqs) {
+function renderRequirements(tab, reqs, title) {
     let completed = 0, pending = 0;
     for (const req of reqs) {
         const key = `${tab}_${req}`;
@@ -116,7 +179,7 @@ function renderRequirements(tab, reqs) {
     const progress = Math.round((completed / total) * 100);
 
     let html = `
-        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${tab.charAt(0).toUpperCase() + tab.slice(1)} Badge</h2>
+        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${title}</h2>
         <div class="progress-section" style="margin-bottom:20px;">
             <div class="progress-header"><span>Progress</span><span>${completed}/${total}</span></div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
@@ -330,11 +393,20 @@ async function renderProfile() {
 }
 
 // ─── Placeholder ─────────────────────────────────────────
-function renderPlaceholder(title) {
-    pageContent.innerHTML = `
-        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${title}</h2>
-        <p style="color:var(--text-muted);padding:40px;text-align:center;">Coming soon! Check back later.</p>
+function renderPlaceholder(title, unlockCondition = null) {
+    let html = `
+        <div style="max-width:600px;margin:0 auto;text-align:center;padding:40px 0;">
+            <div style="font-size:64px;margin-bottom:16px;">🔒</div>
+            <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">${title}</h2>
+            <p style="color:var(--text-muted);font-size:16px;margin-bottom:24px;">
+                ${unlockCondition || 'This section is coming soon! Stay tuned.'}
+            </p>
+            <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <p style="color:var(--text-muted);font-size:14px;">⏳ More content is on the way. Check back later!</p>
+            </div>
+        </div>
     `;
+    pageContent.innerHTML = html;
 }
 
 // ─── Navigation ──────────────────────────────────────────
