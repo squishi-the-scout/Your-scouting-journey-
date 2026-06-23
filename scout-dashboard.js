@@ -1,5 +1,5 @@
 import { auth, db } from './firebase-config.js';
-import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -80,78 +80,13 @@ function renderView() {
     else if (currentView === 'sessions') renderSessions();
 }
 
-// ─── Dashboard ───────────────────────────────────────────
+// ─── Dashboard (placeholder ❤️) ─────────────────────────
 function renderDashboard() {
-    let completed = 0, pending = 0;
-    for (const req of membershipReqs) {
-        const key = `membership_${req}`;
-        const status = scoutStatus[key];
-        if (status && status.status === 'approved') completed++;
-        else if (status && status.status === 'pending') pending++;
-    }
-    const total = membershipReqs.length;
-    const progress = Math.round((completed / total) * 100);
-
-    const isComplete = completed === total;
-
-    let html = `
-        <div class="stats-grid">
-            <div class="stat-card purple"><div class="number">${completed}</div><div class="label">✅ Completed</div></div>
-            <div class="stat-card orange"><div class="number">${pending}</div><div class="label">✋ Pending</div></div>
-            <div class="stat-card green"><div class="number">${total - completed - pending}</div><div class="label">⭕ Not Started</div></div>
-        </div>
-
-        <div class="progress-section">
-            <div class="progress-header">
-                <span>Membership Badge Progress</span>
-                <span>${completed}/${total}</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" style="width:${progress}%;"></div>
-            </div>
-            ${isComplete ? `<p style="text-align:center;margin-top:12px;color:var(--purple);font-weight:600;">🎉 Congratulations! You've earned your Membership Badge!</p>` : ''}
-        </div>
-
-        <div class="requirements-grid">
-            ${membershipReqs.map(req => {
-                const key = `membership_${req}`;
-                const data = scoutStatus[key];
-                const status = data ? data.status : 'todo';
-                const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
-                const borderClass = status === 'approved' ? 'completed' : status === 'pending' ? 'pending' : '';
-                const actionHtml = status === 'approved' ? `<span class="approved-badge">✓ Completed</span>` :
-                                   status === 'pending' ? `<span class="pending-badge">⏳ Waiting</span>` :
-                                   `<button class="ready-btn" data-req="${req}">Mark Ready</button>`;
-                return `
-                    <div class="req-card ${borderClass}">
-                        <div class="req-header">
-                            <span class="req-title">${req}</span>
-                            <span class="req-status-icon">${icon}</span>
-                        </div>
-                        <div class="req-actions">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=membership" class="notes-link">📖 Notes</a>
-                            ${actionHtml}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
+    pageContent.innerHTML = `
+        <div class="placeholder-heart">
+            ❤️
         </div>
     `;
-
-    pageContent.innerHTML = html;
-
-    // ─── Event Listeners ──────────────────────────────────
-    document.querySelectorAll('.ready-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const reqName = this.dataset.req;
-            const key = `membership_${reqName}`;
-            if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
-            scoutStatus[key] = { status: 'pending' };
-            await saveStatus();
-            renderView();
-            checkAndTriggerConfetti();
-        });
-    });
 }
 
 // ─── Requirements View ──────────────────────────────────
@@ -178,9 +113,14 @@ function renderRequirements(tab, reqs) {
                 const data = scoutStatus[key];
                 const status = data ? data.status : 'todo';
                 const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
-                const actionHtml = status === 'approved' ? `<span class="approved-badge">✓ Completed</span>` :
-                                   status === 'pending' ? `<span class="pending-badge">⏳ Waiting</span>` :
-                                   `<button class="ready-btn" data-req="${req}" data-tab="${tab}">Mark Ready</button>`;
+                let actionHtml = '';
+                if (status === 'approved') {
+                    actionHtml = `<span class="approved-badge">✓ Completed</span>`;
+                } else if (status === 'pending') {
+                    actionHtml = `<span class="pending-badge" data-req="${req}" data-tab="${tab}">⏳ Undo</span>`;
+                } else {
+                    actionHtml = `<button class="ready-btn" data-req="${req}" data-tab="${tab}">Mark Ready</button>`;
+                }
                 return `
                     <div class="req-card">
                         <div class="req-header">
@@ -199,6 +139,7 @@ function renderRequirements(tab, reqs) {
 
     pageContent.innerHTML = html;
 
+    // ─── Mark Ready ──────────────────────────────────────
     document.querySelectorAll('.ready-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -206,6 +147,18 @@ function renderRequirements(tab, reqs) {
             const key = `${tabName}_${reqName}`;
             if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
             scoutStatus[key] = { status: 'pending' };
+            await saveStatus();
+            renderView();
+        });
+    });
+
+    // ─── Undo Pending ────────────────────────────────────
+    document.querySelectorAll('.pending-badge').forEach(badge => {
+        badge.addEventListener('click', async function() {
+            const reqName = this.dataset.req;
+            const tabName = this.dataset.tab;
+            const key = `${tabName}_${reqName}`;
+            delete scoutStatus[key];
             await saveStatus();
             renderView();
         });
