@@ -1,5 +1,7 @@
 import { auth, db } from './firebase-config.js';
-import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+    doc, getDoc, setDoc, collection, getDocs, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { membershipRequirements } from './data/membership-requirements.js';
 import { secondClassRequirements } from './data/secondclass-requirements.js';
 import { firstClassRequirements } from './data/firstclass-requirements.js';
@@ -43,23 +45,62 @@ const userEmail = `${currentUser.username}@gis-scout.local`;
 let currentView = 'dashboard';
 let scoutStatus = {};
 let allSessions = [];
-let scoutData = { rank: 'Membership' }; // 👈 NEW: stores scout's rank
+let scoutData = { rank: 'Membership' };
+let statusUnsubscribe = null;
+let sessionsUnsubscribe = null;
 
-// ─── Load scout data ───────────────────────────────────── 👈 NEW
+// ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
     const docRef = doc(db, 'users', userEmail);
     const docSnap = await getDoc(docRef);
     scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
     
-    // Update sidebar rank
     if (sidebarRank) sidebarRank.textContent = `Scout · ${scoutData.rank || 'Membership'}`;
 }
 
-// ─── Load status ─────────────────────────────────────────
-async function loadStatus() {
+// ─── Real-time status listener ──────────────────────────
+function listenToStatus() {
+    if (statusUnsubscribe) {
+        statusUnsubscribe();
+        statusUnsubscribe = null;
+    }
+    
     const docRef = doc(db, 'scoutStatus', userEmail);
-    const docSnap = await getDoc(docRef);
-    scoutStatus = docSnap.exists() ? docSnap.data() : {};
+    statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
+        scoutStatus = docSnap.exists() ? docSnap.data() : {};
+        // Only re-render if not in profile view (or always if you want)
+        if (currentView !== 'profile') {
+            renderView();
+        } else {
+            // If in profile, just update data but don't re-render
+            // The profile will fetch fresh data when needed
+        }
+    }, (error) => {
+        console.error('Status listener error:', error);
+    });
+}
+
+// ─── Real-time sessions listener ────────────────────────
+function listenToSessions() {
+    if (sessionsUnsubscribe) {
+        sessionsUnsubscribe();
+        sessionsUnsubscribe = null;
+    }
+    
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+        allSessions = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.attendance && data.attendance[userEmail] === true) {
+                allSessions.push({ id: doc.id, ...data });
+            }
+        });
+        if (currentView === 'sessions') {
+            renderView();
+        }
+    }, (error) => {
+        console.error('Sessions listener error:', error);
+    });
 }
 
 // ─── Save status ─────────────────────────────────────────
@@ -67,19 +108,7 @@ async function saveStatus() {
     await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
 }
 
-// ─── Load sessions ───────────────────────────────────────
-async function loadSessions() {
-    const snapshot = await getDocs(collection(db, 'sessions'));
-    allSessions = [];
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.attendance && data.attendance[userEmail] === true) {
-            allSessions.push({ id: doc.id, ...data });
-        }
-    });
-}
-
-// ─── Check if badge is accessible ────────────────────── 👈 NEW
+// ─── Check if badge is accessible ──────────────────────
 function isBadgeAccessible(tab) {
     const rank = scoutData.rank || 'Membership';
     if (tab === 'membership') return true;
@@ -88,7 +117,7 @@ function isBadgeAccessible(tab) {
     return false;
 }
 
-// ─── Render Locked Message ───────────────────────────── 👈 NEW
+// ─── Render Locked Message ─────────────────────────────
 function renderLockedMessage(tab) {
     const messages = {
         'secondClass': {
@@ -255,7 +284,7 @@ function renderRequirements(tab, reqs, title) {
             if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
             scoutStatus[key] = { status: 'pending' };
             await saveStatus();
-            renderView();
+            // No need to renderView() - listener will handle it
         });
     });
 
@@ -266,7 +295,7 @@ function renderRequirements(tab, reqs, title) {
             const key = `${tabName}_${reqName}`;
             delete scoutStatus[key];
             await saveStatus();
-            renderView();
+            // No need to renderView() - listener will handle it
         });
     });
 }
@@ -466,15 +495,18 @@ document.getElementById('header-avatar')?.addEventListener('click', () => {
 
 // ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
+    // Clean up listeners
+    if (statusUnsubscribe) statusUnsubscribe();
+    if (sessionsUnsubscribe) sessionsUnsubscribe();
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
 
 // ─── Init ────────────────────────────────────────────────
 async function init() {
-    await loadScoutData();  // 👈 NEW: load rank first
-    await loadStatus();
-    await loadSessions();
+    await loadScoutData();
+    listenToStatus();
+    listenToSessions();
     renderView();
 }
 
