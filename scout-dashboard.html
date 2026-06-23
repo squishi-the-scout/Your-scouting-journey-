@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* ===== SCOUT DASHBOARD — PURPLE & ORANGE THEME ===== */
-
-        /* ─── Custom Colors ─── */
         :root {
             --purple: #6c3b8c;
             --purple-light: #8a5aa8;
@@ -22,7 +20,6 @@
             --text-muted: #6b5f7a;
         }
 
-        /* ─── Base ─── */
         * {
             margin: 0;
             padding: 0;
@@ -41,7 +38,7 @@
             text-decoration: none;
         }
 
-        /* ─── Sidebar ─── */
+        /* ===== SIDEBAR ===== */
         .sidebar {
             width: 220px;
             background: var(--purple-dark);
@@ -76,7 +73,8 @@
             margin-bottom: 20px;
         }
 
-        .sidebar-avatar {
+        /* ─── Person Icon Avatar ─── */
+        .person-avatar {
             width: 56px;
             height: 56px;
             border-radius: 50%;
@@ -84,10 +82,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 24px;
-            color: white;
+            position: relative;
+            flex-shrink: 0;
             margin-bottom: 8px;
+        }
+        .person-avatar .head {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 12px;
+        }
+        .person-avatar .body {
+            width: 28px;
+            height: 16px;
+            border-radius: 50% 50% 0 0;
+            background: white;
+            position: absolute;
+            bottom: 10px;
         }
 
         .sidebar-name {
@@ -148,13 +161,13 @@
             color: white;
         }
 
-        /* ─── Main Content ─── */
+        /* ===== MAIN CONTENT ===== */
         .main-content {
             flex: 1;
             padding: 32px 40px;
         }
 
-        /* ─── Header ─── */
+        /* ===== HEADER ===== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -173,7 +186,35 @@
             margin-top: 4px;
         }
 
-        /* ─── Placeholder ─── */
+        /* ===== HEADER AVATAR (person icon) ===== */
+        .header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .header-avatar .head {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 8px;
+        }
+        .header-avatar .body {
+            width: 20px;
+            height: 12px;
+            border-radius: 50% 50% 0 0;
+            background: white;
+            position: absolute;
+            bottom: 7px;
+        }
+
+        /* ===== PLACEHOLDER ===== */
         .placeholder-heart {
             display: flex;
             justify-content: center;
@@ -184,7 +225,7 @@
             color: var(--purple-light);
         }
 
-        /* ─── Stats Cards ─── */
+        /* ===== STATS CARDS ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -211,7 +252,7 @@
         .stat-card.orange .number { color: var(--orange); }
         .stat-card.green .number { color: #8fbcbb; }
 
-        /* ─── Progress Bar ─── */
+        /* ===== PROGRESS BAR ===== */
         .progress-section {
             background: var(--card-bg);
             border-radius: 24px;
@@ -240,13 +281,12 @@
             transition: width 0.6s ease;
         }
 
-        /* ─── Requirements Grid ─── */
+        /* ===== REQUIREMENTS GRID ===== */
         .requirements-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
-
         .req-card {
             background: var(--card-bg);
             border-radius: 24px;
@@ -333,7 +373,7 @@
             font-weight: 500;
         }
 
-        /* ===== Confetti ===== */
+        /* ===== CONFETTI ===== */
         .confetti-container {
             position: fixed;
             top: 0;
@@ -356,7 +396,7 @@
             100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
         }
 
-        /* ─── Mobile ─── */
+        /* ===== MOBILE ===== */
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { padding: 16px; }
@@ -374,8 +414,11 @@
     <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
 
     <div class="sidebar-profile">
-        <div class="sidebar-avatar" id="sidebar-avatar">Z</div>
-        <div class="sidebar-name" id="sidebar-name">Zasha</div>
+        <div class="person-avatar" id="sidebar-avatar">
+            <div class="head"></div>
+            <div class="body"></div>
+        </div>
+        <div class="sidebar-name" id="sidebar-name">Scout</div>
         <div class="sidebar-role" id="sidebar-rank">Scout · Membership</div>
     </div>
 
@@ -386,6 +429,7 @@
         <a href="#" data-view="first">🌟 <span>First Class</span></a>
         <a href="#" data-view="badges">🏆 <span>Badges</span></a>
         <a href="#" data-view="sessions">📋 <span>My Sessions</span></a>
+        <a href="#" data-view="profile">👤 <span>My Profile</span></a>
     </nav>
 
     <div class="sidebar-footer">
@@ -403,7 +447,10 @@
             <p id="scout-subtitle">welcome back</p>
         </div>
         <div class="header-right">
-            <span class="avatar" id="header-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:18px;">Z</span>
+            <div class="header-avatar" id="header-avatar" style="background:var(--orange);">
+                <div class="head"></div>
+                <div class="body"></div>
+            </div>
         </div>
     </div>
 
@@ -419,6 +466,7 @@
     <a href="#" data-view="second" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>⭐</span><span style="font-size:9px;">Second</span></a>
     <a href="#" data-view="first" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🌟</span><span style="font-size:9px;">First</span></a>
     <a href="#" data-view="sessions" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>📋</span><span style="font-size:9px;">Sessions</span></a>
+    <a href="#" data-view="profile" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>👤</span><span style="font-size:9px;">Profile</span></a>
 </div>
 
 <script type="module" src="scout-dashboard.js"></script>
