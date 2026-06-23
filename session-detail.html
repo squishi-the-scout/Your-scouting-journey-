@@ -6,111 +6,404 @@
     <title>Session Detail — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: 600; color: #2d5a4a; margin-bottom: 6px; }
-        .form-group input, .form-group textarea {
-            width: 100%; padding: 12px; border: 1px solid #e0ece4; border-radius: 16px;
-            font-family: inherit; font-size: 14px; background: white;
+        .detail-section {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
         }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .form-actions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-        .form-actions button { padding: 10px 24px; border-radius: 40px; border: none; font-weight: 500; cursor: pointer; }
-        .btn-save { background: #8fbcbb; color: white; }
-        .btn-delete { background: #c47a7a; color: white; }
-        .btn-cancel { background: #e8f0ec; color: #2d5a4a; }
-        .attendance-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-        .attendance-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 16px; background: #f9fbfa; border-radius: 12px;
-            flex-wrap: wrap; gap: 8px;
+        .detail-section h3 {
+            color: var(--text-dark);
+            margin-bottom: 16px;
         }
-        .attendance-row .scout-name { font-weight: 500; color: #2d5a4a; }
-        .attendance-toggle { display: flex; gap: 8px; flex-wrap: wrap; }
-        .attendance-toggle button {
-            padding: 4px 16px; border-radius: 30px; border: none; font-size: 13px;
-            cursor: pointer; font-weight: 500;
-            transition: all 0.2s;
-        }
-        .btn-attend { background: #e8f0ec; color: #5a7c6e; }
-        .btn-attend.active { background: #2d5a4a; color: white; }
-        .btn-absent { background: #e8f0ec; color: #5a7c6e; }
-        .btn-absent.active { background: #c47a7a; color: white; }
-        .edit-toggle { background: #a8c4d4; color: #2d5a4a; border: none; padding: 8px 20px; border-radius: 40px; font-weight: 500; cursor: pointer; }
-        .edit-toggle:hover { background: #8fb8cc; }
-        .section-title {
+        .attendance-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 16px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f0f8;
         }
-        .section-title h3 { color: #2d5a4a; margin: 0; }
-        .mark-btn-scouts { background: #8fbcbb; color: white; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 500; cursor: pointer; }
-        .mark-btn-leaders { background: #a8c4d4; color: #2d5a4a; border: none; padding: 6px 16px; border-radius: 30px; font-weight: 500; cursor: pointer; }
-        .mark-btn-scouts:hover { background: #7da8a7; }
-        .mark-btn-leaders:hover { background: #8fb8cc; }
+        .attendance-item:last-child {
+            border-bottom: none;
+        }
+        .attendance-item .name {
+            font-weight: 500;
+        }
+        .attendance-item .status {
+            font-size: 13px;
+            padding: 2px 12px;
+            border-radius: 12px;
+        }
+        .attendance-item .status.present {
+            background: #d4edda;
+            color: #155724;
+        }
+        .attendance-item .status.absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .toggle-btn {
+            padding: 4px 14px;
+            border-radius: 20px;
+            border: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn.present {
+            background: #28a745;
+            color: white;
+        }
+        .toggle-btn.present:hover {
+            background: #218838;
+        }
+        .toggle-btn.absent {
+            background: #dc3545;
+            color: white;
+        }
+        .toggle-btn.absent:hover {
+            background: #c82333;
+        }
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+        .feedback-item {
+            background: #f8f5fa;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .feedback-item .scout-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--purple-dark);
+        }
+        .feedback-item .feedback-text {
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-top: 4px;
+        }
+        .feedback-item .empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .leader-notes-area {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e0d6ec;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .scout-feedback-area {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e0d6ec;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 60px;
+            resize: vertical;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .meta-item .label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .meta-item .value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #8baa9a;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            color: var(--purple-dark);
+        }
+        @media (max-width: 768px) {
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+    <div class="container" style="max-width:800px;margin:0 auto;padding:32px 20px;">
+        <a href="sessions.html" class="back-link">← Back to Sessions</a>
 
-        <div class="sidebar-profile">
-            <div class="person-avatar" id="sidebar-avatar">
-                <div class="head"></div>
-                <div class="body"></div>
+        <div id="session-detail">
+            <div style="text-align:center;padding:40px 0;">
+                <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+                <p style="color:var(--text-muted);">Loading session details...</p>
             </div>
-            <div class="sidebar-name" id="sidebar-name">Hazfar</div>
-            <div class="sidebar-role">HOPE — Rover Leader</div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <a href="leader-dashboard.html" data-view="dashboard">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                <span>Dashboard</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="scouts">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span>All Scouts</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="pending">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>Pending</span> <span class="badge" id="pending-badge">0</span>
-            </a>
-            <a href="#" class="active" data-view="sessions">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span>Sessions</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="export">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                <span>Export</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="#" id="logout-btn">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                <span>Logout</span>
-            </a>
         </div>
     </div>
 
-    <div class="main-content">
-        <div class="header">
-            <div class="header-left">
-                <a href="sessions.html" style="color:#5a7c6e;font-weight:500;cursor:pointer;display:inline-block;margin-bottom:8px;">← Back to Sessions</a>
-<h1 id="session-title" style="font-size:28px;font-weight:700;color:#2d5a4a;">Loading...</h1>
-                <p id="session-meta" style="color:#5a7c6e;margin-top:4px;"></p>
-            </div>
-            <div class="header-right">
-                <span class="avatar" id="leader-avatar">H</span>
-            </div>
-        </div>
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { 
+            doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        <div id="session-detail"></div>
-    </div>
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
 
-    <script type="module" src="session-detail.js"></script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('id');
+        if (!sessionId) {
+            document.getElementById('session-detail').innerHTML = `<p style="color:#e74c3c;">No session ID provided.</p>`;
+        }
+
+        const isLeader = currentUser.role === 'leader';
+        const userEmail = `${currentUser.username}@gis-scout.local`;
+        const container = document.getElementById('session-detail');
+
+        // ─── Load all scouts for attendance ──────────────
+        let allScouts = [];
+
+        async function loadScouts() {
+            const snap = await getDocs(collection(db, 'users'));
+            allScouts = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data.role === 'scout') {
+                    allScouts.push({ email: doc.id, ...data });
+                }
+            });
+        }
+
+        // ─── Render ──────────────────────────────────────
+        function renderSession(session) {
+            const isAttending = session.attendance ? session.attendance[userEmail] === true : false;
+            const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
+
+            let html = `
+                <div class="detail-section">
+                    <h2 style="color:var(--purple-dark);margin:0 0 8px 0;">${session.name}</h2>
+                    <div class="meta-grid">
+                        <div class="meta-item"><span class="label">📅 Date</span><span class="value">${session.date}</span></div>
+                        <div class="meta-item"><span class="label">⏰ Time</span><span class="value">${session.time}</span></div>
+                        <div class="meta-item"><span class="label">📍 Location</span><span class="value">${session.location || 'TBD'}</span></div>
+                        <div class="meta-item"><span class="label">⏱️ Duration</span><span class="value">${session.duration || 0} hours</span></div>
+                    </div>
+                    ${session.purpose ? `<p style="margin-top:16px;color:var(--text-dark);">📝 ${session.purpose}</p>` : ''}
+                    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
+                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">👥 ${attendeeCount} attendees</span>
+                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:20px;font-size:13px;">✅ You attended</span>' : ''}
+                    </div>
+                </div>
+            `;
+
+            // ─── Leader Notes (Leaders only) ──────────────
+            if (isLeader) {
+                html += `
+                    <div class="detail-section">
+                        <h3>📝 Leader Notes</h3>
+                        <textarea id="leader-notes" class="leader-notes-area">${session.leaderNotes || ''}</textarea>
+                        <button id="save-leader-notes" class="btn-primary" style="margin-top:12px;">💾 Save Notes</button>
+                        <div id="leader-notes-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+                    </div>
+                `;
+            }
+
+            // ─── Attendance (Leaders only) ──────────────────
+            if (isLeader) {
+                html += `
+                    <div class="detail-section">
+                        <h3>👥 Attendance (${allScouts.length} scouts)</h3>
+                        <div id="attendance-list">
+                            ${allScouts.map(scout => {
+                                const present = session.attendance ? session.attendance[scout.email] === true : false;
+                                return `
+                                    <div class="attendance-item">
+                                        <span class="name">${scout.fullName || scout.username}</span>
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <span class="status ${present ? 'present' : 'absent'}">${present ? '✅ Present' : '❌ Absent'}</span>
+                                            <button class="toggle-btn ${present ? 'present' : 'absent'}" data-email="${scout.email}">${present ? 'Mark Absent' : 'Mark Present'}</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        <div id="attendance-message" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
+                    </div>
+                `;
+            }
+
+            // ─── Scout Feedback ─────────────────────────────
+            html += `
+                <div class="detail-section">
+                    <h3>💬 Scout Feedback</h3>
+                    ${isLeader ? `
+                        ${Object.keys(session.scoutNotes || {}).length === 0 ? '<p style="color:var(--text-muted);">No feedback submitted yet.</p>' : ''}
+                        ${Object.entries(session.scoutNotes || {}).map(([email, note]) => {
+                            const scout = allScouts.find(s => s.email === email);
+                            const name = scout ? scout.fullName || scout.username : email;
+                            return `
+                                <div class="feedback-item">
+                                    <div class="scout-name">${name}</div>
+                                    <div class="feedback-text">${note}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    ` : `
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:500;display:block;margin-bottom:6px;">Your Feedback</label>
+                            <textarea id="scout-feedback" class="scout-feedback-area" placeholder="What did you learn? Any suggestions?">${session.scoutNotes ? session.scoutNotes[userEmail] || '' : ''}</textarea>
+                            <button id="submit-feedback" class="btn-primary" style="margin-top:12px;">📤 Submit Feedback</button>
+                            <div id="feedback-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+                        </div>
+                        ${Object.keys(session.scoutNotes || {}).length > 1 ? `
+                            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
+                                <div style="font-weight:500;margin-bottom:8px;">Other Scouts Said:</div>
+                                ${Object.entries(session.scoutNotes || {}).filter(([email]) => email !== userEmail).map(([email, note]) => {
+                                    const scout = allScouts.find(s => s.email === email);
+                                    const name = scout ? scout.fullName || scout.username : email;
+                                    return `
+                                        <div class="feedback-item">
+                                            <div class="scout-name">${name}</div>
+                                            <div class="feedback-text">${note}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                    `}
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // ─── Event Listeners ──────────────────────────
+
+            // Leader Notes
+            if (isLeader) {
+                document.getElementById('save-leader-notes')?.addEventListener('click', async function() {
+                    const notes = document.getElementById('leader-notes').value.trim();
+                    try {
+                        await updateDoc(doc(db, 'sessions', sessionId), {
+                            leaderNotes: notes,
+                            lastEditedBy: currentUser.username,
+                            lastEditedAt: new Date().toISOString()
+                        });
+                        document.getElementById('leader-notes-message').textContent = '✅ Notes saved!';
+                        document.getElementById('leader-notes-message').style.color = '#4caf50';
+                    } catch (error) {
+                        document.getElementById('leader-notes-message').textContent = '❌ Error: ' + error.message;
+                        document.getElementById('leader-notes-message').style.color = '#e74c3c';
+                    }
+                });
+            }
+
+            // Attendance Toggle
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const email = this.dataset.email;
+                    const currentPresent = this.textContent === 'Mark Absent';
+                    const newStatus = !currentPresent;
+
+                    try {
+                        const docRef = doc(db, 'sessions', sessionId);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data();
+                        const attendance = data.attendance || {};
+                        attendance[email] = newStatus;
+                        await updateDoc(docRef, { attendance });
+                        document.getElementById('attendance-message').textContent = `✅ ${email} marked ${newStatus ? 'present' : 'absent'}`;
+                        document.getElementById('attendance-message').style.color = '#4caf50';
+                    } catch (error) {
+                        document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
+                        document.getElementById('attendance-message').style.color = '#e74c3c';
+                    }
+                });
+            });
+
+            // Scout Feedback
+            if (!isLeader) {
+                document.getElementById('submit-feedback')?.addEventListener('click', async function() {
+                    const feedback = document.getElementById('scout-feedback').value.trim();
+                    if (!feedback) {
+                        document.getElementById('feedback-message').textContent = '⚠️ Please write something.';
+                        document.getElementById('feedback-message').style.color = '#e67e22';
+                        return;
+                    }
+
+                    try {
+                        const docRef = doc(db, 'sessions', sessionId);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data();
+                        const scoutNotes = data.scoutNotes || {};
+                        scoutNotes[userEmail] = feedback;
+                        await updateDoc(docRef, { scoutNotes });
+                        document.getElementById('feedback-message').textContent = '✅ Feedback submitted!';
+                        document.getElementById('feedback-message').style.color = '#4caf50';
+                    } catch (error) {
+                        document.getElementById('feedback-message').textContent = '❌ Error: ' + error.message;
+                        document.getElementById('feedback-message').style.color = '#e74c3c';
+                    }
+                });
+            }
+        }
+
+        // ─── Real-time session listener ──────────────────
+        async function init() {
+            await loadScouts();
+
+            onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
+                if (!docSnap.exists()) {
+                    container.innerHTML = `<p style="color:#e74c3c;">Session not found.</p>`;
+                    return;
+                }
+                renderSession({ id: docSnap.id, ...docSnap.data() });
+            }, (error) => {
+                console.error('Session listener error:', error);
+                container.innerHTML = `<p style="color:#e74c3c;">Error loading session: ${error.message}</p>`;
+            });
+        }
+
+        init();
+    </script>
 </body>
 </html>
