@@ -3,106 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Session — GIS Scouts</title>
+    <title>Create Session — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: 600; color: #2d5a4a; margin-bottom: 6px; }
-        .form-group input, .form-group textarea {
-            width: 100%; padding: 12px; border: 1px solid #e0ece4; border-radius: 16px;
-            font-family: inherit; font-size: 14px; background: white;
+        .form-group {
+            margin-bottom: 20px;
         }
-        .form-group textarea { min-height: 80px; resize: vertical; }
-        .form-actions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-        .form-actions button { padding: 10px 24px; border-radius: 40px; border: none; font-weight: 500; cursor: pointer; }
-        .btn-save { background: #8fbcbb; color: white; }
-        .btn-cancel { background: #e8f0ec; color: #2d5a4a; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e0d6ec;
+            font-size: 15px;
+            font-family: inherit;
+            background: white;
+        }
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+    <div class="container" style="max-width:700px;margin:0 auto;padding:32px 20px;">
+        <div class="header-card">
+            <a href="sessions.html" class="back-link">← Back to Sessions</a>
+            <h1 style="color:var(--purple-dark);margin:16px 0 8px 0;">📅 Create New Session</h1>
+            <p style="color:var(--text-muted);">Fill in the details for your scout session.</p>
+        </div>
 
-        <div class="sidebar-profile">
-            <div class="person-avatar" id="sidebar-avatar">
-                <div class="head"></div>
-                <div class="body"></div>
+        <form id="session-form" style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div class="form-group">
+                <label for="session-name">Session Title *</label>
+                <input type="text" id="session-name" placeholder="e.g., Knots Practice" required>
             </div>
-            <div class="sidebar-name" id="sidebar-name">Hazfar</div>
-            <div class="sidebar-role">HOPE — Rover Leader</div>
-        </div>
 
-        <nav class="sidebar-nav">
-            <a href="leader-dashboard.html" data-view="dashboard">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-                <span>Dashboard</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="scouts">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                <span>All Scouts</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="pending">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <span>Pending</span> <span class="badge" id="pending-badge">0</span>
-            </a>
-            <a href="#" class="active" data-view="sessions">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span>Sessions</span>
-            </a>
-            <a href="leader-dashboard.html" data-view="export">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                <span>Export</span>
-            </a>
-        </nav>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="session-date">Date *</label>
+                    <input type="date" id="session-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="session-time">Time *</label>
+                    <input type="time" id="session-time" required>
+                </div>
+            </div>
 
-        <div class="sidebar-footer">
-            <a href="#" id="logout-btn">
-                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                <span>Logout</span>
-            </a>
-        </div>
+            <div class="form-group">
+                <label for="session-location">Location</label>
+                <input type="text" id="session-location" placeholder="e.g., School Hall, Beach, Park">
+            </div>
+
+            <div class="form-group">
+                <label for="session-purpose">Purpose / Description</label>
+                <textarea id="session-purpose" placeholder="What will the scouts learn/do?"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="session-duration">Duration (hours) *</label>
+                <input type="number" id="session-duration" placeholder="e.g., 2" min="0.5" step="0.5" required>
+            </div>
+
+            <div class="form-group">
+                <label for="session-leader-notes">Leader Notes (optional)</label>
+                <textarea id="session-leader-notes" placeholder="Any notes for this session..."></textarea>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:8px;">
+                <button type="submit" class="btn-primary">✅ Create Session</button>
+                <a href="sessions.html" class="btn-secondary">Cancel</a>
+            </div>
+        </form>
+
+        <div id="message" style="margin-top:16px;text-align:center;font-weight:500;"></div>
     </div>
 
-    <div class="main-content">
-        <div class="header">
-            <div class="header-left">
-                <h1> New Session</h1>
-                <p>Create a new activity or meeting</p>
-            </div>
-            <div class="header-right">
-                <span class="avatar" id="leader-avatar">H</span>
-            </div>
-        </div>
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        <div style="background:white; border-radius:20px; padding:32px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div class="form-group">
-                <label>Session Name *</label>
-                <input type="text" id="session-name" placeholder="e.g., Knots Practice">
-            </div>
-            <div class="form-group">
-                <label>Date *</label>
-                <input type="date" id="session-date">
-            </div>
-            <div class="form-group">
-                <label>Time *</label>
-                <input type="time" id="session-time">
-            </div>
-            <div class="form-group">
-                <label>Location</label>
-                <input type="text" id="session-location" placeholder="e.g., School Hall">
-            </div>
-            <div class="form-group">
-                <label>Purpose / Notes</label>
-                <textarea id="session-purpose" placeholder="What will you be covering?"></textarea>
-            </div>
-            <div class="form-actions">
-                <button class="btn-save" id="save-session-btn">💾 Save Session</button>
-                <button class="btn-cancel" id="cancel-btn">Cancel</button>
-            </div>
-            <div id="form-message" style="margin-top:16px;color:#5a7c6e;"></div>
-        </div>
-    </div>
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.role !== 'leader') {
+            window.location.href = 'index.html';
+        }
 
-    <script type="module" src="new-session.js"></script>
+        // Set default date to today
+        document.getElementById('session-date').value = new Date().toISOString().split('T')[0];
+
+        const form = document.getElementById('session-form');
+        const message = document.getElementById('message');
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('session-name').value.trim();
+            const date = document.getElementById('session-date').value;
+            const time = document.getElementById('session-time').value;
+            const location = document.getElementById('session-location').value.trim();
+            const purpose = document.getElementById('session-purpose').value.trim();
+            const duration = parseFloat(document.getElementById('session-duration').value);
+            const leaderNotes = document.getElementById('session-leader-notes').value.trim();
+
+            if (!name || !date || !time || !duration) {
+                message.textContent = '❌ Please fill in all required fields.';
+                message.style.color = '#e74c3c';
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, 'sessions'), {
+                    name,
+                    date,
+                    time,
+                    location: location || 'TBD',
+                    purpose: purpose || '',
+                    duration,
+                    leaderNotes: leaderNotes || '',
+                    createdBy: currentUser.username,
+                    createdAt: serverTimestamp(),
+                    lastEditedBy: currentUser.username,
+                    lastEditedAt: serverTimestamp(),
+                    attendance: {},
+                    scoutNotes: {}
+                });
+
+                message.textContent = '✅ Session created successfully! Redirecting...';
+                message.style.color = '#4caf50';
+                setTimeout(() => {
+                    window.location.href = 'sessions.html';
+                }, 1500);
+            } catch (error) {
+                message.textContent = '❌ Error: ' + error.message;
+                message.style.color = '#e74c3c';
+            }
+        });
+    </script>
 </body>
 </html>
