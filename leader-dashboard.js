@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, getDocs
+    doc, getDoc, setDoc, collection, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ─── HARDCODED REQUIREMENTS ──────────────────────────────
@@ -71,6 +71,9 @@ let allStatus = {};
 let allSessions = [];
 let currentView = 'dashboard';
 let selectedScout = null;
+let usersUnsubscribe = null;
+let statusUnsubscribe = null;
+let sessionsUnsubscribe = null;
 
 // ─── Badge Colors ──────────────────────────────────────
 const badgeColors = {
@@ -139,27 +142,72 @@ function isReadyForPromotion(email) {
     return null;
 }
 
-// ─── Load Data ──────────────────────────────────────────
-async function loadData() {
-    const usersSnap = await getDocs(collection(db, 'users'));
-    allScouts = [];
-    usersSnap.forEach(doc => {
-        const data = doc.data();
-        if (data.role === 'scout') {
-            allScouts.push({ email: doc.id, ...data });
+// ─── Real-time Users Listener ──────────────────────────
+function listenToUsers() {
+    if (usersUnsubscribe) {
+        usersUnsubscribe();
+        usersUnsubscribe = null;
+    }
+    
+    usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+        allScouts = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.role === 'scout') {
+                allScouts.push({ email: doc.id, ...data });
+            }
+        });
+        // Re-render current view if not in profile
+        if (!selectedScout) {
+            renderView();
+        } else {
+            // If in profile, refresh profile data
+            renderScoutProfile(selectedScout);
         }
+    }, (error) => {
+        console.error('Users listener error:', error);
     });
+}
 
-    const statusSnap = await getDocs(collection(db, 'scoutStatus'));
-    allStatus = {};
-    statusSnap.forEach(doc => {
-        allStatus[doc.id] = doc.data();
+// ─── Real-time Status Listener ─────────────────────────
+function listenToStatus() {
+    if (statusUnsubscribe) {
+        statusUnsubscribe();
+        statusUnsubscribe = null;
+    }
+    
+    statusUnsubscribe = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+        allStatus = {};
+        snapshot.forEach(doc => {
+            allStatus[doc.id] = doc.data();
+        });
+        if (!selectedScout) {
+            renderView();
+        } else {
+            renderScoutProfile(selectedScout);
+        }
+    }, (error) => {
+        console.error('Status listener error:', error);
     });
+}
 
-    const sessionsSnap = await getDocs(collection(db, 'sessions'));
-    allSessions = [];
-    sessionsSnap.forEach(doc => {
-        allSessions.push({ id: doc.id, ...doc.data() });
+// ─── Real-time Sessions Listener ──────────────────────
+function listenToSessions() {
+    if (sessionsUnsubscribe) {
+        sessionsUnsubscribe();
+        sessionsUnsubscribe = null;
+    }
+    
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+        allSessions = [];
+        snapshot.forEach(doc => {
+            allSessions.push({ id: doc.id, ...doc.data() });
+        });
+        if (currentView === 'sessions' && !selectedScout) {
+            renderView();
+        }
+    }, (error) => {
+        console.error('Sessions listener error:', error);
     });
 }
 
@@ -508,8 +556,7 @@ async function renderScoutProfile(email) {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    await loadData();
-                    renderScoutProfile(email);
+                    // Listener will auto-update
                     alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
@@ -553,11 +600,7 @@ async function renderScoutProfile(email) {
                     approvedAt: new Date().toISOString()
                 };
                 await setDoc(docRef, data);
-                
-                if (!allStatus[scoutEmail]) allStatus[scoutEmail] = {};
-                allStatus[scoutEmail][field] = { status: 'approved', approvedBy: currentUser.username, approvedAt: new Date().toISOString() };
-                
-                renderScoutProfile(scoutEmail);
+                // Listener will auto-update
             } catch (error) {
                 alert('Error approving: ' + error.message);
             }
@@ -696,14 +739,7 @@ function renderPendingApprovals() {
                 approvedAt: new Date().toISOString()
             };
             await setDoc(docRef, data);
-            
-            allStatus = {};
-            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
-            statusSnap.forEach(doc => {
-                allStatus[doc.id] = doc.data();
-            });
-            
-            renderPendingApprovals();
+            // Listener will auto-update
         });
     });
 
@@ -717,12 +753,7 @@ function renderPendingApprovals() {
             const data = docSnap.data() || {};
             data[field] = { status: 'todo' };
             await setDoc(docRef, data);
-            allStatus = {};
-            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
-            statusSnap.forEach(doc => {
-                allStatus[doc.id] = doc.data();
-            });
-            renderPendingApprovals();
+            // Listener will auto-update
         });
     });
 
@@ -740,8 +771,7 @@ function renderPendingApprovals() {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    await loadData();
-                    renderPendingApprovals();
+                    // Listener will auto-update
                     alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
@@ -787,13 +817,19 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
 
 // ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
+    // Clean up listeners
+    if (usersUnsubscribe) usersUnsubscribe();
+    if (statusUnsubscribe) statusUnsubscribe();
+    if (sessionsUnsubscribe) sessionsUnsubscribe();
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
 
 // ─── Init ────────────────────────────────────────────────
 async function init() {
-    await loadData();
+    listenToUsers();
+    listenToStatus();
+    listenToSessions();
     renderView();
 }
 
