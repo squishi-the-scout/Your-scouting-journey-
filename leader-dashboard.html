@@ -5,6 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leader Dashboard — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--purple-dark);
+            padding: 8px 0;
+            justify-content: space-around;
+            z-index: 1000;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .bottom-nav a {
+            color: #c4b8d4;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .bottom-nav a.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+        .bottom-nav a span {
+            font-size: 9px;
+        }
+        .bottom-nav a .badge-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            margin-left: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { padding: 16px; padding-bottom: 80px; }
+            .bottom-nav { display: flex !important; }
+        }
+    </style>
 </head>
 <body>
 
@@ -55,6 +101,30 @@
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
     <div id="page-content"></div>
+</div>
+
+<!-- ===== BOTTOM NAV (mobile) ===== -->
+<div class="bottom-nav">
+    <a href="#" class="active" data-view="dashboard">
+        <span>📊</span>
+        <span>Home</span>
+    </a>
+    <a href="#" data-view="scouts">
+        <span>👥</span>
+        <span>Scouts</span>
+    </a>
+    <a href="#" data-view="pending">
+        <span>⏳</span>
+        <span>Pending</span>
+    </a>
+    <a href="#" data-view="sessions">
+        <span>📋</span>
+        <span>Sessions</span>
+    </a>
+    <a href="#" data-view="export">
+        <span>📤</span>
+        <span>Export</span>
+    </a>
 </div>
 
 <script type="module" src="leader-dashboard.js"></script>
