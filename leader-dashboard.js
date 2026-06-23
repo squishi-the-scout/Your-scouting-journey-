@@ -199,12 +199,12 @@ function renderDashboard() {
         <h2 style="color:var(--purple-dark);margin-bottom:24px;">📊 Leader Dashboard</h2>
         
         ${readyForPromotion.length > 0 ? `
-            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
-                <div style="font-weight:600;color:#856404;">🎯 Scouts Ready for Promotion</div>
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #b8860b;">
+                <div style="font-weight:600;color:#6b8e23;">🌟 Scouts Ready for Promotion</div>
                 ${readyForPromotion.map(p => `
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:white;border-radius:8px;">
                         <span>${p.scout.fullName || p.scout.username} — ${p.promo.currentRank} → ${p.promo.nextRank}</span>
-                        <button class="promote-btn" data-email="${p.scout.email}" style="background:#4caf50;color:white;border:none;padding:4px 16px;border-radius:20px;font-size:13px;cursor:pointer;">Promote</button>
+                        <a href="#" data-view="pending" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:4px 16px;border-radius:20px;font-size:13px;text-decoration:none;cursor:pointer;">View in Pending</a>
                     </div>
                 `).join('')}
             </div>
@@ -245,6 +245,10 @@ function renderDashboard() {
                         <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#2e7d32;"></span>
                         <span>First Class</span>
                     </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,#b8860b,#6b8e23);"></span>
+                        <span>Ready for Promotion</span>
+                    </div>
                 </div>
             </div>
             <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -258,30 +262,6 @@ function renderDashboard() {
     `;
 
     pageContent.innerHTML = html;
-
-    // ─── Promote button ──────────────────────────────────
-    document.querySelectorAll('.promote-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const email = this.dataset.email;
-            const scout = allScouts.find(s => s.email === email);
-            if (!scout) return;
-            
-            const promo = isReadyForPromotion(email);
-            if (!promo) return;
-            
-            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
-                try {
-                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
-                    scout.rank = promo.nextRank;
-                    await loadData();
-                    renderView();
-                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
-                } catch (error) {
-                    alert('Error promoting: ' + error.message);
-                }
-            }
-        });
-    });
 
     document.querySelectorAll('a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
@@ -350,7 +330,7 @@ function renderAllScouts() {
                 ${progressHtml}
                 <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-size:12px;color:var(--text-muted);">${overall}% overall</span>
-                    ${promo ? '<span style="font-size:11px;background:#fff3cd;padding:2px 10px;border-radius:12px;color:#856404;">🎯 Ready for Promotion</span>' : ''}
+                    ${promo ? '<span style="font-size:11px;background:linear-gradient(135deg,#fdf8e7,#f0f7e6);padding:2px 10px;border-radius:12px;color:#6b8e23;border:1px solid #b8860b;">🌟 Ready for Promotion</span>' : ''}
                 </div>
             </div>
         `;
@@ -415,9 +395,9 @@ async function renderScoutProfile(email) {
             
             ${promo ? `
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
-                    <div style="background:#fff3cd;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-                        <span style="color:#856404;">🎯 Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
-                        <button class="promote-btn" data-email="${email}" style="background:#4caf50;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote</button>
+                    <div style="background:linear-gradient(135deg,#fdf8e7,#f0f7e6);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid #b8860b;">
+                        <span style="color:#6b8e23;font-weight:500;">🌟 Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
+                        <button class="promote-btn" data-email="${email}" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote Now</button>
                     </div>
                 </div>
             ` : ''}
@@ -574,7 +554,6 @@ async function renderScoutProfile(email) {
                 };
                 await setDoc(docRef, data);
                 
-                // Update local cache
                 if (!allStatus[scoutEmail]) allStatus[scoutEmail] = {};
                 allStatus[scoutEmail][field] = { status: 'approved', approvedBy: currentUser.username, approvedAt: new Date().toISOString() };
                 
@@ -589,9 +568,11 @@ async function renderScoutProfile(email) {
 // ─── Pending Approvals ──────────────────────────────────
 function renderPendingApprovals() {
     let pendingItems = [];
+    let readyForPromotion = [];
 
     for (const scout of allScouts) {
         const status = allStatus[scout.email] || {};
+        
         for (const key in status) {
             if (status[key].status === 'pending') {
                 let reqName = key;
@@ -619,12 +600,19 @@ function renderPendingApprovals() {
                 });
             }
         }
+        
+        const promo = isReadyForPromotion(scout.email);
+        if (promo) {
+            readyForPromotion.push({ scout, promo });
+        }
     }
 
     const order = { membership: 0, secondClass: 1, firstClass: 2, badge: 3 };
     pendingItems.sort((a, b) => order[a.badgeType] - order[b.badgeType]);
 
-    if (pendingItems.length === 0) {
+    const totalPending = pendingItems.length + readyForPromotion.length;
+
+    if (totalPending === 0) {
         pageContent.innerHTML = `
             <h2 style="color:var(--purple-dark);margin-bottom:24px;">✅ Pending Approvals</h2>
             <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -638,7 +626,7 @@ function renderPendingApprovals() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
             <h2 style="color:var(--purple-dark);">⏳ Pending Approvals</h2>
-            <span style="color:var(--text-muted);font-size:14px;">${pendingItems.length} items</span>
+            <span style="color:var(--text-muted);font-size:14px;">${totalPending} items</span>
         </div>
 
         <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
@@ -646,6 +634,7 @@ function renderPendingApprovals() {
             <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#4caf50;color:white;font-size:12px;font-weight:500;">Second Class</span>
             <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#2e7d32;color:white;font-size:12px;font-weight:500;">First Class</span>
             <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#00897b;color:white;font-size:12px;font-weight:500;">Badges</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;font-size:12px;font-weight:500;">🌟 Ready for Promotion</span>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
@@ -672,9 +661,27 @@ function renderPendingApprovals() {
         `;
     }
 
+    for (const item of readyForPromotion) {
+        const name = item.scout.fullName || item.scout.username;
+        const goldenGreen = 'linear-gradient(135deg, #b8860b, #6b8e23)';
+
+        html += `
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${goldenGreen};"></span>
+                    <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">🌟 Ready for Promotion</span>
+                    <span style="font-weight:500;">${name}</span>
+                    <span style="color:var(--text-muted);font-size:14px;">${item.promo.currentRank} → ${item.promo.nextRank}</span>
+                </div>
+                <button class="promote-btn" data-email="${item.scout.email}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">🌟 Promote Now</button>
+            </div>
+        `;
+    }
+
     html += '</div>';
     pageContent.innerHTML = html;
 
+    // ─── Approve button ──────────────────────────────────
     document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -700,6 +707,7 @@ function renderPendingApprovals() {
         });
     });
 
+    // ─── Reject button ───────────────────────────────────
     document.querySelectorAll('.reject-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -715,6 +723,30 @@ function renderPendingApprovals() {
                 allStatus[doc.id] = doc.data();
             });
             renderPendingApprovals();
+        });
+    });
+
+    // ─── Promote button ──────────────────────────────────
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const scout = allScouts.find(s => s.email === email);
+            if (!scout) return;
+            
+            const promo = isReadyForPromotion(email);
+            if (!promo) return;
+            
+            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
+                try {
+                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    scout.rank = promo.nextRank;
+                    await loadData();
+                    renderPendingApprovals();
+                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                } catch (error) {
+                    alert('Error promoting: ' + error.message);
+                }
+            }
         });
     });
 }
