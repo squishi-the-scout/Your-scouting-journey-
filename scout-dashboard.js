@@ -1,118 +1,136 @@
 import { auth, db } from './firebase-config.js';
-import { collection, getDocs, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+// ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-if (!currentUser || currentUser.role !== 'leader') window.location.href = 'index.html';
+if (!currentUser || currentUser.role !== 'scout') {
+    window.location.href = 'index.html';
+}
 
-document.getElementById('leader-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+// ─── DOM refs ────────────────────────────────────────────
+const pageContent = document.getElementById('page-content');
+const scoutNameEl = document.getElementById('scout-name');
+const scoutSubtitle = document.getElementById('scout-subtitle');
+const sidebarName = document.getElementById('sidebar-name');
+const sidebarRank = document.getElementById('sidebar-rank');
+const headerAvatar = document.getElementById('header-avatar');
+const sidebarAvatar = document.getElementById('sidebar-avatar');
 
+// ─── Set user info ──────────────────────────────────────
+const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+if (scoutNameEl) scoutNameEl.textContent = displayName;
+if (sidebarName) sidebarName.textContent = displayName;
+if (headerAvatar) headerAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+if (sidebarAvatar) sidebarAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+
+// ─── Requirements Data ──────────────────────────────────
+const membershipReqs = [
+    "Law and Promise",
+    "Scout Uniform, Badges and Positions",
+    "Knots and Whipping",
+    "Woodcraft Signs",
+    "National Flag, Anthem, Emblem, Tree, Flower",
+    "Scouting History",
+    "Salutes, Signs, Handshake, Scout Staff",
+    "Dress a Wound",
+    "Whistle Calls, Silent Signs, Formations",
+    "Re-test Membership",
+    "Interview by Scouter",
+    "Investiture"
+];
+
+// ─── State ──────────────────────────────────────────────
+let currentView = 'dashboard';
+let scoutStatus = {};
 let allSessions = [];
-let allScouts = [];
-let attendanceCache = {};
 
-// ─── LOAD SCOUTS ──────────────────────────────────────────
-async function loadScouts() {
-    const snapshot = await getDocs(collection(db, 'users'));
-    allScouts = [];
+// ─── Load status ─────────────────────────────────────────
+async function loadStatus() {
+    const docRef = doc(db, 'scoutStatus', currentUser.uid);
+    const docSnap = await getDoc(docRef);
+    scoutStatus = docSnap.exists() ? docSnap.data() : {};
+}
+
+// ─── Save status ─────────────────────────────────────────
+async function saveStatus() {
+    await setDoc(doc(db, 'scoutStatus', currentUser.uid), scoutStatus);
+}
+
+// ─── Load sessions ───────────────────────────────────────
+async function loadSessions() {
+    const snapshot = await getDocs(collection(db, 'sessions'));
+    allSessions = [];
     snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.role === 'scout') allScouts.push({ id: doc.id, username: data.username });
+        if (data.attendance && data.attendance[currentUser.uid] === true) {
+            allSessions.push({ id: doc.id, ...data });
+        }
     });
 }
 
-// ─── LISTEN TO SESSIONS + ATTENDANCE ─────────────────────
-function listenToSessions() {
-    const container = document.getElementById('sessions-list');
-    container.innerHTML = 'Loading sessions...';
-
-    // Listen to sessions
-    const unsubscribeSessions = onSnapshot(collection(db, 'sessions'), (snapshot) => {
-        allSessions = [];
-        snapshot.forEach(doc => {
-            allSessions.push({ id: doc.id, ...doc.data() });
-        });
-        // After sessions load, listen to attendance
-        listenToAttendance();
-    }, (error) => {
-        container.innerHTML = `<p style="color:#c47a7a;">❌ Error loading sessions: ${error.message}</p>`;
-        console.error(error);
-    });
-
-    return unsubscribeSessions;
+// ─── Render Views ────────────────────────────────────────
+function renderView() {
+    if (!pageContent) return;
+    pageContent.innerHTML = '';
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'membership') renderRequirements('membership', membershipReqs);
+    else if (currentView === 'second') renderPlaceholder('Second Class');
+    else if (currentView === 'first') renderPlaceholder('First Class');
+    else if (currentView === 'badges') renderPlaceholder('Badges');
+    else if (currentView === 'sessions') renderSessions();
 }
 
-// ─── LISTEN TO ATTENDANCE ──────────────────────────────────
-function listenToAttendance() {
-    const container = document.getElementById('sessions-list');
-    
-    // Listen to ALL attendance records
-    const unsubscribeAttendance = onSnapshot(collection(db, 'attendance'), (snapshot) => {
-        attendanceCache = {};
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const sessionId = data.sessionId;
-            if (!attendanceCache[sessionId]) {
-                attendanceCache[sessionId] = {};
-            }
-            attendanceCache[sessionId][data.userId] = data.attended;
-        });
-        renderSessions();
-    }, (error) => {
-        console.error("Error loading attendance:", error);
-    });
-
-    return unsubscribeAttendance;
-}
-
-// ─── RENDER SESSIONS ────────────────────────────────────────
-function renderSessions() {
-    const container = document.getElementById('sessions-list');
-
-    if (allSessions.length === 0) {
-        container.innerHTML = `
-            <div style="background:white;border-radius:20px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <p style="color:#5a7c6e;font-size:18px;">📋 No sessions yet.</p>
-                <p style="color:#5a7c6e;">Click "New Session" to create your first activity.</p>
-            </div>
-        `;
-        return;
+// ─── Dashboard ───────────────────────────────────────────
+function renderDashboard() {
+    let completed = 0, pending = 0;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
+        const status = scoutStatus[key];
+        if (status && status.status === 'approved') completed++;
+        else if (status && status.status === 'pending') pending++;
     }
+    const total = membershipReqs.length;
+    const progress = Math.round((completed / total) * 100);
 
-    const sorted = [...allSessions].sort((a, b) => {
-        if (a.date > b.date) return -1;
-        if (a.date < b.date) return 1;
-        if (a.time > b.time) return -1;
-        if (a.time < b.time) return 1;
-        return 0;
-    });
+    const isComplete = completed === total;
 
-    container.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:16px;">
-            ${sorted.map(session => {
-                const scoutCount = allScouts.length;
-                let attended = 0;
-                const sessionAttendance = attendanceCache[session.id] || {};
-                for (const scout of allScouts) {
-                    if (sessionAttendance[scout.id] === true) attended++;
-                }
-                const percent = scoutCount > 0 ? Math.round((attended / scoutCount) * 100) : 0;
+    let html = `
+        <div class="stats-grid">
+            <div class="stat-card purple"><div class="number">${completed}</div><div class="label">✅ Completed</div></div>
+            <div class="stat-card orange"><div class="number">${pending}</div><div class="label">✋ Pending</div></div>
+            <div class="stat-card green"><div class="number">${total - completed - pending}</div><div class="label">⭕ Not Started</div></div>
+        </div>
 
+        <div class="progress-section">
+            <div class="progress-header">
+                <span>Membership Badge Progress</span>
+                <span>${completed}/${total}</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width:${progress}%;"></div>
+            </div>
+            ${isComplete ? `<p style="text-align:center;margin-top:12px;color:var(--purple);font-weight:600;">🎉 Congratulations! You've earned your Membership Badge!</p>` : ''}
+        </div>
+
+        <div class="requirements-grid">
+            ${membershipReqs.map(req => {
+                const key = `membership_${req}`;
+                const data = scoutStatus[key];
+                const status = data ? data.status : 'todo';
+                const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
+                const borderClass = status === 'approved' ? 'completed' : status === 'pending' ? 'pending' : '';
+                const actionHtml = status === 'approved' ? `<span class="approved-badge">✓ Completed</span>` :
+                                   status === 'pending' ? `<span class="pending-badge">⏳ Waiting</span>` :
+                                   `<button class="ready-btn" data-req="${req}">Mark Ready</button>`;
                 return `
-                    <div class="scout-card" style="cursor:pointer;" data-id="${session.id}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-                            <div>
-                                <div style="font-weight:600;font-size:18px;color:#2d5a4a;">${session.name}</div>
-                                <div style="color:#5a7c6e;font-size:14px;">
-                                    📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
-                                </div>
-                                <div style="color:#5a7c6e;font-size:14px;margin-top:4px;">
-                                    👥 ${attended}/${scoutCount} scouts attended (${percent}%)
-                                </div>
-                            </div>
-                            <div style="font-size:14px;color:#5a7c6e;text-align:right;">
-                                ${session.purpose ? `<div style="max-width:200px;font-style:italic;">${session.purpose.substring(0,60)}${session.purpose.length > 60 ? '...' : ''}</div>` : ''}
-                                <div style="font-size:12px;color:#b0c4b8;">Created by ${session.createdBy || 'unknown'}</div>
-                            </div>
+                    <div class="req-card ${borderClass}">
+                        <div class="req-header">
+                            <span class="req-title">${req}</span>
+                            <span class="req-status-icon">${icon}</span>
+                        </div>
+                        <div class="req-actions">
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=membership" class="notes-link">📖 Notes</a>
+                            ${actionHtml}
                         </div>
                     </div>
                 `;
@@ -120,27 +138,164 @@ function renderSessions() {
         </div>
     `;
 
-    document.querySelectorAll('.scout-card[data-id]').forEach(card => {
-        card.addEventListener('click', () => {
-            window.location.href = `session-detail.html?id=${card.dataset.id}`;
+    pageContent.innerHTML = html;
+
+    // ─── Event Listeners ──────────────────────────────────
+    document.querySelectorAll('.ready-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const reqName = this.dataset.req;
+            const key = `membership_${reqName}`;
+            if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
+            scoutStatus[key] = { status: 'pending' };
+            await saveStatus();
+            renderView();
+            checkAndTriggerConfetti();
         });
     });
 }
 
-// ─── LOGOUT ──────────────────────────────────────────────────
+// ─── Requirements View ──────────────────────────────────
+function renderRequirements(tab, reqs) {
+    let completed = 0, pending = 0;
+    for (const req of reqs) {
+        const key = `${tab}_${req}`;
+        const status = scoutStatus[key];
+        if (status && status.status === 'approved') completed++;
+        else if (status && status.status === 'pending') pending++;
+    }
+    const total = reqs.length;
+    const progress = Math.round((completed / total) * 100);
+
+    let html = `
+        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${tab.charAt(0).toUpperCase() + tab.slice(1)} Badge</h2>
+        <div class="progress-section" style="margin-bottom:20px;">
+            <div class="progress-header"><span>Progress</span><span>${completed}/${total}</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
+        </div>
+        <div class="requirements-grid">
+            ${reqs.map(req => {
+                const key = `${tab}_${req}`;
+                const data = scoutStatus[key];
+                const status = data ? data.status : 'todo';
+                const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
+                const actionHtml = status === 'approved' ? `<span class="approved-badge">✓ Completed</span>` :
+                                   status === 'pending' ? `<span class="pending-badge">⏳ Waiting</span>` :
+                                   `<button class="ready-btn" data-req="${req}" data-tab="${tab}">Mark Ready</button>`;
+                return `
+                    <div class="req-card">
+                        <div class="req-header">
+                            <span class="req-title">${req}</span>
+                            <span class="req-status-icon">${icon}</span>
+                        </div>
+                        <div class="req-actions">
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${tab}" class="notes-link">📖 Notes</a>
+                            ${actionHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+
+    pageContent.innerHTML = html;
+
+    document.querySelectorAll('.ready-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const reqName = this.dataset.req;
+            const tabName = this.dataset.tab;
+            const key = `${tabName}_${reqName}`;
+            if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
+            scoutStatus[key] = { status: 'pending' };
+            await saveStatus();
+            renderView();
+        });
+    });
+}
+
+// ─── Sessions View ──────────────────────────────────────
+function renderSessions() {
+    if (allSessions.length === 0) {
+        pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">You haven't attended any sessions yet.</p>`;
+        return;
+    }
+    let html = `<h2 style="color:var(--purple-dark);margin-bottom:16px;">📋 My Sessions</h2><div style="display:flex;flex-direction:column;gap:12px;">`;
+    for (const session of allSessions) {
+        html += `
+            <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${session.name}</div>
+                <div style="color:var(--text-muted);font-size:14px;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
+                <div style="margin-top:8px;"><span class="approved-badge">✅ Attended</span></div>
+            </div>
+        `;
+    }
+    html += '</div>';
+    pageContent.innerHTML = html;
+}
+
+// ─── Placeholder ─────────────────────────────────────────
+function renderPlaceholder(title) {
+    pageContent.innerHTML = `
+        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${title}</h2>
+        <p style="color:var(--text-muted);padding:40px;text-align:center;">Coming soon! Check back later.</p>
+    `;
+}
+
+// ─── Confetti ────────────────────────────────────────────
+function checkAndTriggerConfetti() {
+    let completed = 0;
+    for (const req of membershipReqs) {
+        const key = `membership_${req}`;
+        const status = scoutStatus[key];
+        if (status && status.status === 'approved') completed++;
+    }
+    if (completed === membershipReqs.length) {
+        triggerConfetti();
+        // TODO: Send notification to leader
+    }
+}
+
+function triggerConfetti() {
+    const container = document.createElement('div');
+    container.className = 'confetti-container';
+    document.body.appendChild(container);
+    const colors = ['#6c3b8c', '#e67e22', '#f39c12', '#8a5aa8', '#d35400', '#f9f5fc'];
+    for (let i = 0; i < 120; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.width = (Math.random() * 8 + 4) + 'px';
+        piece.style.height = (Math.random() * 8 + 4) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        piece.style.animationDelay = (Math.random() * 1.5) + 's';
+        container.appendChild(piece);
+    }
+    setTimeout(() => container.remove(), 4000);
+}
+
+// ─── Navigation ──────────────────────────────────────────
+document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        currentView = this.dataset.view;
+        renderView();
+    });
+});
+
+// ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
 
-// ─── NEW SESSION ─────────────────────────────────────────────
-document.getElementById('new-session-btn').addEventListener('click', () => {
-    window.location.href = 'new-session.html';
-});
-
-// ─── INIT ─────────────────────────────────────────────────────
+// ─── Init ────────────────────────────────────────────────
 async function init() {
-    await loadScouts();
-    listenToSessions();
+    await loadStatus();
+    await loadSessions();
+    renderView();
 }
+
 init();
