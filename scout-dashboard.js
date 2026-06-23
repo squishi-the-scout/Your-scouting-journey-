@@ -338,6 +338,19 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
     });
 });
 
+// ─── Avatar click → Profile ─────────────────────────────
+document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
+    currentView = 'profile';
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+    renderView();
+});
+
+document.getElementById('header-avatar')?.addEventListener('click', () => {
+    currentView = 'profile';
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+    renderView();
+});
+
 // ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
     localStorage.removeItem('currentUser');
