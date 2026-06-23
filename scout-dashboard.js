@@ -1,5 +1,8 @@
 import { auth, db } from './firebase-config.js';
 import { doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { membershipRequirements } from './data/membership-requirements.js';
+import { secondClassRequirements } from './data/secondclass-requirements.js';
+import { firstClassRequirements } from './data/firstclass-requirements.js';
 
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -36,41 +39,6 @@ if (sidebarAvatar) sidebarAvatar.style.background = avatarColor;
 // ─── IMPORTANT: Use email as document ID ──────────────
 const userEmail = `${currentUser.username}@gis-scout.local`;
 
-// ─── Requirements Data ──────────────────────────────────
-const membershipReqs = [
-    "Law and Promise",
-    "Scout Uniform, Badges and Positions",
-    "Knots and Whipping",
-    "Woodcraft Signs",
-    "National Flag, Anthem, Emblem, Tree, Flower",
-    "Scouting History",
-    "Salutes, Signs, Handshake, Scout Staff",
-    "Dress a Wound",
-    "Whistle Calls, Silent Signs, Formations",
-    "Re-test Membership",
-    "Interview by Scouter",
-    "Investiture"
-];
-
-const secondClassReqs = [
-    "Scouting History",
-    "Pitch Strike and Store a Hike or Patrol Tent",
-    "Knots and Lashing",
-    "Wood Craft Signs",
-    "Hand Axe, Froe and Kathi Valhi",
-    "Cooking",
-    "Fire Lighting",
-    "Hike",
-    "First Aid",
-    "Rules of Health",
-    "Swimming",
-    "Observation Skills",
-    "Common Trees, Birds and Fishes",
-    "Compass and the Safety Regulations of a Sea Going Vessel",
-    "Environmental Education",
-    "Re-test Scout Standard"
-];
-
 // ─── State ──────────────────────────────────────────────
 let currentView = 'dashboard';
 let scoutStatus = {};
@@ -105,9 +73,9 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'membership') renderRequirements('membership', membershipReqs, '🏅 Membership Badge');
-    else if (currentView === 'second') renderRequirements('second', secondClassReqs, '⭐ Second Class Badge');
-    else if (currentView === 'first') renderPlaceholder('First Class', 'Complete Second Class to unlock First Class.');
+    else if (currentView === 'membership') renderRequirements('membership', membershipRequirements, '🏅 Membership Badge');
+    else if (currentView === 'second') renderRequirements('secondClass', secondClassRequirements, '⭐ Second Class Badge');
+    else if (currentView === 'first') renderRequirements('firstClass', firstClassRequirements, '🌟 First Class Badge');
     else if (currentView === 'badges') renderPlaceholder('Proficiency Badges', 'Start earning badges for your skills!');
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
@@ -116,13 +84,14 @@ function renderView() {
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
     let completed = 0, pending = 0;
-    for (const req of membershipReqs) {
-        const key = `membership_${req}`;
+    const allReqs = membershipRequirements;
+    for (const req of allReqs) {
+        const key = `membership_${req.name}`;
         const status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
         else if (status && status.status === 'pending') pending++;
     }
-    const total = membershipReqs.length;
+    const total = allReqs.length;
     const progress = Math.round((completed / total) * 100);
 
     let html = `
@@ -170,7 +139,7 @@ function renderDashboard() {
 function renderRequirements(tab, reqs, title) {
     let completed = 0, pending = 0;
     for (const req of reqs) {
-        const key = `${tab}_${req}`;
+        const key = `${tab}_${req.name}`;
         const status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
         else if (status && status.status === 'pending') pending++;
@@ -186,7 +155,7 @@ function renderRequirements(tab, reqs, title) {
         </div>
         <div class="requirements-grid">
             ${reqs.map(req => {
-                const key = `${tab}_${req}`;
+                const key = `${tab}_${req.name}`;
                 const data = scoutStatus[key];
                 const status = data ? data.status : 'todo';
                 const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
@@ -194,18 +163,18 @@ function renderRequirements(tab, reqs, title) {
                 if (status === 'approved') {
                     actionHtml = `<span class="approved-badge">✓ Completed</span>`;
                 } else if (status === 'pending') {
-                    actionHtml = `<span class="pending-badge" data-req="${req}" data-tab="${tab}">⏳ Undo</span>`;
+                    actionHtml = `<span class="pending-badge" data-req="${req.name}" data-tab="${tab}">⏳ Undo</span>`;
                 } else {
-                    actionHtml = `<button class="ready-btn" data-req="${req}" data-tab="${tab}">Mark Ready</button>`;
+                    actionHtml = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
                 }
                 return `
                     <div class="req-card">
                         <div class="req-header">
-                            <span class="req-title">${req}</span>
+                            <span class="req-title">${req.id}. ${req.name}</span>
                             <span class="req-status-icon">${icon}</span>
                         </div>
                         <div class="req-actions">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${tab}" class="notes-link">📖 Notes</a>
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
                             ${actionHtml}
                         </div>
                     </div>
