@@ -5,66 +5,213 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sessions — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .session-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid var(--purple-light);
+        }
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .session-card .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .session-card .meta {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .session-card .duration {
+            display: inline-block;
+            background: #e8e0f0;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .session-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .session-stats .stat {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .session-stats .stat .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--purple);
+        }
+        .session-stats .stat .label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .empty-state h3 {
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+        .empty-state p {
+            color: var(--text-muted);
+        }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 768px) {
+            .session-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
-
-    <div class="sidebar-profile">
-        <div class="person-avatar" id="sidebar-avatar">
-            <div class="head"></div>
-            <div class="body"></div>
+    <div class="container" style="max-width:900px;margin:0 auto;padding:32px 20px;">
+        <div class="header-card">
+            <a href="leader-dashboard.html" class="back-link">← Back to Dashboard</a>
+            <div class="header-actions">
+                <div>
+                    <h1 style="color:var(--purple-dark);margin:16px 0 4px 0;">📋 Sessions</h1>
+                    <p style="color:var(--text-muted);">Manage your scout sessions</p>
+                </div>
+                <a href="new-session.html" class="btn-primary">➕ New Session</a>
+            </div>
         </div>
-        <div class="sidebar-name" id="sidebar-name">Hazfar</div>
-        <div class="sidebar-role">HOPE — Rover Leader</div>
-    </div>
 
-    <nav class="sidebar-nav">
-        <a href="leader-dashboard.html" data-view="dashboard">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            <span>Dashboard</span>
-        </a>
-        <a href="leader-dashboard.html" data-view="scouts">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            <span>All Scouts</span>
-        </a>
-        <a href="leader-dashboard.html" data-view="pending">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>Pending</span> <span class="badge" id="pending-badge">0</span>
-        </a>
-        <a href="#" class="active" data-view="sessions">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            <span>Sessions</span>
-        </a>
-        <a href="leader-dashboard.html" data-view="export">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            <span>Export</span>
-        </a>
-    </nav>
-
-    <div class="sidebar-footer">
-        <a href="#" id="logout-btn">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-            <span>Logout</span>
-        </a>
-    </div>
-</div>
-
-<div class="main-content">
-    <div class="header">
-        <div class="header-left">
-            <h1> Sessions</h1>
-            <p>Manage your scout activities and attendance</p>
-        </div>
-        <div class="header-right">
-            <button class="export-btn" id="new-session-btn" style="background:#8fbcbb;color:white;">➕ New Session</button>
-            <span class="avatar" id="leader-avatar">H</span>
+        <div id="sessions-container">
+            <div class="session-stats" id="session-stats">
+                <div class="stat"><div class="number" id="total-sessions">0</div><div class="label">Total Sessions</div></div>
+                <div class="stat"><div class="number" id="total-hours">0</div><div class="label">Total Hours</div></div>
+                <div class="stat"><div class="number" id="total-attendees">0</div><div class="label">Total Attendees</div></div>
+            </div>
+            <div id="sessions-list"></div>
         </div>
     </div>
-    <div id="sessions-list"></div>
-</div>
 
-<script type="module" src="sessions.js"></script>
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+
+        const isLeader = currentUser.role === 'leader';
+        const sessionsList = document.getElementById('sessions-list');
+
+        // ─── Real-time listener ──────────────────────────
+        const q = query(collection(db, 'sessions'), orderBy('date', 'desc'));
+        onSnapshot(q, (snapshot) => {
+            const sessions = [];
+            let totalHours = 0;
+            let totalAttendees = new Set();
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const id = doc.id;
+                sessions.push({ id, ...data });
+                totalHours += data.duration || 0;
+                if (data.attendance) {
+                    Object.keys(data.attendance).forEach(email => {
+                        if (data.attendance[email] === true) {
+                            totalAttendees.add(email);
+                        }
+                    });
+                }
+            });
+
+            document.getElementById('total-sessions').textContent = sessions.length;
+            document.getElementById('total-hours').textContent = totalHours;
+            document.getElementById('total-attendees').textContent = totalAttendees.size;
+
+            if (sessions.length === 0) {
+                sessionsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📅</div>
+                        <h3>No sessions yet</h3>
+                        <p>${isLeader ? 'Click "New Session" to create your first session!' : 'Check back later for upcoming sessions.'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+            for (const session of sessions) {
+                const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
+                const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
+
+                html += `
+                    <div class="session-card" data-id="${session.id}">
+                        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div class="title">${session.name}</div>
+                                <div class="meta">📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span class="duration">⏱️ ${session.duration || 0}h</span>
+                                ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>' : ''}
+                                <span style="font-size:12px;color:var(--text-muted);">👥 ${attendeeCount}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            sessionsList.innerHTML = html;
+
+            document.querySelectorAll('.session-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const id = this.dataset.id;
+                    window.location.href = `session-detail.html?id=${id}`;
+                });
+            });
+        }, (error) => {
+            console.error('Sessions listener error:', error);
+            sessionsList.innerHTML = `<p style="color:#e74c3c;">Error loading sessions: ${error.message}</p>`;
+        });
+    </script>
 </body>
 </html>
