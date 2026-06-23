@@ -4,377 +4,424 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Progress — GIS Scouts</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* ===== SCOUT DASHBOARD — PURPLE & ORANGE THEME ===== */
+
+        /* ─── Custom Colors ─── */
+        :root {
+            --purple: #6c3b8c;
+            --purple-light: #8a5aa8;
+            --purple-dark: #4a2a5e;
+            --orange: #e67e22;
+            --orange-light: #f39c12;
+            --orange-dark: #d35400;
+            --cream: #f9f5fc;
+            --card-bg: #ffffff;
+            --text-dark: #2d2a3a;
+            --text-muted: #6b5f7a;
+        }
+
+        /* ─── Base ─── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #d8f0e5 0%, #c4e0f9 100%);
-            min-height: 100vh;
-            padding: 24px;
-        }
-
-        .container { max-width: 700px; margin: 0 auto; }
-
-        .header-card {
-            background: white;
-            border-radius: 32px;
-            padding: 28px 32px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
-
-        h1 { font-size: 28px; color: #2d5a4a; margin-bottom: 6px; }
-        .subtitle { color: #8baa9a; font-size: 14px; margin-bottom: 20px; }
-        .logout-btn {
-            background: #eef3f0;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            color: #2d5a4a;
-            cursor: pointer;
-        }
-
-        .tab-bar {
+            background: var(--cream);
+            color: var(--text-dark);
             display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            min-height: 100vh;
         }
-        .tab {
-            background: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #8baa9a;
-            cursor: pointer;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        }
-        .tab.active { background: #2d5a4a; color: white; }
 
-        .progress-card {
-            background: white;
+        a {
+            text-decoration: none;
+        }
+
+        /* ─── Sidebar ─── */
+        .sidebar {
+            width: 220px;
+            background: var(--purple-dark);
+            color: #e8e0f0;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: white;
+        }
+        .sidebar-brand span {
+            color: var(--orange-light);
+        }
+
+        .sidebar-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8e0f0;
+        }
+        .sidebar-role {
+            font-size: 12px;
+            color: var(--orange-light);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .sidebar-nav a {
+            color: #c4b8d4;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+        .sidebar-nav a.active {
+            background: var(--purple);
+            color: white;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar-footer a {
+            color: #c4b8d4;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .sidebar-footer a:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+
+        /* ─── Main Content ─── */
+        .main-content {
+            flex: 1;
+            padding: 32px 40px;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-left h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--purple-dark);
+            margin: 0;
+        }
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-top: 4px;
+        }
+
+        /* ─── Stats Cards ─── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .stat-card .label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .stat-card.purple .number { color: var(--purple); }
+        .stat-card.orange .number { color: var(--orange); }
+        .stat-card.green .number { color: #8fbcbb; }
+
+        /* ─── Progress Bar ─── */
+        .progress-section {
+            background: var(--card-bg);
             border-radius: 24px;
             padding: 20px 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            margin-bottom: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         .progress-header {
             display: flex;
             justify-content: space-between;
             font-size: 14px;
-            color: #2d5a4a;
+            color: var(--text-dark);
             margin-bottom: 12px;
         }
         .progress-bar-bg {
-            background: #e0ece4;
+            background: #e8e0f0;
             border-radius: 20px;
-            height: 8px;
+            height: 10px;
             overflow: hidden;
         }
         .progress-bar-fill {
-            background: #8fbcbb;
+            background: linear-gradient(90deg, var(--purple), var(--orange));
             height: 100%;
             width: 0%;
             border-radius: 20px;
+            transition: width 0.6s ease;
         }
 
-        .requirements-grid { display: flex; flex-direction: column; gap: 12px; }
+        /* ─── Requirements Grid ─── */
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
 
         .req-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 24px;
             padding: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.2s;
+            border-left: 4px solid var(--purple-light);
         }
+        .req-card.completed {
+            border-left-color: var(--purple);
+        }
+        .req-card.pending {
+            border-left-color: var(--orange);
+        }
+
         .req-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
         }
-        .req-name {
+        .req-title {
             font-weight: 600;
-            font-size: 20px;
-            color: #2d5a4a;
+            font-size: 16px;
+            color: var(--text-dark);
         }
-        .req-left-icon { font-size: 32px; margin-right: 12px; }
-        .req-status-icon { font-size: 32px; }
+        .req-status-icon {
+            font-size: 24px;
+        }
 
-        .req-footer {
+        .req-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .req-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 4px;
         }
-        .notes-link {
-            background: #f0f4f2;
-            padding: 8px 16px;
-            border-radius: 30px;
+        .req-actions .notes-link {
+            background: #f0ebf5;
+            padding: 6px 16px;
+            border-radius: 40px;
             font-size: 13px;
-            color: #5a7c6e;
+            color: var(--purple);
             text-decoration: none;
         }
+        .req-actions .notes-link:hover {
+            background: #e0d6ec;
+        }
 
-        .toggle-btn {
+        .ready-btn {
+            background: var(--orange);
+            color: white;
             border: none;
-            padding: 8px 20px;
-            border-radius: 30px;
+            padding: 6px 20px;
+            border-radius: 40px;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s;
         }
-        .toggle-ready {
-            background: #8fbcbb;
-            color: white;
-        }
-        .toggle-ready:hover {
-            background: #7da8a7;
-        }
-        .toggle-pending {
-            background: #f5e6d3;
-            color: #c28b3e;
-        }
-        .toggle-pending:hover {
-            background: #ecd5b0;
+        .ready-btn:hover {
+            background: var(--orange-dark);
         }
 
-        .done-text {
-            color: #2d5a4a;
+        .pending-badge {
+            background: #fde8d0;
+            color: var(--orange-dark);
+            padding: 4px 16px;
+            border-radius: 40px;
             font-size: 13px;
             font-weight: 500;
-            background: #d4e4dc;
-            padding: 6px 16px;
-            border-radius: 30px;
         }
-        .approval-info {
-            font-size: 12px;
-            color: #5a7c6e;
-            margin-top: 4px;
+        .approved-badge {
+            background: #e8dff0;
+            color: var(--purple);
+            padding: 4px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ===== Confetti ===== */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            animation: confetti-fall 3s ease-in forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ─── Mobile ─── */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                padding: 16px;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .requirements-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-left h1 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header-card">
-            <h1>🌸 Welcome, <span id="scout-name">Scout</span></h1>
-            <div class="subtitle">Your Scouting Journey</div>
-            <button id="logout-btn" class="logout-btn">Log out</button>
-        </div>
 
-        <div class="tab-bar">
-            <button class="tab active" data-tab="membership">🏕️ Membership</button>
-            <button class="tab" data-tab="second">⭐ Second Class</button>
-            <button class="tab" data-tab="first">🌟 First Class</button>
-            <button class="tab" data-tab="badges">🏅 Badges</button>
-        </div>
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+    <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
 
-        <div class="progress-card">
-            <div class="progress-header">
-                <span>📊 Progress</span>
-                <span id="progress-count">0/12</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div id="progress-bar" class="progress-bar-fill"></div>
-            </div>
-        </div>
-
-        <div id="requirements-grid" class="requirements-grid"></div>
+    <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebar-avatar">Z</div>
+        <div class="sidebar-name" id="sidebar-name">Zasha</div>
+        <div class="sidebar-role" id="sidebar-rank">Scout · Membership</div>
     </div>
 
-    <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <nav class="sidebar-nav">
+        <a href="#" class="active" data-view="dashboard">📊 <span>Dashboard</span></a>
+        <a href="#" data-view="membership">🏅 <span>Membership</span></a>
+        <a href="#" data-view="second">⭐ <span>Second Class</span></a>
+        <a href="#" data-view="first">🌟 <span>First Class</span></a>
+        <a href="#" data-view="badges">🏆 <span>Badges</span></a>
+        <a href="#" data-view="sessions">📋 <span>My Sessions</span></a>
+    </nav>
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser || currentUser.role !== 'scout') window.location.href = 'index.html';
-        document.getElementById('scout-name').innerText = currentUser.username;
+    <div class="sidebar-footer">
+        <a href="#" id="logout-btn">🚪 <span>Logout</span></a>
+    </div>
+</div>
 
-        const userEmail = `${currentUser.username}@gis-scout.local`;
+<!-- ===== MAIN CONTENT ===== -->
+<div class="main-content" id="main-content">
 
-        document.getElementById('logout-btn').onclick = () => {
-            localStorage.removeItem('currentUser');
-            window.location.href = 'index.html';
-        };
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-left">
+            <h1>Good morning, <span id="scout-name">Scout</span>! 👋</h1>
+            <p id="scout-subtitle">welcome back</p>
+        </div>
+        <div class="header-right">
+            <span class="avatar" id="header-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:18px;">Z</span>
+        </div>
+    </div>
 
-        const requirementsData = {
-            membership: [
-                "Law and Promise",
-                "Scout Uniform, Badges and Positions",
-                "Knots and Whipping",
-                "Woodcraft Signs",
-                "National Flag, Anthem, Emblem, Tree, Flower",
-                "Scouting History",
-                "Salutes, Signs, Handshake, Scout Staff",
-                "Dress a Wound",
-                "Whistle Calls, Silent Signs, Formations",
-                "Re-test Membership",
-                "Interview by Scouter",
-                "Investiture"
-            ],
-            second: ["Second Class requirements coming soon"],
-            first: ["First Class requirements coming soon"],
-            badges: ["Proficiency badges coming soon"]
-        };
+    <!-- ===== DYNAMIC CONTENT ===== -->
+    <div id="page-content"></div>
 
-        let currentTab = 'membership';
-        let scoutStatus = {};
-        let unsubscribe = null;
+</div>
 
-        function getRequirementIcon(reqName) {
-            const iconMap = {
-                "Law and Promise": "📜",
-                "Scout Uniform, Badges and Positions": "🎽",
-                "Knots and Whipping": "🪢",
-                "Woodcraft Signs": "🌲",
-                "National Flag, Anthem, Emblem, Tree, Flower": "🇲🇻",
-                "Scouting History": "📖",
-                "Salutes, Signs, Handshake, Scout Staff": "🫡",
-                "Dress a Wound": "🩹",
-                "Whistle Calls, Silent Signs, Formations": "🎵",
-                "Re-test Membership": "🔁",
-                "Interview by Scouter": "🗣️",
-                "Investiture": "🎓"
-            };
-            return iconMap[reqName] || "⭐";
-        }
+<!-- ===== BOTTOM NAV (mobile) ===== -->
+<div class="bottom-nav" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--purple-dark); padding:10px 0; display:none; justify-content:space-around; z-index:1000; border-top:1px solid rgba(255,255,255,0.1);">
+    <a href="#" class="active" data-view="dashboard" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>📊</span><span style="font-size:9px;">Home</span></a>
+    <a href="#" data-view="membership" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🏅</span><span style="font-size:9px;">Membership</span></a>
+    <a href="#" data-view="second" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>⭐</span><span style="font-size:9px;">Second</span></a>
+    <a href="#" data-view="first" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🌟</span><span style="font-size:9px;">First</span></a>
+    <a href="#" data-view="sessions" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>📋</span><span style="font-size:9px;">Sessions</span></a>
+</div>
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-GB', { 
-                day: 'numeric', 
-                month: 'long', 
-                year: 'numeric' 
-            }) + ', ' + date.toLocaleTimeString('en-GB', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-        }
-
-        async function saveStatus() {
-            await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
-        }
-
-        async function toggleStatus(reqName) {
-            const key = `${currentTab}_${reqName}`;
-            const current = scoutStatus[key];
-
-            if (current && current.status === 'approved') return;
-
-            if (current && current.status === 'pending') {
-                delete scoutStatus[key];
-            } else {
-                scoutStatus[key] = { status: 'pending' };
-            }
-
-            await saveStatus();
-            // No need to render — onSnapshot will update
-        }
-
-        function renderRequirements() {
-            const container = document.getElementById('requirements-grid');
-            const reqs = requirementsData[currentTab];
-            
-            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-                container.innerHTML = `<div class="req-card"><div class="req-name">More requirements coming soon!</div></div>`;
-                updateProgress();
-                return;
-            }
-
-            container.innerHTML = reqs.map(req => {
-                const key = `${currentTab}_${req}`;
-                const data = scoutStatus[key];
-                const status = data ? data.status : 'todo';
-                const leftIcon = getRequirementIcon(req);
-                let statusIcon = '';
-                let actionHtml = '';
-                let infoHtml = '';
-                
-                if (status === 'approved') {
-                    statusIcon = '🏁';
-                    const approvedBy = data.approvedBy || 'leader';
-                    const approvedAt = data.approvedAt ? formatDate(data.approvedAt) : 'recently';
-                    actionHtml = `<span class="done-text">✓ Completed</span>`;
-                    infoHtml = `<div class="approval-info">Approved by ${approvedBy} — ${approvedAt}</div>`;
-                } else if (status === 'pending') {
-                    statusIcon = '✋';
-                    actionHtml = `<button class="toggle-btn toggle-pending" data-req="${req}">Pending test</button>`;
-                } else {
-                    statusIcon = '🚩';
-                    actionHtml = `<button class="toggle-btn toggle-ready" data-req="${req}">Ready</button>`;
-                }
-                
-                return `
-                    <div class="req-card">
-                        <div class="req-header">
-                            <span class="req-name"><span class="req-left-icon">${leftIcon}</span>${req}</span>
-                            <span class="req-status-icon">${statusIcon}</span>
-                        </div>
-                        <div class="req-footer">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req)}&tab=${currentTab}" class="notes-link">Notes</a>
-                            ${actionHtml}
-                        </div>
-                        ${infoHtml}
-                    </div>
-                `;
-            }).join('');
-
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.addEventListener('click', () => toggleStatus(btn.dataset.req));
-            });
-            
-            updateProgress();
-        }
-
-        function updateProgress() {
-            const reqs = requirementsData[currentTab];
-            if (!reqs || reqs.length === 0 || reqs[0].includes("coming soon")) {
-                document.getElementById('progress-count').innerText = '0/0';
-                document.getElementById('progress-bar').style.width = '0%';
-                return;
-            }
-            let completed = 0;
-            reqs.forEach(req => {
-                const key = `${currentTab}_${req}`;
-                if (scoutStatus[key] && scoutStatus[key].status === 'approved') completed++;
-            });
-            const percent = (completed / reqs.length) * 100;
-            document.getElementById('progress-count').innerText = `${completed}/${reqs.length}`;
-            document.getElementById('progress-bar').style.width = `${percent}%`;
-        }
-
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => {
-                if (t.dataset.tab === tab) t.classList.add('active');
-                else t.classList.remove('active');
-            });
-            renderRequirements();
-        }
-
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-        });
-
-        // Listen for real-time updates
-        function listenToStatus() {
-            const docRef = doc(db, 'scoutStatus', userEmail);
-            unsubscribe = onSnapshot(docRef, (docSnap) => {
-                scoutStatus = docSnap.exists() ? docSnap.data() : {};
-                renderRequirements();
-            }, (error) => {
-                console.error("Error listening to status updates:", error);
-            });
-        }
-
-        function init() {
-            // Start listening to real-time updates
-            listenToStatus();
-        }
-        init();
-    </script>
+<script type="module" src="scout-dashboard.js"></script>
 </body>
 </html>
