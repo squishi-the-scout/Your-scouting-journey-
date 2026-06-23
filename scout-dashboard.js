@@ -43,6 +43,17 @@ const userEmail = `${currentUser.username}@gis-scout.local`;
 let currentView = 'dashboard';
 let scoutStatus = {};
 let allSessions = [];
+let scoutData = { rank: 'Membership' }; // 👈 NEW: stores scout's rank
+
+// ─── Load scout data ───────────────────────────────────── 👈 NEW
+async function loadScoutData() {
+    const docRef = doc(db, 'users', userEmail);
+    const docSnap = await getDoc(docRef);
+    scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
+    
+    // Update sidebar rank
+    if (sidebarRank) sidebarRank.textContent = `Scout · ${scoutData.rank || 'Membership'}`;
+}
 
 // ─── Load status ─────────────────────────────────────────
 async function loadStatus() {
@@ -68,14 +79,66 @@ async function loadSessions() {
     });
 }
 
+// ─── Check if badge is accessible ────────────────────── 👈 NEW
+function isBadgeAccessible(tab) {
+    const rank = scoutData.rank || 'Membership';
+    if (tab === 'membership') return true;
+    if (tab === 'secondClass' && rank !== 'Membership') return true;
+    if (tab === 'firstClass' && rank === 'First Class') return true;
+    return false;
+}
+
+// ─── Render Locked Message ───────────────────────────── 👈 NEW
+function renderLockedMessage(tab) {
+    const messages = {
+        'secondClass': {
+            title: '⭐ Second Class',
+            message: 'Complete your Membership badge first to unlock Second Class!',
+            icon: '🔒'
+        },
+        'firstClass': {
+            title: '🌟 First Class',
+            message: 'Complete your Second Class badge first to unlock First Class!',
+            icon: '🔒'
+        }
+    };
+    
+    const info = messages[tab] || messages['secondClass'];
+    return `
+        <div style="text-align:center;padding:60px 20px;background:white;border-radius:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="font-size:64px;margin-bottom:16px;">${info.icon}</div>
+            <h2 style="color:var(--text-muted);">${info.title}</h2>
+            <p style="color:var(--text-muted);font-size:16px;">${info.message}</p>
+        </div>
+    `;
+}
+
 // ─── Render Views ────────────────────────────────────────
 function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'membership') renderRequirements('membership', membershipRequirements, '🏅 Membership Badge');
-    else if (currentView === 'second') renderRequirements('secondClass', secondClassRequirements, '⭐ Second Class Badge');
-    else if (currentView === 'first') renderRequirements('firstClass', firstClassRequirements, '🌟 First Class Badge');
+    else if (currentView === 'membership') {
+        if (isBadgeAccessible('membership')) {
+            renderRequirements('membership', membershipRequirements, '🏅 Membership Badge');
+        } else {
+            pageContent.innerHTML = renderLockedMessage('membership');
+        }
+    }
+    else if (currentView === 'second') {
+        if (isBadgeAccessible('secondClass')) {
+            renderRequirements('secondClass', secondClassRequirements, '⭐ Second Class Badge');
+        } else {
+            pageContent.innerHTML = renderLockedMessage('secondClass');
+        }
+    }
+    else if (currentView === 'first') {
+        if (isBadgeAccessible('firstClass')) {
+            renderRequirements('firstClass', firstClassRequirements, '🌟 First Class Badge');
+        } else {
+            pageContent.innerHTML = renderLockedMessage('firstClass');
+        }
+    }
     else if (currentView === 'badges') renderPlaceholder('Proficiency Badges', 'Start earning badges for your skills!');
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
@@ -84,21 +147,20 @@ function renderView() {
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
     let completed = 0, pending = 0;
-    const allReqs = membershipRequirements;
-    for (const req of allReqs) {
+    for (const req of membershipRequirements) {
         const key = `membership_${req.name}`;
         const status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
         else if (status && status.status === 'pending') pending++;
     }
-    const total = allReqs.length;
+    const total = membershipRequirements.length;
     const progress = Math.round((completed / total) * 100);
 
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
             <div style="font-size:48px;margin-bottom:16px;">👋</div>
             <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">Welcome back, ${displayName}!</h2>
-            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your scouting journey starts here. 🌿</p>
+            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Rank: ${scoutData.rank || 'Membership'}</p>
 
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
                 <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -410,6 +472,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 
 // ─── Init ────────────────────────────────────────────────
 async function init() {
+    await loadScoutData();  // 👈 NEW: load rank first
     await loadStatus();
     await loadSessions();
     renderView();
