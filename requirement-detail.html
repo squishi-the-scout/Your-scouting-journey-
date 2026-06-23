@@ -220,48 +220,4 @@
             },
             "Environmental Education": {
                 title: "Environmental Education",
-                content: `<h3>🌍 What to Learn</h3><p>Know the importance of environmental protection. Understand measures to protect the reef environment and prevent sea pollution.</p><h3>📝 Study Points</h3><ul><li>Know hazardous chemicals dumped in Maldivian waters</li><li>General measures to protect the reef</li><li>Regulations on garbage disposal in Maldives</li></ul><h3>✅ To Pass</h3><p>Discuss environmental protection measures with your leader.</p>`
-            },
-            "Re-test Scout Standard": {
-                title: "Re-test Scout Standard",
-                content: `<h3>📋 What to Learn</h3><p>Review all Second Class requirements. Your leader will re-test you to ensure you know everything.</p><h3>📝 Study Points</h3><ul><li>Review all 1–15 above</li><li>Be honest about what you need to practice</li><li>Ask your leader for help on weak areas</li></ul><h3>✅ To Pass</h3><p>Pass your leader's re-test covering all Second Class requirements.</p>`
-            }
-        };
-
-        // ─── ============================================================
-        // ─── 🌟 FIRST CLASS BADGE NOTES (PLACEHOLDER)
-        // ─── ============================================================
-        const firstClassNotes = {};
-
-        // ─── ============================================================
-        // ─── LOAD THE RIGHT NOTES ──────────────────────────────────────
-        // ─── ============================================================
-
-        let notesData = {};
-
-        if (tab === 'membership') {
-            notesData = membershipNotes;
-        } else if (tab === 'second') {
-            notesData = secondClassNotes;
-        } else if (tab === 'first') {
-            notesData = firstClassNotes;
-        }
-
-        // ─── RENDER ──────────────────────────────────────────────────────
-        const note = notesData[reqName];
-        const titleEl = document.getElementById('req-title');
-        const contentEl = document.getElementById('notes-content');
-
-        if (note) {
-            titleEl.textContent = note.title || reqName;
-            contentEl.innerHTML = note.content || `<p>📝 Notes for "${reqName}" coming soon.</p>`;
-        } else {
-            titleEl.textContent = reqName;
-            contentEl.innerHTML = `
-                <p>📝 Notes for "${reqName}" coming soon.</p>
-                <p style="color:#5a7c6e;font-size:14px;">Ask your leader for guidance on this requirement.</p>
-            `;
-        }
-    </script>
-</body>
-</html>
+                content: `<h3>🌍 What to Learn</h3><p>Know the importance of environmental protection. Understand measures to protect the reef environment and prevent sea pollution.</p><h3>📝 Study
