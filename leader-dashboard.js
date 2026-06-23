@@ -1,10 +1,59 @@
 import { auth, db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, getDocs, query, where 
+    doc, getDoc, setDoc, collection, getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { membershipRequirements } from './data/membership-requirements.js';
-import { secondClassRequirements } from './data/secondclass-requirements.js';
-import { firstClassRequirements } from './data/firstclass-requirements.js';
+
+// ─── HARDCODED REQUIREMENTS ──────────────────────────────
+const membershipRequirements = [
+    "Law and Promise",
+    "Scout Uniform, Badges and Positions",
+    "Knots and Whipping",
+    "Woodcraft Signs",
+    "National Flag, Anthem, Emblem, Tree, Flower",
+    "Scouting History",
+    "Salutes, Signs, Handshake, Scout Staff",
+    "Dress a Wound",
+    "Whistle Calls, Silent Signs, Formations",
+    "Re-test Membership",
+    "Interview by Scouter",
+    "Investiture"
+];
+
+const secondClassRequirements = [
+    "Scouting History",
+    "Pitch Strike and Store a Hike or Patrol Tent",
+    "Knots and Lashing",
+    "Wood Craft Signs",
+    "Hand Axe, Froe and Kathi Valhi",
+    "Cooking",
+    "Fire Lighting",
+    "Hike",
+    "First Aid",
+    "Rules of Health",
+    "Swimming",
+    "Observation Skills",
+    "Common Trees, Birds and Fishes",
+    "Compass and the Safety Regulations of a Sea Going Vessel",
+    "Environmental Education",
+    "Re-test Scout Standard"
+];
+
+const firstClassRequirements = [
+    "Emergencies",
+    "First Aid",
+    "Common Trees, Birds and Fishes",
+    "Felling Axes and Maldivian Tools Mulhoa, Odaa",
+    "Mapping and Compass",
+    "Estimation",
+    "Knots, Lashing and Splices",
+    "Tracking",
+    "Swimming",
+    "Cooking",
+    "Camping",
+    "Environmental Education",
+    "Hike - Expedition",
+    "Re-test Advance Scout Standard"
+];
 
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -28,14 +77,13 @@ const badgeColors = {
     membership: { bg: '#d4edda', text: '#155724', border: '#7bcb7b', label: 'Membership' },
     secondClass: { bg: '#c3e6cb', text: '#0b5e1f', border: '#4caf50', label: 'Second Class' },
     firstClass: { bg: '#a8d5a2', text: '#1b5e20', border: '#2e7d32', label: 'First Class' },
-    badge: { bg: '#b2dfdb', text: '#004d40', border: '#00897b', label: 'Badge' }
+    badge: { bg: '#b2dfdb', text: '#004d40', border: '#00897b', label: 'Badges' }
 };
 
 function getBadgeInfo(fieldName) {
     if (fieldName.startsWith('membership_')) return badgeColors.membership;
     if (fieldName.startsWith('secondClass_')) return badgeColors.secondClass;
     if (fieldName.startsWith('firstClass_')) return badgeColors.firstClass;
-    if (fieldName.startsWith('badge_')) return badgeColors.badge;
     return badgeColors.membership;
 }
 
@@ -43,7 +91,6 @@ function getBadgeLabel(fieldName) {
     if (fieldName.startsWith('membership_')) return 'Membership';
     if (fieldName.startsWith('secondClass_')) return 'Second Class';
     if (fieldName.startsWith('firstClass_')) return 'First Class';
-    if (fieldName.startsWith('badge_')) return 'Badge';
     return 'Membership';
 }
 
@@ -60,6 +107,36 @@ function getBadgesForRank(rank) {
         badges.push({ key: 'badge', reqs: [], label: 'Badges' });
     }
     return badges;
+}
+
+// ─── Check if scout is ready for promotion ──────────────
+function isReadyForPromotion(email) {
+    const status = allStatus[email] || {};
+    const scout = allScouts.find(s => s.email === email);
+    if (!scout) return null;
+    
+    const rank = scout.rank || 'Membership';
+    
+    if (rank === 'Membership') {
+        let done = 0;
+        for (const req of membershipRequirements) {
+            const key = `membership_${req}`;
+            if (status[key]?.status === 'approved') done++;
+        }
+        if (done === membershipRequirements.length) {
+            return { currentRank: 'Membership', nextRank: 'Second Class' };
+        }
+    } else if (rank === 'Second Class') {
+        let done = 0;
+        for (const req of secondClassRequirements) {
+            const key = `secondClass_${req}`;
+            if (status[key]?.status === 'approved') done++;
+        }
+        if (done === secondClassRequirements.length) {
+            return { currentRank: 'Second Class', nextRank: 'First Class' };
+        }
+    }
+    return null;
 }
 
 // ─── Load Data ──────────────────────────────────────────
@@ -107,29 +184,37 @@ function renderView() {
 function renderDashboard() {
     let totalScouts = allScouts.length;
     let totalPending = 0;
-    let completedScouts = 0;
+    let readyForPromotion = [];
 
     for (const scout of allScouts) {
         const status = allStatus[scout.email] || {};
-        let completed = 0;
-        const allReqs = [...membershipRequirements, ...secondClassRequirements, ...firstClassRequirements];
-        for (const req of allReqs) {
-            const membershipKey = `membership_${req.name}`;
-            const secondKey = `secondClass_${req.name}`;
-            const firstKey = `firstClass_${req.name}`;
-            if (status[membershipKey]?.status === 'approved') completed++;
-            if (status[secondKey]?.status === 'approved') completed++;
-            if (status[firstKey]?.status === 'approved') completed++;
-        }
         for (const key in status) {
             if (status[key].status === 'pending') totalPending++;
         }
-        if (completed >= 42) completedScouts++;
+        const promo = isReadyForPromotion(scout.email);
+        if (promo) readyForPromotion.push({ scout, promo });
     }
 
     let html = `
         <h2 style="color:var(--purple-dark);margin-bottom:24px;">📊 Leader Dashboard</h2>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
+        
+        ${readyForPromotion.length > 0 ? `
+            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
+                <div style="font-weight:600;color:#856404;">🎯 Scouts Ready for Promotion</div>
+                ${readyForPromotion.map(p => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:white;border-radius:8px;">
+                        <span>${p.scout.fullName || p.scout.username} — ${p.promo.currentRank} → ${p.promo.nextRank}</span>
+                        <button class="promote-btn" data-email="${p.scout.email}" style="background:#4caf50;color:white;border:none;padding:4px 16px;border-radius:20px;font-size:13px;cursor:pointer;">Promote</button>
+                    </div>
+                `).join('')}
+            </div>
+        ` : `
+            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
+                <span style="color:#155724;">✅ No scouts ready for promotion right now.</span>
+            </div>
+        `}
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;">
             <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
                 <div style="font-size:32px;font-weight:700;color:var(--purple);">${totalScouts}</div>
                 <div style="font-size:14px;color:var(--text-muted);">Total Scouts</div>
@@ -137,10 +222,6 @@ function renderDashboard() {
             <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
                 <div style="font-size:32px;font-weight:700;color:var(--orange);">${totalPending}</div>
                 <div style="font-size:14px;color:var(--text-muted);">Pending Approvals</div>
-            </div>
-            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
-                <div style="font-size:32px;font-weight:700;color:#4caf50;">${completedScouts}</div>
-                <div style="font-size:14px;color:var(--text-muted);">Completed All Badges</div>
             </div>
             <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
                 <div style="font-size:32px;font-weight:700;color:#8fbcbb;">${allScouts.length}</div>
@@ -164,10 +245,6 @@ function renderDashboard() {
                         <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#2e7d32;"></span>
                         <span>First Class</span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:12px;">
-                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#00897b;"></span>
-                        <span>Badges</span>
-                    </div>
                 </div>
             </div>
             <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -181,6 +258,30 @@ function renderDashboard() {
     `;
 
     pageContent.innerHTML = html;
+
+    // ─── Promote button ──────────────────────────────────
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const scout = allScouts.find(s => s.email === email);
+            if (!scout) return;
+            
+            const promo = isReadyForPromotion(email);
+            if (!promo) return;
+            
+            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
+                try {
+                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    scout.rank = promo.nextRank;
+                    await loadData();
+                    renderView();
+                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                } catch (error) {
+                    alert('Error promoting: ' + error.message);
+                }
+            }
+        });
+    });
 
     document.querySelectorAll('a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
@@ -209,7 +310,6 @@ function renderAllScouts() {
         const rank = scout.rank || 'Membership';
         const role = scout.scoutRole || 'Scout';
 
-        // Get badges based on rank
         const badges = getBadgesForRank(rank);
         let totalDone = 0;
         let totalReqs = 0;
@@ -218,7 +318,7 @@ function renderAllScouts() {
         for (const badge of badges) {
             let done = 0;
             for (const req of badge.reqs) {
-                const key = `${badge.key}_${req.name}`;
+                const key = `${badge.key}_${req}`;
                 if (status[key]?.status === 'approved') done++;
             }
             totalDone += done;
@@ -238,6 +338,7 @@ function renderAllScouts() {
         }
 
         const overall = totalReqs > 0 ? Math.round((totalDone / totalReqs) * 100) : 0;
+        const promo = isReadyForPromotion(scout.email);
 
         html += `
             <div class="scout-card" data-email="${scout.email}" style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;">
@@ -247,7 +348,10 @@ function renderAllScouts() {
                 </div>
                 <div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">${patrol} · ${rank}</div>
                 ${progressHtml}
-                <div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:right;">${overall}% overall</div>
+                <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:var(--text-muted);">${overall}% overall</span>
+                    ${promo ? '<span style="font-size:11px;background:#fff3cd;padding:2px 10px;border-radius:12px;color:#856404;">🎯 Ready for Promotion</span>' : ''}
+                </div>
             </div>
         `;
     }
@@ -275,8 +379,8 @@ async function renderScoutProfile(email) {
     const rank = scout.rank || 'Membership';
     const badges = getBadgesForRank(rank);
     const role = scout.scoutRole || 'Scout';
+    const promo = isReadyForPromotion(email);
 
-    // Get attended sessions
     const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[email] === true);
     const totalHours = attendedSessions.reduce((sum, s) => sum + (s.serviceHours || 0), 0);
 
@@ -308,6 +412,15 @@ async function renderScoutProfile(email) {
                     </div>
                 </div>
             ` : ''}
+            
+            ${promo ? `
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
+                    <div style="background:#fff3cd;border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
+                        <span style="color:#856404;">🎯 Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
+                        <button class="promote-btn" data-email="${email}" style="background:#4caf50;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote</button>
+                    </div>
+                </div>
+            ` : ''}
         </div>
 
         <!-- Leadership Roles -->
@@ -331,7 +444,7 @@ async function renderScoutProfile(email) {
         let done = 0;
         let reqHtml = '';
         for (const req of badge.reqs) {
-            const key = `${badge.key}_${req.name}`;
+            const key = `${badge.key}_${req}`;
             const data = status[key];
             const statusText = data ? data.status : 'todo';
             const statusIcons = {
@@ -346,7 +459,7 @@ async function renderScoutProfile(email) {
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f0f8;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span>${icon}</span>
-                        <span style="font-size:14px;">${req.name}</span>
+                        <span style="font-size:14px;">${req}</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="font-size:12px;color:var(--text-muted);">${statusText}</span>
@@ -401,6 +514,30 @@ async function renderScoutProfile(email) {
         renderView();
     });
 
+    // ─── Promote button ──────────────────────────────────
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const scout = allScouts.find(s => s.email === email);
+            if (!scout) return;
+            
+            const promo = isReadyForPromotion(email);
+            if (!promo) return;
+            
+            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
+                try {
+                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    scout.rank = promo.nextRank;
+                    await loadData();
+                    renderScoutProfile(email);
+                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                } catch (error) {
+                    alert('Error promoting: ' + error.message);
+                }
+            }
+        });
+    });
+
     // ─── Role buttons ─────────────────────────────────────
     document.querySelectorAll('.role-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
@@ -410,7 +547,6 @@ async function renderScoutProfile(email) {
                 await setDoc(doc(db, 'users', scoutEmail), { scoutRole: newRole }, { merge: true });
                 document.getElementById('role-message').textContent = `✅ Role updated to: ${newRole}`;
                 document.getElementById('role-message').style.color = '#4caf50';
-                // Update local data
                 const scout = allScouts.find(s => s.email === scoutEmail);
                 if (scout) scout.scoutRole = newRole;
                 setTimeout(() => renderScoutProfile(scoutEmail), 1000);
@@ -426,6 +562,7 @@ async function renderScoutProfile(email) {
         btn.addEventListener('click', async function() {
             const scoutEmail = this.dataset.email;
             const field = this.dataset.field;
+            
             try {
                 const docRef = doc(db, 'scoutStatus', scoutEmail);
                 const docSnap = await getDoc(docRef);
@@ -436,9 +573,11 @@ async function renderScoutProfile(email) {
                     approvedAt: new Date().toISOString()
                 };
                 await setDoc(docRef, data);
+                
                 // Update local cache
                 if (!allStatus[scoutEmail]) allStatus[scoutEmail] = {};
                 allStatus[scoutEmail][field] = { status: 'approved', approvedBy: currentUser.username, approvedAt: new Date().toISOString() };
+                
                 renderScoutProfile(scoutEmail);
             } catch (error) {
                 alert('Error approving: ' + error.message);
@@ -540,6 +679,7 @@ function renderPendingApprovals() {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
             const field = this.dataset.field;
+            
             const docRef = doc(db, 'scoutStatus', email);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data() || {};
@@ -549,11 +689,13 @@ function renderPendingApprovals() {
                 approvedAt: new Date().toISOString()
             };
             await setDoc(docRef, data);
+            
             allStatus = {};
             const statusSnap = await getDocs(collection(db, 'scoutStatus'));
             statusSnap.forEach(doc => {
                 allStatus[doc.id] = doc.data();
             });
+            
             renderPendingApprovals();
         });
     });
