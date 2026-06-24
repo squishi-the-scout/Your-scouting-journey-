@@ -201,9 +201,7 @@ function listenToSessions() {
         snapshot.forEach(doc => {
             allSessions.push({ id: doc.id, ...doc.data() });
         });
-        if (currentView === 'sessions' && !selectedScout) {
-            renderView();
-        } else if (currentView === 'dashboard' || currentView === 'scouts') {
+        if (currentView === 'sessions' || currentView === 'dashboard') {
             renderView();
         }
     }, (error) => {
@@ -787,15 +785,110 @@ function renderPendingApprovals() {
     });
 }
 
-// ─── Sessions ──────────────────────────────────────────
+// ─── Sessions View (INLINE - NOT EXTERNAL) ──────────────
 function renderSessions() {
-    pageContent.innerHTML = `
-        <h2 style="color:var(--purple-dark);margin-bottom:24px;">📋 Sessions</h2>
-        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div style="font-size:48px;margin-bottom:16px;">📅</div>
-            <p style="color:var(--text-muted);font-size:16px;">Session management is in <a href="sessions.html" style="color:var(--purple);font-weight:500;">sessions.html</a></p>
+    // ─── Calculate stats ──────────────────────────────────
+    let totalSessions = allSessions.length;
+    let totalHours = 0;
+    let totalAttendees = new Set();
+
+    for (const session of allSessions) {
+        totalHours += session.duration || 0;
+        if (session.attendance) {
+            Object.keys(session.attendance).forEach(email => {
+                if (session.attendance[email] === true) {
+                    totalAttendees.add(email);
+                }
+            });
+        }
+    }
+
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h2 style="color:var(--purple-dark);margin:0;">📋 Sessions</h2>
+                <p style="color:var(--text-muted);margin-top:4px;">All scout sessions</p>
+            </div>
+            <a href="new-session.html" style="background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;">➕ New Session</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:var(--purple);">${totalSessions}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Sessions</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:#4caf50;">${totalHours}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Hours</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${totalAttendees.size}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Attendees</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:var(--orange);">${allSessions.length}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Sessions</div>
+            </div>
         </div>
     `;
+
+    if (allSessions.length === 0) {
+        html += `
+            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:64px;margin-bottom:16px;">📅</div>
+                <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
+                <p style="color:var(--text-muted);">Click "New Session" to create your first session!</p>
+            </div>
+        `;
+        pageContent.innerHTML = html;
+        return;
+    }
+
+    // Sort sessions by date (newest first)
+    const sortedSessions = [...allSessions].sort((a, b) => {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        return 0;
+    });
+
+    html += `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+    `;
+
+    for (const session of sortedSessions) {
+        const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
+        const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
+
+        html += `
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid var(--purple-light);">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <div style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</div>
+                        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
+                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                        </div>
+                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="display:inline-block;background:#e8e0f0;padding:2px 12px;border-radius:12px;font-size:12px;color:var(--text-muted);">⏱️ ${session.duration || 0}h</span>
+                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>' : ''}
+                        <span style="font-size:12px;color:var(--text-muted);">👥 ${attendeeCount}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    pageContent.innerHTML = html;
+
+    // ─── Click to go to session detail ───────────────────
+    document.querySelectorAll('.session-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const id = this.dataset.id;
+            window.location.href = `session-detail.html?id=${id}`;
+        });
+    });
 }
 
 // ─── Export ────────────────────────────────────────────
