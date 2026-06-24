@@ -74,6 +74,7 @@
             cursor: pointer;
         }
 
+        /* ─── Person Icon Avatar (clickable) ─── */
         .person-avatar {
             width: 56px;
             height: 56px;
@@ -85,7 +86,7 @@
             position: relative;
             flex-shrink: 0;
             margin-bottom: 8px;
-            border: 2px solid var(--orange-light);
+            /* border removed as requested */
             transition: transform 0.2s;
         }
         .person-avatar:hover {
@@ -189,39 +190,6 @@
             color: var(--text-muted);
             font-size: 16px;
             margin-top: 4px;
-        }
-
-        .header-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            flex-shrink: 0;
-            border: 2px solid var(--orange-light);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .header-avatar:hover {
-            transform: scale(1.08);
-        }
-        .header-avatar .head {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: white;
-            position: absolute;
-            top: 8px;
-        }
-        .header-avatar .body {
-            width: 20px;
-            height: 12px;
-            border-radius: 50% 50% 0 0;
-            background: white;
-            position: absolute;
-            bottom: 7px;
         }
 
         /* ===== STATS CARDS ===== */
@@ -563,7 +531,7 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a href="#" class="active" data-view="dashboard">📊 <span>Dashboard</span></a>
+        <a href="#" class="active" data-view="dashboard">🏕️ <span>Campsite</span></a>
         <a href="#" data-view="membership">🏅 <span>Membership</span></a>
         <a href="#" data-view="second">⭐ <span>Second Class</span></a>
         <a href="#" data-view="first">🌟 <span>First Class</span></a>
@@ -582,15 +550,10 @@
     <!-- ===== HEADER ===== -->
     <div class="header">
         <div class="header-left">
-            <h1>Good morning, <span id="scout-name">Scout</span>! 👋</h1>
-            <p id="scout-subtitle">welcome back</p>
+            <h1 id="page-heading">Good morning, <span id="scout-name">Scout</span>! 👋</h1>
+            <p id="scout-subtitle">Welcome to your Campsite</p>
         </div>
-        <div class="header-right">
-            <div class="header-avatar" id="header-avatar" style="background:var(--orange);">
-                <div class="head"></div>
-                <div class="body"></div>
-            </div>
-        </div>
+        <!-- Header avatar REMOVED as requested -->
     </div>
 
     <!-- ===== DYNAMIC CONTENT ===== -->
@@ -600,7 +563,7 @@
 
 <!-- ===== BOTTOM NAV (mobile) ===== -->
 <div class="bottom-nav" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--purple-dark); padding:10px 0; justify-content:space-around; z-index:1000; border-top:1px solid rgba(255,255,255,0.1);">
-    <a href="#" class="active" data-view="dashboard" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>📊</span><span style="font-size:9px;">Home</span></a>
+    <a href="#" class="active" data-view="dashboard" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🏕️</span><span style="font-size:9px;">Campsite</span></a>
     <a href="#" data-view="membership" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🏅</span><span style="font-size:9px;">Membership</span></a>
     <a href="#" data-view="second" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>⭐</span><span style="font-size:9px;">Second</span></a>
     <a href="#" data-view="first" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🌟</span><span style="font-size:9px;">First</span></a>
