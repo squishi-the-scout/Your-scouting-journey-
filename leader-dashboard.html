@@ -6,43 +6,82 @@
     <title>Leader Dashboard — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--purple-dark);
-            padding: 8px 0;
-            justify-content: space-around;
-            z-index: 1000;
-            border-top: 1px solid rgba(255,255,255,0.1);
+        /* ===== LEADER DASHBOARD — GREEN THEME ===== */
+        :root {
+            --green-primary: #2e7d32;
+            --green-primary-dark: #1b5e20;
+            --green-primary-light: #4caf50;
+            --green-secondary: #81c784;
+            --green-secondary-light: #a5d6a7;
+            --green-background: #f0f7f0;
+            --green-mint: #e8f5e9;
+            --gold: #f9a825;
+            --gold-light: #ffd54f;
+            --text-dark: #1b3a1b;
+            --text-muted: #5a7a5a;
+            --card-bg: #ffffff;
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
         }
-        .bottom-nav a {
-            color: #c4b8d4;
-            font-size: 18px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--green-background);
+            color: var(--text-dark);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            width: 220px;
+            background: var(--text-dark);
+            color: #c8e6c9;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: white;
+        }
+        .sidebar-brand span {
+            color: var(--gold-light);
+        }
+
+        .sidebar-profile {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 2px;
-            text-decoration: none;
-            padding: 4px 8px;
-            border-radius: 8px;
-        }
-        .bottom-nav a.active {
-            color: white;
-            background: rgba(255,255,255,0.1);
-        }
-        .bottom-nav a span {
-            font-size: 9px;
+            padding: 16px 0 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 20px;
+            cursor: pointer;
         }
 
-        /* ─── Person Icon Avatar (blue for leaders) ─── */
         .person-avatar {
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: #3498db;
+            background: var(--green-primary-light);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -71,6 +110,88 @@
             bottom: 10px;
         }
 
+        .sidebar-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8f5e9;
+        }
+        .sidebar-role {
+            font-size: 12px;
+            color: var(--green-secondary);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .sidebar-nav a {
+            color: #a5d6a7;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-nav a .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.06);
+            color: white;
+        }
+        .sidebar-nav a.active {
+            background: var(--green-primary);
+            color: white;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .sidebar-footer a {
+            color: #a5d6a7;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .sidebar-footer a .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .sidebar-footer a:hover {
+            background: rgba(255,255,255,0.06);
+            color: white;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            flex: 1;
+            padding: 32px 40px;
+        }
+
+        /* ===== HEADER ===== */
         .header {
             display: flex;
             justify-content: space-between;
@@ -80,7 +201,7 @@
         .header-left h1 {
             font-size: 32px;
             font-weight: 700;
-            color: var(--purple-dark);
+            color: var(--text-dark);
             margin: 0;
         }
         .header-left p {
@@ -89,23 +210,372 @@
             margin-top: 4px;
         }
 
+        /* ===== BADGE ===== */
         .pending-badge {
-            background: #007bff;
-            color: white;
+            background: var(--gold);
+            color: var(--text-dark);
             border-radius: 50%;
             padding: 2px 8px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             min-width: 20px;
             display: inline-block;
             text-align: center;
         }
 
+        /* ===== STAGNATION BANNER ===== */
+        .stagnation-banner {
+            background: #fff8e1;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--gold);
+        }
+        .stagnation-banner .title {
+            font-weight: 600;
+            color: #795548;
+        }
+        .stagnation-banner .subtitle {
+            font-size: 12px;
+            color: #795548;
+        }
+        .stagnation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: white;
+            border-radius: 8px;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .stagnation-item:hover {
+            background: #f5f5f5;
+        }
+        .stagnation-item .scout-name {
+            font-weight: 500;
+        }
+        .stagnation-item .scout-detail {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stagnation-item .status-badge {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .stagnation-item .status-badge.inactive {
+            color: #f39c12;
+        }
+        .stagnation-item .status-badge.critical {
+            color: #e74c3c;
+        }
+
+        /* ===== SUCCESS BANNER ===== */
+        .success-banner {
+            background: #e8f5e9;
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--green-primary);
+            color: var(--text-dark);
+        }
+
+        /* ===== SCOUT CARD ===== */
+        .scout-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .scout-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .scout-card .name {
+            font-weight: 600;
+            font-size: 18px;
+            color: var(--text-dark);
+        }
+        .scout-card .role-tag {
+            font-size: 12px;
+            background: var(--green-mint);
+            padding: 2px 10px;
+            border-radius: 12px;
+            color: var(--text-muted);
+        }
+        .scout-card .meta {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+        .scout-card .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .scout-card .progress-bar {
+            background: #e8e0f0;
+            border-radius: 20px;
+            height: 4px;
+            overflow: hidden;
+        }
+        .scout-card .progress-bar .fill {
+            background: var(--green-primary);
+            height: 100%;
+            border-radius: 20px;
+        }
+        .scout-card .note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-style: italic;
+            border-top: 1px solid #e8e0f0;
+            padding-top: 8px;
+        }
+
+        /* ===== SESSION CARD ===== */
+        .session-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid var(--green-primary-light);
+        }
+        .session-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .session-card .session-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        .session-card .session-meta {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .session-card .session-status {
+            font-size: 11px;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            color: white;
+        }
+        .session-card .session-status.today {
+            background: var(--green-primary);
+        }
+        .session-card .session-status.upcoming {
+            background: #007bff;
+        }
+        .session-card .session-status.completed {
+            background: #6c757d;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-primary {
+            background: var(--green-primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: var(--green-primary-dark);
+        }
+
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+
+        .btn-new-session {
+            background: var(--gold);
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(249,168,37,0.3);
+        }
+        .btn-new-session:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(249,168,37,0.4);
+        }
+
+        /* ===== STAT CARD ===== */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stat-card.green .number { color: var(--green-primary); }
+        .stat-card.gold .number { color: var(--gold); }
+        .stat-card.mint .number { color: var(--green-secondary); }
+
+        /* ===== PENDING ITEM ===== */
+        .pending-item {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-left: 4px solid var(--green-primary-light);
+        }
+        .pending-item .color-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+        }
+        .pending-item .badge-label {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 8px;
+        }
+        .pending-item .req-name {
+            font-weight: 500;
+        }
+        .pending-item .scout-name {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .approve-btn {
+            background: var(--green-primary);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .approve-btn:hover {
+            background: var(--green-primary-dark);
+        }
+
+        .reject-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .reject-btn:hover {
+            background: #c0392b;
+        }
+
+        /* ===== COLOR KEY ===== */
+        .color-key {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .color-key .key-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+        }
+        .color-key .key-item.membership { background: #7bcb7b; }
+        .color-key .key-item.second { background: #4caf50; }
+        .color-key .key-item.first { background: #2e7d32; }
+        .color-key .key-item.badges { background: #00897b; }
+        .color-key .key-item.promo { background: linear-gradient(135deg, #b8860b, #6b8e23); }
+
+        /* ===== MOBILE ===== */
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { padding: 16px; padding-bottom: 80px; }
             .bottom-nav { display: flex !important; }
             .header-left h1 { font-size: 22px; }
+            .scout-card { padding: 16px; }
+        }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--text-dark);
+            padding: 8px 0;
+            justify-content: space-around;
+            z-index: 1000;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .bottom-nav a {
+            color: #a5d6a7;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            text-decoration: none;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .bottom-nav a.active {
+            color: white;
+            background: rgba(255,255,255,0.06);
+        }
+        .bottom-nav a span {
+            font-size: 9px;
+        }
+        .bottom-nav a .nav-icon {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
         }
     </style>
 </head>
@@ -126,31 +596,49 @@
 
     <nav class="sidebar-nav">
         <a href="#" class="active" data-view="dashboard">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            <span>🏕️ Home</span>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            <span>Home</span>
         </a>
         <a href="#" data-view="scouts">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
             <span>All Scouts</span>
         </a>
         <a href="#" data-view="pending">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+            </svg>
             <span>Pending</span>
             <span class="pending-badge" id="pending-badge">0</span>
         </a>
         <a href="#" data-view="sessions">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
             <span>Sessions</span>
         </a>
         <a href="#" data-view="export">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
             <span>Export</span>
         </a>
     </nav>
 
     <div class="sidebar-footer">
         <a href="#" id="logout-btn">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
             <span>Logout</span>
         </a>
     </div>
@@ -158,36 +646,49 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
-    <!-- ===== HEADER ===== -->
     <div class="header">
         <div class="header-left">
-            <h1 id="page-heading">Good morning, <span id="leader-name">Leader</span>! 👋</h1>
+            <h1 id="page-heading">Good morning, <span id="leader-name">Leader</span>!</h1>
             <p id="page-subtitle">Welcome to your Home</p>
         </div>
     </div>
     <div id="page-content"></div>
 </div>
 
-<!-- ===== BOTTOM NAV (mobile) ===== -->
+<!-- ===== BOTTOM NAV ===== -->
 <div class="bottom-nav">
     <a href="#" class="active" data-view="dashboard">
-        <span>🏕️</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
         <span>Home</span>
     </a>
     <a href="#" data-view="scouts">
-        <span>👥</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
         <span>Scouts</span>
     </a>
     <a href="#" data-view="pending">
-        <span>⏳</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+        </svg>
         <span>Pending</span>
     </a>
     <a href="#" data-view="sessions">
-        <span>📋</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
         <span>Sessions</span>
     </a>
     <a href="#" data-view="export">
-        <span>📤</span>
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
         <span>Export</span>
     </a>
 </div>
