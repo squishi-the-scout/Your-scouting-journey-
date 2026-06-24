@@ -241,7 +241,6 @@ function renderDashboard() {
         if (promo) readyForPromotion.push({ scout, promo });
     }
 
-    // ─── Calculate total service hours ─────────────────────
     let totalServiceHours = 0;
     for (const session of allSessions) {
         totalServiceHours += session.duration || 0;
@@ -425,7 +424,6 @@ async function renderScoutProfile(email) {
             <button id="back-to-scouts" style="background:none;border:none;color:var(--purple);font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px;">← Back to All Scouts</button>
         </div>
 
-        <!-- Personal Info -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;">
                 <div>
@@ -460,7 +458,6 @@ async function renderScoutProfile(email) {
             ` : ''}
         </div>
 
-        <!-- Leadership Roles -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">⭐ Leadership Roles</h3>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
@@ -471,7 +468,6 @@ async function renderScoutProfile(email) {
             <div id="role-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
         </div>
 
-        <!-- Badge Progress -->
         <div style="margin-bottom:20px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">🏅 Badge Progress</h3>
     `;
@@ -526,7 +522,6 @@ async function renderScoutProfile(email) {
     html += `
         </div>
 
-        <!-- Attendance & Sessions -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">📋 Attendance & Sessions</h3>
             <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
@@ -545,13 +540,11 @@ async function renderScoutProfile(email) {
 
     pageContent.innerHTML = html;
 
-    // ─── Back button ──────────────────────────────────────
     document.getElementById('back-to-scouts').addEventListener('click', () => {
         selectedScout = null;
         renderView();
     });
 
-    // ─── Promote button ──────────────────────────────────
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -573,7 +566,6 @@ async function renderScoutProfile(email) {
         });
     });
 
-    // ─── Role buttons ─────────────────────────────────────
     document.querySelectorAll('.role-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const scoutEmail = this.dataset.email;
@@ -592,7 +584,6 @@ async function renderScoutProfile(email) {
         });
     });
 
-    // ─── Approve requirement buttons ─────────────────────
     document.querySelectorAll('.approve-req-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const scoutEmail = this.dataset.email;
@@ -731,7 +722,6 @@ function renderPendingApprovals() {
     html += '</div>';
     pageContent.innerHTML = html;
 
-    // ─── Approve button ──────────────────────────────────
     document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -749,7 +739,6 @@ function renderPendingApprovals() {
         });
     });
 
-    // ─── Reject button ───────────────────────────────────
     document.querySelectorAll('.reject-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -762,7 +751,6 @@ function renderPendingApprovals() {
         });
     });
 
-    // ─── Promote button ──────────────────────────────────
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const email = this.dataset.email;
@@ -785,9 +773,8 @@ function renderPendingApprovals() {
     });
 }
 
-// ─── Sessions View (INLINE - NOT EXTERNAL) ──────────────
+// ─── Sessions View ──────────────────────────────────────
 function renderSessions() {
-    // ─── Calculate stats ──────────────────────────────────
     let totalSessions = allSessions.length;
     let totalHours = 0;
     let totalAttendees = new Set();
@@ -809,25 +796,21 @@ function renderSessions() {
                 <h2 style="color:var(--purple-dark);margin:0;">📋 Sessions</h2>
                 <p style="color:var(--text-muted);margin-top:4px;">All scout sessions</p>
             </div>
-            <a href="new-session.html" style="background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;">➕ New Session</a>
+            <a href="new-session.html" class="new-session-btn" style="background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;">➕ New Session</a>
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
             <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:28px;font-weight:700;color:var(--purple);">${totalSessions}</div>
                 <div style="font-size:13px;color:var(--text-muted);">Total Sessions</div>
             </div>
             <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:28px;font-weight:700;color:#4caf50;">${totalHours}</div>
-                <div style="font-size:13px;color:var(--text-muted);">Total Hours</div>
+                <div style="font-size:13px;color:var(--text-muted);">Scouting Hours</div>
             </div>
             <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${totalAttendees.size}</div>
                 <div style="font-size:13px;color:var(--text-muted);">Total Attendees</div>
-            </div>
-            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:28px;font-weight:700;color:var(--orange);">${allSessions.length}</div>
-                <div style="font-size:13px;color:var(--text-muted);">Sessions</div>
             </div>
         </div>
     `;
@@ -844,35 +827,56 @@ function renderSessions() {
         return;
     }
 
-    // Sort sessions by date (newest first)
     const sortedSessions = [...allSessions].sort((a, b) => {
         if (a.date > b.date) return -1;
         if (a.date < b.date) return 1;
         return 0;
     });
 
-    html += `
-        <div style="display:flex;flex-direction:column;gap:12px;">
-    `;
+    html += `<div style="display:flex;flex-direction:column;gap:12px;">`;
 
     for (const session of sortedSessions) {
         const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
         const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
+        
+        // Status badge
+        const today = new Date().toISOString().split('T')[0];
+        let statusBadge = '';
+        let statusColor = '';
+        if (session.date === today) {
+            statusBadge = 'Today';
+            statusColor = '#28a745';
+        } else if (session.date > today) {
+            statusBadge = 'Upcoming';
+            statusColor = '#007bff';
+        } else {
+            statusBadge = 'Completed';
+            statusColor = '#6c757d';
+        }
 
         html += `
-            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid var(--purple-light);">
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
-                    <div>
-                        <div style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</div>
+                    <div style="flex:1;min-width:200px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</span>
+                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
+                        </div>
                         <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
                             📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
                         </div>
                         ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <span style="display:inline-block;background:#e8e0f0;padding:2px 12px;border-radius:12px;font-size:12px;color:var(--text-muted);">⏱️ ${session.duration || 0}h</span>
-                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>' : ''}
-                        <span style="font-size:12px;color:var(--text-muted);">👥 ${attendeeCount}</span>
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <div style="text-align:center;">
+                            <div style="font-size:20px;font-weight:700;color:var(--purple);">${session.duration || 0}</div>
+                            <div style="font-size:10px;color:var(--text-muted);">hours</div>
+                        </div>
+                        <div style="text-align:center;min-width:45px;">
+                            <div style="font-size:18px;font-weight:600;color:#8fbcbb;">${attendeeCount}</div>
+                            <div style="font-size:10px;color:var(--text-muted);">attended</div>
+                        </div>
+                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;">✅ Attended</span>' : ''}
                     </div>
                 </div>
             </div>
@@ -882,7 +886,6 @@ function renderSessions() {
     html += '</div>';
     pageContent.innerHTML = html;
 
-    // ─── Click to go to session detail ───────────────────
     document.querySelectorAll('.session-card').forEach(card => {
         card.addEventListener('click', function() {
             const id = this.dataset.id;
