@@ -265,7 +265,7 @@ function renderDashboard() {
 
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
+            <div style="font-size:48px;margin-bottom:16px;">🖤</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Campsite is under construction. Check back soon!</p>
 
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
