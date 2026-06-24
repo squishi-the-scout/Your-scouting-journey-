@@ -108,10 +108,6 @@
             color: var(--text-dark);
             margin-top: 4px;
         }
-        .feedback-item .empty {
-            color: var(--text-muted);
-            font-style: italic;
-        }
         .leader-notes-area {
             width: 100%;
             padding: 12px;
@@ -156,9 +152,37 @@
             color: #8baa9a;
             text-decoration: none;
             font-weight: 500;
+            cursor: pointer;
         }
         .back-link:hover {
             color: var(--purple-dark);
+        }
+        .attendance-stats {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .attendance-stats .stat {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .attendance-stats .stat strong {
+            color: var(--text-dark);
+        }
+        .mark-all-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        .mark-all-btn:hover {
+            background: #218838;
         }
         @media (max-width: 768px) {
             .meta-grid {
@@ -169,7 +193,7 @@
 </head>
 <body>
     <div class="container" style="max-width:800px;margin:0 auto;padding:32px 20px;">
-        <a href="sessions.html" class="back-link">← Back to Sessions</a>
+        <span class="back-link" id="back-link">← Back to Sessions</span>
 
         <div id="session-detail">
             <div style="text-align:center;padding:40px 0;">
@@ -200,8 +224,12 @@
         const userEmail = `${currentUser.username}@gis-scout.local`;
         const container = document.getElementById('session-detail');
 
-        // ─── Load all scouts for attendance ──────────────
         let allScouts = [];
+
+        // ─── Fix back button ──────────────────────────────────
+        document.getElementById('back-link').addEventListener('click', function() {
+            window.location.href = 'leader-dashboard.html#sessions';
+        });
 
         async function loadScouts() {
             const snap = await getDocs(collection(db, 'users'));
@@ -214,10 +242,11 @@
             });
         }
 
-        // ─── Render ──────────────────────────────────────
         function renderSession(session) {
             const isAttending = session.attendance ? session.attendance[userEmail] === true : false;
             const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
+            const totalScouts = allScouts.length;
+            const attendancePercent = totalScouts > 0 ? Math.round((attendeeCount / totalScouts) * 100) : 0;
 
             let html = `
                 <div class="detail-section">
@@ -231,12 +260,12 @@
                     ${session.purpose ? `<p style="margin-top:16px;color:var(--text-dark);">📝 ${session.purpose}</p>` : ''}
                     <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
                         <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">👥 ${attendeeCount} attendees</span>
+                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">📊 ${attendancePercent}% attendance</span>
                         ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:20px;font-size:13px;">✅ You attended</span>' : ''}
                     </div>
                 </div>
             `;
 
-            // ─── Leader Notes (Leaders only) ──────────────
             if (isLeader) {
                 html += `
                     <div class="detail-section">
@@ -248,11 +277,13 @@
                 `;
             }
 
-            // ─── Attendance (Leaders only) ──────────────────
             if (isLeader) {
                 html += `
                     <div class="detail-section">
-                        <h3>👥 Attendance (${allScouts.length} scouts)</h3>
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                            <h3 style="margin:0;">👥 Attendance (${totalScouts} scouts)</h3>
+                            <button class="mark-all-btn" id="mark-all-present">✅ Mark All Present</button>
+                        </div>
                         <div id="attendance-list">
                             ${allScouts.map(scout => {
                                 const present = session.attendance ? session.attendance[scout.email] === true : false;
@@ -261,149 +292,4 @@
                                         <span class="name">${scout.fullName || scout.username}</span>
                                         <div style="display:flex;align-items:center;gap:8px;">
                                             <span class="status ${present ? 'present' : 'absent'}">${present ? '✅ Present' : '❌ Absent'}</span>
-                                            <button class="toggle-btn ${present ? 'present' : 'absent'}" data-email="${scout.email}">${present ? 'Mark Absent' : 'Mark Present'}</button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <div id="attendance-message" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
-                    </div>
-                `;
-            }
-
-            // ─── Scout Feedback ─────────────────────────────
-            html += `
-                <div class="detail-section">
-                    <h3>💬 Scout Feedback</h3>
-                    ${isLeader ? `
-                        ${Object.keys(session.scoutNotes || {}).length === 0 ? '<p style="color:var(--text-muted);">No feedback submitted yet.</p>' : ''}
-                        ${Object.entries(session.scoutNotes || {}).map(([email, note]) => {
-                            const scout = allScouts.find(s => s.email === email);
-                            const name = scout ? scout.fullName || scout.username : email;
-                            return `
-                                <div class="feedback-item">
-                                    <div class="scout-name">${name}</div>
-                                    <div class="feedback-text">${note}</div>
-                                </div>
-                            `;
-                        }).join('')}
-                    ` : `
-                        <div style="margin-bottom:12px;">
-                            <label style="font-weight:500;display:block;margin-bottom:6px;">Your Feedback</label>
-                            <textarea id="scout-feedback" class="scout-feedback-area" placeholder="What did you learn? Any suggestions?">${session.scoutNotes ? session.scoutNotes[userEmail] || '' : ''}</textarea>
-                            <button id="submit-feedback" class="btn-primary" style="margin-top:12px;">📤 Submit Feedback</button>
-                            <div id="feedback-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
-                        </div>
-                        ${Object.keys(session.scoutNotes || {}).length > 1 ? `
-                            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
-                                <div style="font-weight:500;margin-bottom:8px;">Other Scouts Said:</div>
-                                ${Object.entries(session.scoutNotes || {}).filter(([email]) => email !== userEmail).map(([email, note]) => {
-                                    const scout = allScouts.find(s => s.email === email);
-                                    const name = scout ? scout.fullName || scout.username : email;
-                                    return `
-                                        <div class="feedback-item">
-                                            <div class="scout-name">${name}</div>
-                                            <div class="feedback-text">${note}</div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                    `}
-                </div>
-            `;
-
-            container.innerHTML = html;
-
-            // ─── Event Listeners ──────────────────────────
-
-            // Leader Notes
-            if (isLeader) {
-                document.getElementById('save-leader-notes')?.addEventListener('click', async function() {
-                    const notes = document.getElementById('leader-notes').value.trim();
-                    try {
-                        await updateDoc(doc(db, 'sessions', sessionId), {
-                            leaderNotes: notes,
-                            lastEditedBy: currentUser.username,
-                            lastEditedAt: new Date().toISOString()
-                        });
-                        document.getElementById('leader-notes-message').textContent = '✅ Notes saved!';
-                        document.getElementById('leader-notes-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('leader-notes-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('leader-notes-message').style.color = '#e74c3c';
-                    }
-                });
-            }
-
-            // Attendance Toggle
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const email = this.dataset.email;
-                    const currentPresent = this.textContent === 'Mark Absent';
-                    const newStatus = !currentPresent;
-
-                    try {
-                        const docRef = doc(db, 'sessions', sessionId);
-                        const docSnap = await getDoc(docRef);
-                        const data = docSnap.data();
-                        const attendance = data.attendance || {};
-                        attendance[email] = newStatus;
-                        await updateDoc(docRef, { attendance });
-                        document.getElementById('attendance-message').textContent = `✅ ${email} marked ${newStatus ? 'present' : 'absent'}`;
-                        document.getElementById('attendance-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('attendance-message').style.color = '#e74c3c';
-                    }
-                });
-            });
-
-            // Scout Feedback
-            if (!isLeader) {
-                document.getElementById('submit-feedback')?.addEventListener('click', async function() {
-                    const feedback = document.getElementById('scout-feedback').value.trim();
-                    if (!feedback) {
-                        document.getElementById('feedback-message').textContent = '⚠️ Please write something.';
-                        document.getElementById('feedback-message').style.color = '#e67e22';
-                        return;
-                    }
-
-                    try {
-                        const docRef = doc(db, 'sessions', sessionId);
-                        const docSnap = await getDoc(docRef);
-                        const data = docSnap.data();
-                        const scoutNotes = data.scoutNotes || {};
-                        scoutNotes[userEmail] = feedback;
-                        await updateDoc(docRef, { scoutNotes });
-                        document.getElementById('feedback-message').textContent = '✅ Feedback submitted!';
-                        document.getElementById('feedback-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('feedback-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('feedback-message').style.color = '#e74c3c';
-                    }
-                });
-            }
-        }
-
-        // ─── Real-time session listener ──────────────────
-        async function init() {
-            await loadScouts();
-
-            onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
-                if (!docSnap.exists()) {
-                    container.innerHTML = `<p style="color:#e74c3c;">Session not found.</p>`;
-                    return;
-                }
-                renderSession({ id: docSnap.id, ...docSnap.data() });
-            }, (error) => {
-                console.error('Session listener error:', error);
-                container.innerHTML = `<p style="color:#e74c3c;">Error loading session: ${error.message}</p>`;
-            });
-        }
-
-        init();
-    </script>
-</body>
-</html>
+                                            <button class="toggle-btn ${present ? 'present' : 'absent'}" data-email="${scout.email}">${
