@@ -63,10 +63,13 @@ if (!currentUser || currentUser.role !== 'leader') {
 
 const pageContent = document.getElementById('page-content');
 const sidebarName = document.getElementById('sidebar-name');
+const sidebarRole = document.getElementById('sidebar-role');
 const pageHeading = document.getElementById('page-heading');
 const pageSubtitle = document.getElementById('page-subtitle');
+const pendingBadge = document.getElementById('pending-badge');
 const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 if (sidebarName) sidebarName.textContent = displayName;
+if (sidebarRole) sidebarRole.textContent = currentUser.role || 'Leader';
 
 let allScouts = [];
 let allStatus = {};
@@ -114,14 +117,12 @@ function getBadgesForRank(rank) {
     return badges;
 }
 
-// ─── Get latest badge for scout card ────────────────────
 function getLatestBadge(rank) {
     if (rank === 'First Class') return { key: 'firstClass', label: 'First Class', reqs: firstClassRequirements };
     if (rank === 'Second Class') return { key: 'secondClass', label: 'Second Class', reqs: secondClassRequirements };
     return { key: 'membership', label: 'Membership', reqs: membershipRequirements };
 }
 
-// ─── Check if scout is ready for promotion ──────────────
 function isReadyForPromotion(email) {
     const status = allStatus[email] || {};
     const scout = allScouts.find(s => s.email === email);
@@ -151,7 +152,18 @@ function isReadyForPromotion(email) {
     return null;
 }
 
-// ─── Real-time Users Listener ──────────────────────────
+function updatePendingBadge() {
+    if (!pendingBadge) return;
+    let count = 0;
+    for (const scout of allScouts) {
+        const status = allStatus[scout.email] || {};
+        for (const key in status) {
+            if (status[key].status === 'pending') count++;
+        }
+    }
+    pendingBadge.textContent = count;
+}
+
 function listenToUsers() {
     if (usersUnsubscribe) {
         usersUnsubscribe();
@@ -166,6 +178,7 @@ function listenToUsers() {
                 allScouts.push({ email: doc.id, ...data });
             }
         });
+        updatePendingBadge();
         if (!selectedScout) {
             renderView();
         } else {
@@ -176,7 +189,6 @@ function listenToUsers() {
     });
 }
 
-// ─── Real-time Status Listener ─────────────────────────
 function listenToStatus() {
     if (statusUnsubscribe) {
         statusUnsubscribe();
@@ -188,6 +200,7 @@ function listenToStatus() {
         snapshot.forEach(doc => {
             allStatus[doc.id] = doc.data();
         });
+        updatePendingBadge();
         if (!selectedScout) {
             renderView();
         } else {
@@ -198,7 +211,6 @@ function listenToStatus() {
     });
 }
 
-// ─── Real-time Sessions Listener ──────────────────────
 function listenToSessions() {
     if (sessionsUnsubscribe) {
         sessionsUnsubscribe();
@@ -218,7 +230,6 @@ function listenToSessions() {
     });
 }
 
-// ─── Update page heading ──────────────────────────────
 function updatePageHeading() {
     if (!pageHeading) return;
     
@@ -237,10 +248,12 @@ function updatePageHeading() {
     } else if (currentView === 'export') {
         pageHeading.textContent = '📤 Export Data';
         if (pageSubtitle) pageSubtitle.textContent = 'Export scout progress data';
+    } else if (currentView === 'profile') {
+        pageHeading.textContent = '👤 My Profile';
+        if (pageSubtitle) pageSubtitle.textContent = 'Manage your personal information';
     }
 }
 
-// ─── Render Views ──────────────────────────────────────
 function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
@@ -256,48 +269,19 @@ function renderView() {
     else if (currentView === 'pending') renderPendingApprovals();
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'export') renderExport();
+    else if (currentView === 'profile') renderLeaderProfile();
 }
 
-// ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    let totalScouts = allScouts.length;
-    let totalPending = 0;
-    let readyForPromotion = [];
-
-    for (const scout of allScouts) {
-        const status = allStatus[scout.email] || {};
-        for (const key in status) {
-            if (status[key].status === 'pending') totalPending++;
-        }
-        const promo = isReadyForPromotion(scout.email);
-        if (promo) readyForPromotion.push({ scout, promo });
-    }
-
-    let totalServiceHours = 0;
-    for (const session of allSessions) {
-        totalServiceHours += session.duration || 0;
-    }
-
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
             <div style="font-size:48px;margin-bottom:16px;">❤️</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Home is under construction. Check back soon!</p>
         </div>
     `;
-
     pageContent.innerHTML = html;
-
-    document.querySelectorAll('a[data-view]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            currentView = this.dataset.view;
-            selectedScout = null;
-            renderView();
-        });
-    });
 }
 
-// ─── All Scouts ──────────────────────────────────────────
 function renderAllScouts() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
@@ -313,7 +297,6 @@ function renderAllScouts() {
         const rank = scout.rank || 'Membership';
         const role = scout.scoutRole || 'Scout';
 
-        // Get ONLY the latest badge
         const latestBadge = getLatestBadge(rank);
         let done = 0;
         for (const req of latestBadge.reqs) {
@@ -323,7 +306,6 @@ function renderAllScouts() {
         const total = latestBadge.reqs.length;
         const pct = total > 0 ? Math.round((done / total) * 100) : 0;
         
-        // Check if scout has a note
         const noteKey = `${scout.email}_note`;
         const scoutNote = scout.note || '';
 
@@ -361,7 +343,6 @@ function renderAllScouts() {
     });
 }
 
-// ─── Scout Profile ──────────────────────────────────────
 async function renderScoutProfile(email) {
     const scout = allScouts.find(s => s.email === email);
     if (!scout) {
@@ -447,7 +428,6 @@ async function renderScoutProfile(email) {
             };
             const icon = statusIcons[statusText] || '🚩';
             
-            // Check if report exists
             const reportKey = `${badge.key}_${req}_report`;
             const hasReport = status[reportKey] && (status[reportKey].note || (status[reportKey].images && status[reportKey].images.length > 0));
             
@@ -486,7 +466,6 @@ async function renderScoutProfile(email) {
     html += `
         </div>
 
-        <!-- Leader Note Section -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">📝 Leader Note</h3>
             <textarea id="leader-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d6ec;font-family:inherit;font-size:14px;min-height:80px;resize:vertical;">${scout.note || ''}</textarea>
@@ -517,14 +496,12 @@ async function renderScoutProfile(email) {
         renderView();
     });
 
-    // ─── Save Leader Note ──────────────────────────────────
     document.getElementById('save-leader-note').addEventListener('click', async function() {
         const note = document.getElementById('leader-note').value.trim();
         const message = document.getElementById('note-message');
         
         try {
             await setDoc(doc(db, 'users', email), { note: note }, { merge: true });
-            // Update local data
             const scout = allScouts.find(s => s.email === email);
             if (scout) scout.note = note;
             message.textContent = '✅ Note saved successfully!';
@@ -595,6 +572,7 @@ async function renderScoutProfile(email) {
                 statusSnap.forEach(doc => {
                     allStatus[doc.id] = doc.data();
                 });
+                updatePendingBadge();
                 renderScoutProfile(scoutEmail);
             } catch (error) {
                 alert('Error approving: ' + error.message);
@@ -603,7 +581,6 @@ async function renderScoutProfile(email) {
     });
 }
 
-// ─── Pending Approvals ──────────────────────────────────
 function renderPendingApprovals() {
     let pendingItems = [];
     let readyForPromotion = [];
@@ -650,7 +627,6 @@ function renderPendingApprovals() {
 
     const totalPending = pendingItems.length + readyForPromotion.length;
 
-    // ─── ALWAYS show the color key ──────────────────────
     let html = `
         <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
             <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#7bcb7b;color:white;font-size:12px;font-weight:500;">Membership</span>
@@ -741,6 +717,7 @@ function renderPendingApprovals() {
             statusSnap.forEach(doc => {
                 allStatus[doc.id] = doc.data();
             });
+            updatePendingBadge();
             renderPendingApprovals();
         });
     });
@@ -760,6 +737,7 @@ function renderPendingApprovals() {
             statusSnap.forEach(doc => {
                 allStatus[doc.id] = doc.data();
             });
+            updatePendingBadge();
             renderPendingApprovals();
         });
     });
@@ -786,7 +764,6 @@ function renderPendingApprovals() {
     });
 }
 
-// ─── Sessions View ──────────────────────────────────────
 function renderSessions() {
     let totalSessions = allSessions.length;
     let totalHours = 0;
@@ -797,12 +774,10 @@ function renderSessions() {
 
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
-            <div>
-                <p style="color:var(--text-muted);margin:0;">${totalSessions} sessions · ${totalHours} hours</p>
-            </div>
-            <a href="new-session.html" style="background:var(--orange);color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;box-shadow:0 2px 8px rgba(230,126,34,0.3);transition:transform 0.2s,box-shadow 0.2s;" 
-               onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(230,126,34,0.4)';"
-               onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(230,126,34,0.3)';">➕ New Session</a>
+            <div></div>
+            <a href="new-session.html" style="background:#007bff;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;box-shadow:0 2px 8px rgba(0,123,255,0.3);transition:transform 0.2s,box-shadow 0.2s;" 
+               onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(0,123,255,0.4)';"
+               onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(0,123,255,0.3)';">➕ New Session</a>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;">
@@ -895,7 +870,6 @@ function renderSessions() {
     });
 }
 
-// ─── Export ────────────────────────────────────────────
 function renderExport() {
     pageContent.innerHTML = `
         <h2 style="color:var(--purple-dark);margin-bottom:24px;">📤 Export Data</h2>
@@ -904,6 +878,96 @@ function renderExport() {
             <p style="color:var(--text-muted);font-size:16px;">Export feature coming soon.</p>
         </div>
     `;
+}
+
+// ─── Leader Profile ──────────────────────────────────────
+function renderLeaderProfile() {
+    let html = `
+        <div style="max-width:600px;margin:0 auto;">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+                <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
+                <h2 style="color:var(--purple-dark);margin:0;">👤 My Profile</h2>
+            </div>
+            <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+                    <div class="person-avatar" style="width:80px;height:80px;background:#3498db;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
+                        <div class="head" style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
+                        <div class="body" style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${currentUser.fullName || displayName}</div>
+                        <div style="color:var(--text-muted);">${currentUser.role || 'Leader'}</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Full Name</label>
+                        <input type="text" id="leader-fullname" value="${currentUser.fullName || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Date of Birth</label>
+                        <input type="date" id="leader-dob" value="${currentUser.dob || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                    </div>
+                    <div>
+                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Role</label>
+                        <select id="leader-role" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            <option value="Leader" ${currentUser.role === 'Leader' ? 'selected' : ''}>Leader</option>
+                            <option value="Rover Leader" ${currentUser.role === 'Rover Leader' ? 'selected' : ''}>Rover Leader</option>
+                            <option value="GSL" ${currentUser.role === 'GSL' ? 'selected' : ''}>GSL</option>
+                            <option value="AGSL" ${currentUser.role === 'AGSL' ? 'selected' : ''}>AGSL</option>
+                            <option value="Advisor" ${currentUser.role === 'Advisor' ? 'selected' : ''}>Advisor</option>
+                            <option value="Section Head" ${currentUser.role === 'Section Head' ? 'selected' : ''}>Section Head</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="save-leader-profile" style="margin-top:16px;background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">💾 Save Profile</button>
+                <div id="profile-message" style="margin-top:12px;text-align:center;color:var(--text-muted);"></div>
+            </div>
+        </div>
+    `;
+    
+    pageContent.innerHTML = html;
+    
+    document.getElementById('profile-back').addEventListener('click', () => {
+        currentView = 'dashboard';
+        renderView();
+    });
+    
+    document.getElementById('save-leader-profile').addEventListener('click', async function() {
+        const fullName = document.getElementById('leader-fullname').value.trim();
+        const dob = document.getElementById('leader-dob').value;
+        const role = document.getElementById('leader-role').value;
+        const message = document.getElementById('profile-message');
+        
+        if (!fullName) {
+            message.textContent = '⚠️ Please enter your full name.';
+            message.style.color = '#e67e22';
+            return;
+        }
+        
+        try {
+            await setDoc(doc(db, 'users', currentUser.email), {
+                fullName: fullName,
+                dob: dob || null,
+                role: role
+            }, { merge: true });
+            message.textContent = '✅ Profile saved successfully!';
+            message.style.color = '#4caf50';
+            currentUser.fullName = fullName;
+            currentUser.dob = dob;
+            currentUser.role = role;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            if (sidebarName) sidebarName.textContent = fullName;
+            if (sidebarRole) sidebarRole.textContent = role;
+            setTimeout(() => {
+                currentView = 'dashboard';
+                renderView();
+            }, 1200);
+        } catch (error) {
+            message.textContent = '❌ Error: ' + error.message;
+            message.style.color = '#e74c3c';
+        }
+    });
 }
 
 // ─── Navigation ──────────────────────────────────────────
@@ -918,7 +982,12 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
     });
 });
 
-// ─── Logout ──────────────────────────────────────────────
+document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
+    currentView = 'profile';
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+    renderView();
+});
+
 document.getElementById('logout-btn').addEventListener('click', () => {
     if (usersUnsubscribe) usersUnsubscribe();
     if (statusUnsubscribe) statusUnsubscribe();
@@ -927,7 +996,6 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
-// ─── Init ────────────────────────────────────────────────
 async function init() {
     listenToUsers();
     listenToStatus();
