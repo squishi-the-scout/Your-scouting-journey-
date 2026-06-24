@@ -71,6 +71,7 @@ function listenToStatus() {
     const docRef = doc(db, 'scoutStatus', userEmail);
     statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
         scoutStatus = docSnap.exists() ? docSnap.data() : {};
+        // Re-render current view (except profile and report modal)
         if (currentView !== 'profile' && currentView !== 'reportModal') {
             renderView();
         }
@@ -471,7 +472,6 @@ function renderReportModal() {
         const container = document.getElementById('image-preview-container');
         const message = document.getElementById('report-message');
         
-        // Check if adding these would exceed 5
         if (allImages.length + files.length > 5) {
             message.textContent = '⚠️ Maximum 5 images allowed. You have ' + allImages.length + ' already.';
             message.style.color = '#e67e22';
