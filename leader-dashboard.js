@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, onSnapshot 
+    doc, getDoc, setDoc, collection, getDocs, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ─── HARDCODED REQUIREMENTS ──────────────────────────────
@@ -605,12 +605,13 @@ async function renderScoutProfile(email) {
                 };
                 await setDoc(docRef, data);
                 
-                // Refresh status
+                // Auto-refresh status without re-rendering everything
                 allStatus = {};
                 const statusSnap = await getDocs(collection(db, 'scoutStatus'));
                 statusSnap.forEach(doc => {
                     allStatus[doc.id] = doc.data();
                 });
+                renderScoutProfile(scoutEmail);
             } catch (error) {
                 alert('Error approving: ' + error.message);
             }
