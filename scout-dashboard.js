@@ -1,7 +1,11 @@
 import { auth, db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, getDocs, onSnapshot 
+    doc, getDoc, setDoc, collection, getDocs, onSnapshot, updateDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { 
+    ref, uploadBytes, getDownloadURL, deleteObject 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { storage } from './firebase-config.js';
 import { membershipRequirements } from './data/membership-requirements.js';
 import { secondClassRequirements } from './data/secondclass-requirements.js';
 import { firstClassRequirements } from './data/firstclass-requirements.js';
@@ -48,6 +52,9 @@ let allSessions = [];
 let scoutData = { rank: 'Membership' };
 let statusUnsubscribe = null;
 let sessionsUnsubscribe = null;
+let reportData = {};
+let currentReportTab = '';
+let currentReportReq = '';
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
@@ -68,7 +75,7 @@ function listenToStatus() {
     const docRef = doc(db, 'scoutStatus', userEmail);
     statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
         scoutStatus = docSnap.exists() ? docSnap.data() : {};
-        if (currentView !== 'profile') {
+        if (currentView !== 'profile' && currentView !== 'reportModal') {
             renderView();
         }
     }, (error) => {
@@ -167,6 +174,7 @@ function renderView() {
     else if (currentView === 'badges') renderPlaceholder('Proficiency Badges', 'Start earning badges for your skills!');
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
+    else if (currentView === 'reportModal') renderReportModal();
 }
 
 // ─── Dashboard ──────────────────────────────────────────
@@ -181,7 +189,6 @@ function renderDashboard() {
     const total = membershipRequirements.length;
     const progress = Math.round((completed / total) * 100);
 
-    // ─── Calculate scout's total service hours ─────────────
     let scoutServiceHours = 0;
     for (const session of allSessions) {
         scoutServiceHours += session.duration || 0;
@@ -256,6 +263,15 @@ function renderRequirements(tab, reqs, title) {
                 const data = scoutStatus[key];
                 const status = data ? data.status : 'todo';
                 const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
+                
+                // Get approved info
+                let approvedInfo = '';
+                if (status === 'approved' && data) {
+                    const approvedBy = data.approvedBy || 'Unknown';
+                    const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'Unknown date';
+                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">✅ Approved by ${approvedBy} · ${approvedAt}</div>`;
+                }
+                
                 let actionHtml = '';
                 if (status === 'approved') {
                     actionHtml = `<span class="approved-badge">✓ Completed</span>`;
@@ -264,14 +280,24 @@ function renderRequirements(tab, reqs, title) {
                 } else {
                     actionHtml = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
                 }
+                
+                // Report button
+                const reportKey = `${tab}_${req.name}_report`;
+                const hasReport = scoutStatus[reportKey] && scoutStatus[reportKey].note;
+                const reportBtn = `<button class="report-btn" data-req="${req.name}" data-tab="${tab}" style="background:${hasReport ? '#4caf50' : '#e8e0f0'};color:${hasReport ? 'white' : 'var(--text-dark)'};border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;">${hasReport ? '📄 Report' : '📄 Add Report'}</button>`;
+                
                 return `
                     <div class="req-card">
                         <div class="req-header">
                             <span class="req-title">${req.id}. ${req.name}</span>
                             <span class="req-status-icon">${icon}</span>
                         </div>
+                        ${approvedInfo}
                         <div class="req-actions">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
+                            <div style="display:flex;gap:8px;">
+                                <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
+                                ${reportBtn}
+                            </div>
                             ${actionHtml}
                         </div>
                     </div>
@@ -282,6 +308,7 @@ function renderRequirements(tab, reqs, title) {
 
     pageContent.innerHTML = html;
 
+    // ─── Ready button ─────────────────────────────────────
     document.querySelectorAll('.ready-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -293,6 +320,7 @@ function renderRequirements(tab, reqs, title) {
         });
     });
 
+    // ─── Undo button ─────────────────────────────────────
     document.querySelectorAll('.pending-badge').forEach(badge => {
         badge.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -302,12 +330,289 @@ function renderRequirements(tab, reqs, title) {
             await saveStatus();
         });
     });
+
+    // ─── Report button ─────────────────────────────────────
+    document.querySelectorAll('.report-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentReportTab = this.dataset.tab;
+            currentReportReq = this.dataset.req;
+            currentView = 'reportModal';
+            renderView();
+        });
+    });
+}
+
+// ─── Report Modal ──────────────────────────────────────
+function renderReportModal() {
+    const key = `${currentReportTab}_${currentReportReq}_report`;
+    const report = scoutStatus[key] || { note: '', images: [], updatedAt: null };
+    const reqKey = `${currentReportTab}_${currentReportReq}`;
+    const reqStatus = scoutStatus[reqKey] ? scoutStatus[reqKey].status : 'todo';
+
+    let html = `
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
+            <div style="background:white;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+                
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="color:var(--purple-dark);margin:0;">📄 Report: ${currentReportReq}</h2>
+                    <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:var(--text-muted);">×</button>
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">Your Report Note</label>
+                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d6ec;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;">${report.note || ''}</textarea>
+                </div>
+                
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">Upload Images</label>
+                    <div id="drop-zone" style="border:2px dashed #e0d6ec;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;">
+                        <div style="font-size:40px;margin-bottom:8px;">📸</div>
+                        <p style="color:var(--text-muted);">Drag & drop images here, or click to select</p>
+                        <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
+                    </div>
+                </div>
+                
+                <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                    ${(report.images || []).map((url, index) => `
+                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                            <img src="${url}" style="width:100%;height:100%;object-fit:cover;">
+                            <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div style="display:flex;gap:12px;margin-top:16px;">
+                    <button id="save-report" class="btn-primary" style="flex:1;">💾 Save Report</button>
+                    <button id="cancel-report" class="btn-secondary" style="flex:1;">Cancel</button>
+                </div>
+                
+                <div id="report-message" style="margin-top:12px;font-size:14px;color:var(--text-muted);text-align:center;"></div>
+                ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
+            </div>
+        </div>
+        <style>
+            .btn-primary {
+                background: var(--purple);
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 40px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .btn-primary:hover {
+                background: var(--purple-dark);
+            }
+            .btn-secondary {
+                background: #e8e0f0;
+                color: var(--text-dark);
+                border: none;
+                padding: 12px 24px;
+                border-radius: 40px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+            .btn-secondary:hover {
+                background: #d5cae0;
+            }
+        </style>
+    `;
+
+    pageContent.innerHTML = html;
+
+    // ─── Close modal ─────────────────────────────────────
+    document.getElementById('close-report-modal').addEventListener('click', () => {
+        currentView = currentReportTab === 'membership' ? 'membership' : 
+                     currentReportTab === 'secondClass' ? 'second' : 'first';
+        renderView();
+    });
+    document.getElementById('cancel-report').addEventListener('click', () => {
+        currentView = currentReportTab === 'membership' ? 'membership' : 
+                     currentReportTab === 'secondClass' ? 'second' : 'first';
+        renderView();
+    });
+
+    // ─── Click outside to close ─────────────────────────
+    document.querySelector('.report-modal-overlay')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            currentView = currentReportTab === 'membership' ? 'membership' : 
+                         currentReportTab === 'secondClass' ? 'second' : 'first';
+            renderView();
+        }
+    });
+
+    // ─── Drag & Drop ─────────────────────────────────────
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('image-upload');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--purple)';
+        dropZone.style.background = '#f5f0f8';
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = '#e0d6ec';
+        dropZone.style.background = 'transparent';
+    });
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#e0d6ec';
+        dropZone.style.background = 'transparent';
+        handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    // ─── Handle file upload ─────────────────────────────
+    async function handleFiles(files) {
+        const container = document.getElementById('image-preview-container');
+        const existingImages = report.images || [];
+        
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            
+            try {
+                const storageRef = ref(storage, `reports/${userEmail}/${currentReportTab}/${currentReportReq}/${Date.now()}_${file.name}`);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+                existingImages.push(url);
+                
+                // Update preview
+                const imgDiv = document.createElement('div');
+                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;';
+                imgDiv.innerHTML = `
+                    <img src="${url}" style="width:100%;height:100%;object-fit:cover;">
+                    <button class="remove-image" data-index="${existingImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+                `;
+                container.appendChild(imgDiv);
+                
+                // Update report data
+                report.images = existingImages;
+                
+                // Re-attach remove event
+                imgDiv.querySelector('.remove-image').addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.index);
+                    removeImage(idx);
+                });
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById('report-message').textContent = '❌ Error uploading image: ' + error.message;
+                document.getElementById('report-message').style.color = '#e74c3c';
+            }
+        }
+    }
+
+    // ─── Remove image ────────────────────────────────────
+    window.removeImage = async function(index) {
+        const url = report.images[index];
+        if (!url) return;
+        
+        try {
+            // Delete from storage
+            const storageRef = ref(storage, url);
+            await deleteObject(storageRef);
+            
+            // Remove from array
+            report.images.splice(index, 1);
+            
+            // Re-render preview
+            const container = document.getElementById('image-preview-container');
+            container.innerHTML = report.images.map((imgUrl, i) => `
+                <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                    <img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;">
+                    <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+                </div>
+            `).join('');
+            
+            // Re-attach remove events
+            document.querySelectorAll('.remove-image').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.index);
+                    removeImage(idx);
+                });
+            });
+            
+        } catch (error) {
+            console.error('Delete error:', error);
+            document.getElementById('report-message').textContent = '❌ Error deleting image: ' + error.message;
+            document.getElementById('report-message').style.color = '#e74c3c';
+        }
+    };
+
+    // ─── Save report ─────────────────────────────────────
+    document.getElementById('save-report').addEventListener('click', async function() {
+        const note = document.getElementById('report-note').value.trim();
+        const key = `${currentReportTab}_${currentReportReq}_report`;
+        
+        if (!note && (!report.images || report.images.length === 0)) {
+            document.getElementById('report-message').textContent = '⚠️ Please add a note or at least one image.';
+            document.getElementById('report-message').style.color = '#e67e22';
+            return;
+        }
+        
+        try {
+            const docRef = doc(db, 'scoutStatus', userEmail);
+            const docSnap = await getDoc(docRef);
+            const data = docSnap.data() || {};
+            
+            data[key] = {
+                note: note || '',
+                images: report.images || [],
+                updatedAt: new Date().toISOString()
+            };
+            
+            await setDoc(docRef, data);
+            scoutStatus = data;
+            
+            document.getElementById('report-message').textContent = '✅ Report saved successfully!';
+            document.getElementById('report-message').style.color = '#4caf50';
+            
+            setTimeout(() => {
+                currentView = currentReportTab === 'membership' ? 'membership' : 
+                             currentReportTab === 'secondClass' ? 'second' : 'first';
+                renderView();
+            }, 1000);
+            
+        } catch (error) {
+            document.getElementById('report-message').textContent = '❌ Error saving report: ' + error.message;
+            document.getElementById('report-message').style.color = '#e74c3c';
+        }
+    });
 }
 
 // ─── Sessions View ──────────────────────────────────────
 function renderSessions() {
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
+            <span style="color:var(--text-muted);font-size:14px;">Loading...</span>
+        </div>
+        <div style="text-align:center;padding:40px 0;">
+            <div style="display:inline-block;width:40px;height:40px;border:4px solid #e8e0f0;border-top-color:var(--purple);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+            <p style="color:var(--text-muted);margin-top:12px;">Loading your sessions...</p>
+        </div>
+        <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+    `;
+    
+    pageContent.innerHTML = html;
+
     if (allSessions.length === 0) {
-        pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">You haven't attended any sessions yet.</p>`;
+        pageContent.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
+                <span style="color:var(--text-muted);font-size:14px;">0 sessions</span>
+            </div>
+            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:64px;margin-bottom:16px;">📅</div>
+                <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
+                <p style="color:var(--text-muted);">You haven't attended any sessions yet.</p>
+            </div>
+        `;
         return;
     }
     
@@ -316,17 +621,29 @@ function renderSessions() {
         totalHours += session.duration || 0;
     }
 
-    let html = `
+    let contentHtml = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
             <span style="color:var(--text-muted);font-size:14px;">⏱️ ${totalHours} total hours</span>
         </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+            <div style="background:white;border-radius:16px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:24px;font-weight:700;color:var(--purple);">${allSessions.length}</div>
+                <div style="font-size:12px;color:var(--text-muted);">Sessions Attended</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:24px;font-weight:700;color:#4caf50;">${totalHours}</div>
+                <div style="font-size:12px;color:var(--text-muted);">Service Hours</div>
+            </div>
+        </div>
+
         <div style="display:flex;flex-direction:column;gap:12px;">
     `;
     
     for (const session of allSessions) {
-        html += `
-            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;">
+        contentHtml += `
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid var(--purple-light);">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div>
                         <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${session.name}</div>
@@ -334,19 +651,19 @@ function renderSessions() {
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>
-                        <span style="font-size:12px;color:var(--text-muted);">⏱️ ${session.duration || 0}h</span>
+                        <span style="font-size:14px;font-weight:600;color:var(--purple);">${session.duration || 0}h</span>
                     </div>
                 </div>
             </div>
         `;
     }
-    html += '</div>';
-    pageContent.innerHTML = html;
+    contentHtml += '</div>';
+    pageContent.innerHTML = contentHtml;
 
     document.querySelectorAll('.session-card').forEach(card => {
         card.addEventListener('click', function() {
             const id = this.dataset.id;
-            window.location.href = `session-detail.html?id=${id}`;
+            window.location.href = `session-detail-scout.html?id=${id}`;
         });
     });
 }
