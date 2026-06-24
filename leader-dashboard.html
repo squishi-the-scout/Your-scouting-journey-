@@ -45,10 +45,63 @@
             margin-left: 2px;
         }
 
+        /* ─── Person Icon Avatar (sidebar) ─── */
+        .person-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+            transition: transform 0.2s;
+        }
+        .person-avatar:hover {
+            transform: scale(1.05);
+        }
+        .person-avatar .head {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 12px;
+        }
+        .person-avatar .body {
+            width: 28px;
+            height: 16px;
+            border-radius: 50% 50% 0 0;
+            background: white;
+            position: absolute;
+            bottom: 10px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+        .header-left h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--purple-dark);
+            margin: 0;
+        }
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-top: 4px;
+        }
+
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { padding: 16px; padding-bottom: 80px; }
             .bottom-nav { display: flex !important; }
+            .header-left h1 { font-size: 22px; }
         }
     </style>
 </head>
@@ -70,7 +123,7 @@
     <nav class="sidebar-nav">
         <a href="#" class="active" data-view="dashboard">
             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-            <span>Dashboard</span>
+            <span>🏕️ Home</span>
         </a>
         <a href="#" data-view="scouts">
             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
@@ -100,13 +153,21 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-left">
+            <h1 id="page-heading">Good morning, <span id="leader-name">Leader</span>! 👋</h1>
+            <p id="page-subtitle">Welcome to your Home</p>
+        </div>
+        <!-- Header avatar REMOVED as requested -->
+    </div>
     <div id="page-content"></div>
 </div>
 
 <!-- ===== BOTTOM NAV (mobile) ===== -->
 <div class="bottom-nav">
     <a href="#" class="active" data-view="dashboard">
-        <span>📊</span>
+        <span>🏕️</span>
         <span>Home</span>
     </a>
     <a href="#" data-view="scouts">
