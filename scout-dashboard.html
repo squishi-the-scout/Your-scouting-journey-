@@ -74,7 +74,6 @@
             cursor: pointer;
         }
 
-        /* ─── Person Icon Avatar (clickable) ─── */
         .person-avatar {
             width: 56px;
             height: 56px;
@@ -192,7 +191,6 @@
             margin-top: 4px;
         }
 
-        /* ===== HEADER AVATAR (clickable) ===== */
         .header-avatar {
             width: 40px;
             height: 40px;
@@ -224,17 +222,6 @@
             background: white;
             position: absolute;
             bottom: 7px;
-        }
-
-        /* ===== PLACEHOLDER ===== */
-        .placeholder-heart {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 60vh;
-            font-size: 120px;
-            opacity: 0.3;
-            color: var(--purple-light);
         }
 
         /* ===== STATS CARDS ===== */
@@ -306,7 +293,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             transition: all 0.2s;
             border-left: 4px solid var(--purple-light);
         }
@@ -336,6 +323,8 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 4px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .req-actions .notes-link {
             background: #f0ebf5;
@@ -347,6 +336,26 @@
         }
         .req-actions .notes-link:hover {
             background: #e0d6ec;
+        }
+
+        .req-actions .report-btn {
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .req-actions .report-btn.has-report {
+            background: #4caf50;
+            color: white;
+        }
+        .req-actions .report-btn.no-report {
+            background: #e8e0f0;
+            color: var(--text-dark);
+        }
+        .req-actions .report-btn:hover {
+            transform: scale(1.05);
         }
 
         .ready-btn {
@@ -385,6 +394,124 @@
             font-weight: 500;
         }
 
+        /* ===== REPORT MODAL ===== */
+        .report-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .report-modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .report-modal-content .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .report-modal-content .modal-close:hover {
+            color: var(--text-dark);
+        }
+
+        .drop-zone {
+            border: 2px dashed #e0d6ec;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .drop-zone:hover {
+            border-color: var(--purple);
+            background: #f5f0f8;
+        }
+        .drop-zone.dragover {
+            border-color: var(--purple);
+            background: #f5f0f8;
+        }
+
+        .image-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .image-preview-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e8e0f0;
+        }
+        .image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-preview-item .remove-image {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-preview-item .remove-image:hover {
+            background: rgba(0,0,0,0.8);
+        }
+
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+
         /* ===== CONFETTI ===== */
         .confetti-container {
             position: fixed;
@@ -416,6 +543,7 @@
             .requirements-grid { grid-template-columns: 1fr; }
             .header-left h1 { font-size: 22px; }
             .bottom-nav { display: flex !important; }
+            .report-modal-content { padding: 20px; margin: 10px; }
         }
     </style>
 </head>
@@ -472,12 +600,12 @@
 
 <!-- ===== BOTTOM NAV (mobile) ===== -->
 <div class="bottom-nav" style="display:none; position:fixed; bottom:0; left:0; right:0; background:var(--purple-dark); padding:10px 0; justify-content:space-around; z-index:1000; border-top:1px solid rgba(255,255,255,0.1);">
-    <a href="#" class="active" data-view="dashboard" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>📊</span><span style="font-size:9px;">Home</span></a>
-    <a href="#" data-view="membership" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🏅</span><span style="font-size:9px;">Membership</span></a>
-    <a href="#" data-view="second" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>⭐</span><span style="font-size:9px;">Second</span></a>
-    <a href="#" data-view="first" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🌟</span><span style="font-size:9px;">First</span></a>
-    <a href="#" data-view="badges" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>🏆</span><span style="font-size:9px;">Badges</span></a>
-    <a href="#" data-view="sessions" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px;"><span>📋</span><span style="font-size:9px;">Sessions</span></a>
+    <a href="#" class="active" data-view="dashboard" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>📊</span><span style="font-size:9px;">Home</span></a>
+    <a href="#" data-view="membership" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🏅</span><span style="font-size:9px;">Membership</span></a>
+    <a href="#" data-view="second" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>⭐</span><span style="font-size:9px;">Second</span></a>
+    <a href="#" data-view="first" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🌟</span><span style="font-size:9px;">First</span></a>
+    <a href="#" data-view="badges" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>🏆</span><span style="font-size:9px;">Badges</span></a>
+    <a href="#" data-view="sessions" style="color:#c4b8d4; font-size:18px; display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none;"><span>📋</span><span style="font-size:9px;">Sessions</span></a>
 </div>
 
 <script type="module" src="scout-dashboard.js"></script>
