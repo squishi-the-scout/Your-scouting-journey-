@@ -28,7 +28,6 @@ function updateDisplayName(name) {
     displayName = name;
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
-    // Update heading if on campsite
     if (currentView === 'dashboard' && pageHeading) {
         pageHeading.innerHTML = `Good morning, <span id="scout-name">${name}</span>! 👋`;
     }
@@ -67,7 +66,6 @@ async function loadScoutData() {
     
     if (sidebarRank) sidebarRank.textContent = `Scout · ${scoutData.rank || 'Membership'}`;
     
-    // Update display name if fullName exists
     if (scoutData.fullName) {
         updateDisplayName(scoutData.fullName);
     }
@@ -195,7 +193,6 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     
-    // Update page heading based on view
     if (pageHeading) {
         if (currentView === 'dashboard') {
             pageHeading.innerHTML = `Good morning, <span id="scout-name">${displayName}</span>! 👋`;
@@ -312,12 +309,6 @@ function renderDashboard() {
 
 // ─── Requirements View ──────────────────────────────────
 function renderRequirements(tab, reqs) {
-    const titles = {
-        'membership': '🏅 Membership Badge',
-        'secondClass': '⭐ Second Class Badge',
-        'firstClass': '🌟 First Class Badge'
-    };
-    
     let completed = 0, pending = 0;
     for (const req of reqs) {
         const key = `${tab}_${req.name}`;
@@ -343,8 +334,8 @@ function renderRequirements(tab, reqs) {
                 let approvedInfo = '';
                 if (status === 'approved' && data) {
                     const approvedBy = data.approvedBy || 'Unknown';
-                    const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'Unknown date';
-                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">✅ Approved by ${approvedBy} · ${approvedAt}</div>`;
+                    const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
+                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">✅ Approved by ${approvedBy} · ${approvedAt}</div>`;
                 }
                 
                 let actionHtml = '';
@@ -361,9 +352,9 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">📄 View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">📄 View Report</a>`;
                 } else {
-                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;">📄 Add Report</button>`;
+                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">📄 Add Report</button>`;
                 }
                 
                 return `
@@ -372,14 +363,14 @@ function renderRequirements(tab, reqs) {
                             <span class="req-title">${req.id}. ${req.name}</span>
                             <span class="req-status-icon">${icon}</span>
                         </div>
-                        ${approvedInfo}
-                        <div class="req-actions">
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <div class="req-actions" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
                                 <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
                                 ${reportBtn}
                             </div>
                             ${actionHtml}
                         </div>
+                        ${approvedInfo}
                     </div>
                 `;
             }).join('')}
@@ -388,7 +379,6 @@ function renderRequirements(tab, reqs) {
 
     pageContent.innerHTML = html;
 
-    // ─── Ready button ─────────────────────────────────────
     document.querySelectorAll('.ready-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -400,7 +390,6 @@ function renderRequirements(tab, reqs) {
         });
     });
 
-    // ─── Undo button ─────────────────────────────────────
     document.querySelectorAll('.pending-badge').forEach(badge => {
         badge.addEventListener('click', async function() {
             const reqName = this.dataset.req;
@@ -411,7 +400,6 @@ function renderRequirements(tab, reqs) {
         });
     });
 
-    // ─── Report button ─────────────────────────────────────
     document.querySelectorAll('.report-btn.no-report').forEach(btn => {
         btn.addEventListener('click', function() {
             currentReportTab = this.dataset.tab;
@@ -475,7 +463,6 @@ function renderReportModal() {
 
     pageContent.innerHTML = html;
 
-    // ─── Close modal ─────────────────────────────────────
     document.getElementById('close-report-modal').addEventListener('click', () => {
         currentView = currentReportTab === 'membership' ? 'membership' : 
                      currentReportTab === 'secondClass' ? 'second' : 'first';
@@ -487,7 +474,6 @@ function renderReportModal() {
         renderView();
     });
 
-    // ─── Drag & Drop ─────────────────────────────────────
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('image-upload');
 
@@ -509,7 +495,6 @@ function renderReportModal() {
     });
     fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-    // ─── Handle file upload ─────────────────────────────
     async function handleFiles(files) {
         const container = document.getElementById('image-preview-container');
         const message = document.getElementById('report-message');
@@ -556,7 +541,6 @@ function renderReportModal() {
         }
     }
 
-    // ─── Remove image ────────────────────────────────────
     function removeImage(index) {
         allImages.splice(index, 1);
         const container = document.getElementById('image-preview-container');
@@ -575,7 +559,6 @@ function renderReportModal() {
         });
     }
 
-    // ─── Save report ─────────────────────────────────────
     document.getElementById('save-report').addEventListener('click', async function() {
         const note = document.getElementById('report-note').value.trim();
         const key = `${currentReportTab}_${currentReportReq}_report`;
@@ -808,7 +791,6 @@ async function renderProfile() {
         try {
             await setDoc(doc(db, 'users', userEmail), updateData, { merge: true });
             
-            // Update display name everywhere
             if (fullName) {
                 updateDisplayName(fullName);
             }
@@ -851,14 +833,12 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
     });
 });
 
-// ─── Avatar click → Profile ─────────────────────────────
 document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
     currentView = 'profile';
     document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
     renderView();
 });
 
-// ─── Logout ──────────────────────────────────────────────
 document.getElementById('logout-btn').addEventListener('click', () => {
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
@@ -866,7 +846,6 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
-// ─── Init ────────────────────────────────────────────────
 async function init() {
     await loadScoutData();
     listenToStatus();
