@@ -36,21 +36,13 @@
         .bottom-nav a span {
             font-size: 9px;
         }
-        .bottom-nav a .badge-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: var(--orange);
-            border-radius: 50%;
-            margin-left: 2px;
-        }
 
-        /* ─── Person Icon Avatar (sidebar) ─── */
+        /* ─── Person Icon Avatar (blue for leaders) ─── */
         .person-avatar {
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: var(--orange);
+            background: #3498db;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -97,6 +89,18 @@
             margin-top: 4px;
         }
 
+        .pending-badge {
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 20px;
+            display: inline-block;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { padding: 16px; padding-bottom: 80px; }
@@ -111,13 +115,13 @@
 <div class="sidebar">
     <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
 
-    <div class="sidebar-profile">
+    <div class="sidebar-profile" id="sidebar-profile-btn">
         <div class="person-avatar" id="sidebar-avatar">
             <div class="head"></div>
             <div class="body"></div>
         </div>
-        <div class="sidebar-name" id="sidebar-name">Hazfar</div>
-        <div class="sidebar-role">HOPE — Rover Leader</div>
+        <div class="sidebar-name" id="sidebar-name">Leader</div>
+        <div class="sidebar-role" id="sidebar-role">Leader</div>
     </div>
 
     <nav class="sidebar-nav">
@@ -131,7 +135,8 @@
         </a>
         <a href="#" data-view="pending">
             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>Pending</span> <span class="badge" id="pending-badge">0</span>
+            <span>Pending</span>
+            <span class="pending-badge" id="pending-badge">0</span>
         </a>
         <a href="#" data-view="sessions">
             <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -159,7 +164,6 @@
             <h1 id="page-heading">Good morning, <span id="leader-name">Leader</span>! 👋</h1>
             <p id="page-subtitle">Welcome to your Home</p>
         </div>
-        <!-- Header avatar REMOVED as requested -->
     </div>
     <div id="page-content"></div>
 </div>
