@@ -1,11 +1,7 @@
 import { auth, db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, getDocs, onSnapshot, updateDoc 
+    doc, getDoc, setDoc, collection, getDocs, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { 
-    ref, uploadBytes, getDownloadURL, deleteObject 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { storage } from './firebase-config.js';
 import { membershipRequirements } from './data/membership-requirements.js';
 import { secondClassRequirements } from './data/secondclass-requirements.js';
 import { firstClassRequirements } from './data/firstclass-requirements.js';
@@ -52,9 +48,9 @@ let allSessions = [];
 let scoutData = { rank: 'Membership' };
 let statusUnsubscribe = null;
 let sessionsUnsubscribe = null;
-let reportData = {};
 let currentReportTab = '';
 let currentReportReq = '';
+let tempReportImages = [];
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
@@ -109,6 +105,43 @@ function listenToSessions() {
 // ─── Save status ─────────────────────────────────────────
 async function saveStatus() {
     await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
+}
+
+// ─── Resize image to thumbnail ──────────────────────────
+function resizeImage(file, maxWidth = 600, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxWidth) {
+                        width = Math.round((width * maxWidth) / height);
+                        height = maxWidth;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
 }
 
 // ─── Check if badge is accessible ──────────────────────
@@ -264,7 +297,6 @@ function renderRequirements(tab, reqs, title) {
                 const status = data ? data.status : 'todo';
                 const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
                 
-                // Get approved info
                 let approvedInfo = '';
                 if (status === 'approved' && data) {
                     const approvedBy = data.approvedBy || 'Unknown';
@@ -281,10 +313,9 @@ function renderRequirements(tab, reqs, title) {
                     actionHtml = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
                 }
                 
-                // Report button
                 const reportKey = `${tab}_${req.name}_report`;
-                const hasReport = scoutStatus[reportKey] && scoutStatus[reportKey].note;
-                const reportBtn = `<button class="report-btn" data-req="${req.name}" data-tab="${tab}" style="background:${hasReport ? '#4caf50' : '#e8e0f0'};color:${hasReport ? 'white' : 'var(--text-dark)'};border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;">${hasReport ? '📄 Report' : '📄 Add Report'}</button>`;
+                const hasReport = scoutStatus[reportKey] && (scoutStatus[reportKey].note || (scoutStatus[reportKey].images && scoutStatus[reportKey].images.length > 0));
+                const reportBtn = `<button class="report-btn ${hasReport ? 'has-report' : 'no-report'}" data-req="${req.name}" data-tab="${tab}">${hasReport ? '📄 Report' : '📄 Add Report'}</button>`;
                 
                 return `
                     <div class="req-card">
@@ -294,7 +325,7 @@ function renderRequirements(tab, reqs, title) {
                         </div>
                         ${approvedInfo}
                         <div class="req-actions">
-                            <div style="display:flex;gap:8px;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
                                 ${reportBtn}
                             </div>
@@ -336,6 +367,7 @@ function renderRequirements(tab, reqs, title) {
         btn.addEventListener('click', function() {
             currentReportTab = this.dataset.tab;
             currentReportReq = this.dataset.req;
+            tempReportImages = [];
             currentView = 'reportModal';
             renderView();
         });
@@ -349,8 +381,12 @@ function renderReportModal() {
     const reqKey = `${currentReportTab}_${currentReportReq}`;
     const reqStatus = scoutStatus[reqKey] ? scoutStatus[reqKey].status : 'todo';
 
+    // Use existing images from report
+    const existingImages = report.images || [];
+    const allImages = [...existingImages];
+
     let html = `
-        <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div class="report-modal-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
             <div style="background:white;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
                 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -364,60 +400,33 @@ function renderReportModal() {
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <label style="font-weight:600;display:block;margin-bottom:6px;">Upload Images</label>
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">Upload Images (Instagram quality)</label>
                     <div id="drop-zone" style="border:2px dashed #e0d6ec;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;">
                         <div style="font-size:40px;margin-bottom:8px;">📸</div>
                         <p style="color:var(--text-muted);">Drag & drop images here, or click to select</p>
+                        <p style="font-size:12px;color:var(--text-muted);">Images will be compressed to ~100-200KB</p>
                         <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
                     </div>
                 </div>
                 
                 <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-                    ${(report.images || []).map((url, index) => `
-                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
-                            <img src="${url}" style="width:100%;height:100%;object-fit:cover;">
-                            <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+                    ${allImages.map((base64, index) => `
+                        <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                            <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                            <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                         </div>
                     `).join('')}
                 </div>
                 
                 <div style="display:flex;gap:12px;margin-top:16px;">
-                    <button id="save-report" class="btn-primary" style="flex:1;">💾 Save Report</button>
-                    <button id="cancel-report" class="btn-secondary" style="flex:1;">Cancel</button>
+                    <button id="save-report" class="btn-primary" style="flex:1;background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">💾 Save Report</button>
+                    <button id="cancel-report" class="btn-secondary" style="flex:1;background:#e8e0f0;color:var(--text-dark);border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
                 </div>
                 
                 <div id="report-message" style="margin-top:12px;font-size:14px;color:var(--text-muted);text-align:center;"></div>
                 ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
             </div>
         </div>
-        <style>
-            .btn-primary {
-                background: var(--purple);
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 40px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-            }
-            .btn-primary:hover {
-                background: var(--purple-dark);
-            }
-            .btn-secondary {
-                background: #e8e0f0;
-                color: var(--text-dark);
-                border: none;
-                padding: 12px 24px;
-                border-radius: 40px;
-                font-size: 14px;
-                font-weight: 600;
-                cursor: pointer;
-            }
-            .btn-secondary:hover {
-                background: #d5cae0;
-            }
-        </style>
     `;
 
     pageContent.innerHTML = html;
@@ -432,15 +441,6 @@ function renderReportModal() {
         currentView = currentReportTab === 'membership' ? 'membership' : 
                      currentReportTab === 'secondClass' ? 'second' : 'first';
         renderView();
-    });
-
-    // ─── Click outside to close ─────────────────────────
-    document.querySelector('.report-modal-overlay')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            currentView = currentReportTab === 'membership' ? 'membership' : 
-                         currentReportTab === 'secondClass' ? 'second' : 'first';
-            renderView();
-        }
     });
 
     // ─── Drag & Drop ─────────────────────────────────────
@@ -468,28 +468,32 @@ function renderReportModal() {
     // ─── Handle file upload ─────────────────────────────
     async function handleFiles(files) {
         const container = document.getElementById('image-preview-container');
-        const existingImages = report.images || [];
+        const message = document.getElementById('report-message');
         
         for (const file of files) {
-            if (!file.type.startsWith('image/')) continue;
+            if (!file.type.startsWith('image/')) {
+                message.textContent = '⚠️ Please select image files only.';
+                message.style.color = '#e67e22';
+                continue;
+            }
             
             try {
-                const storageRef = ref(storage, `reports/${userEmail}/${currentReportTab}/${currentReportReq}/${Date.now()}_${file.name}`);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
-                existingImages.push(url);
+                // Resize image to Instagram quality
+                const base64 = await resizeImage(file, 600, 0.7);
+                allImages.push(base64);
                 
                 // Update preview
                 const imgDiv = document.createElement('div');
+                imgDiv.className = 'image-preview-item';
                 imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;';
                 imgDiv.innerHTML = `
-                    <img src="${url}" style="width:100%;height:100%;object-fit:cover;">
-                    <button class="remove-image" data-index="${existingImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+                    <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                    <button class="remove-image" data-index="${allImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                 `;
                 container.appendChild(imgDiv);
                 
-                // Update report data
-                report.images = existingImages;
+                message.textContent = `✅ ${file.name} uploaded (${Math.round(base64.length / 1024)}KB)`;
+                message.style.color = '#4caf50';
                 
                 // Re-attach remove event
                 imgDiv.querySelector('.remove-image').addEventListener('click', function() {
@@ -499,57 +503,40 @@ function renderReportModal() {
                 
             } catch (error) {
                 console.error('Upload error:', error);
-                document.getElementById('report-message').textContent = '❌ Error uploading image: ' + error.message;
-                document.getElementById('report-message').style.color = '#e74c3c';
+                message.textContent = '❌ Error uploading image: ' + error.message;
+                message.style.color = '#e74c3c';
             }
         }
     }
 
     // ─── Remove image ────────────────────────────────────
-    window.removeImage = async function(index) {
-        const url = report.images[index];
-        if (!url) return;
+    function removeImage(index) {
+        allImages.splice(index, 1);
+        const container = document.getElementById('image-preview-container');
+        container.innerHTML = allImages.map((base64, i) => `
+            <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
+            </div>
+        `).join('');
         
-        try {
-            // Delete from storage
-            const storageRef = ref(storage, url);
-            await deleteObject(storageRef);
-            
-            // Remove from array
-            report.images.splice(index, 1);
-            
-            // Re-render preview
-            const container = document.getElementById('image-preview-container');
-            container.innerHTML = report.images.map((imgUrl, i) => `
-                <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
-                    <img src="${imgUrl}" style="width:100%;height:100%;object-fit:cover;">
-                    <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
-                </div>
-            `).join('');
-            
-            // Re-attach remove events
-            document.querySelectorAll('.remove-image').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const idx = parseInt(this.dataset.index);
-                    removeImage(idx);
-                });
+        document.querySelectorAll('.remove-image').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.dataset.index);
+                removeImage(idx);
             });
-            
-        } catch (error) {
-            console.error('Delete error:', error);
-            document.getElementById('report-message').textContent = '❌ Error deleting image: ' + error.message;
-            document.getElementById('report-message').style.color = '#e74c3c';
-        }
-    };
+        });
+    }
 
     // ─── Save report ─────────────────────────────────────
     document.getElementById('save-report').addEventListener('click', async function() {
         const note = document.getElementById('report-note').value.trim();
         const key = `${currentReportTab}_${currentReportReq}_report`;
+        const message = document.getElementById('report-message');
         
-        if (!note && (!report.images || report.images.length === 0)) {
-            document.getElementById('report-message').textContent = '⚠️ Please add a note or at least one image.';
-            document.getElementById('report-message').style.color = '#e67e22';
+        if (!note && allImages.length === 0) {
+            message.textContent = '⚠️ Please add a note or at least one image.';
+            message.style.color = '#e67e22';
             return;
         }
         
@@ -560,15 +547,15 @@ function renderReportModal() {
             
             data[key] = {
                 note: note || '',
-                images: report.images || [],
+                images: allImages,
                 updatedAt: new Date().toISOString()
             };
             
             await setDoc(docRef, data);
             scoutStatus = data;
             
-            document.getElementById('report-message').textContent = '✅ Report saved successfully!';
-            document.getElementById('report-message').style.color = '#4caf50';
+            message.textContent = '✅ Report saved successfully!';
+            message.style.color = '#4caf50';
             
             setTimeout(() => {
                 currentView = currentReportTab === 'membership' ? 'membership' : 
@@ -577,8 +564,8 @@ function renderReportModal() {
             }, 1000);
             
         } catch (error) {
-            document.getElementById('report-message').textContent = '❌ Error saving report: ' + error.message;
-            document.getElementById('report-message').style.color = '#e74c3c';
+            message.textContent = '❌ Error saving report: ' + error.message;
+            message.style.color = '#e74c3c';
         }
     });
 }
