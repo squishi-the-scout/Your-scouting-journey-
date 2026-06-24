@@ -1,450 +1,937 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Session Detail — GIS Scouts</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .detail-section {
-            background: white;
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            margin-bottom: 20px;
-        }
-        .detail-section h3 {
-            color: var(--text-dark);
-            margin-bottom: 16px;
-        }
-        .attendance-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f5f0f8;
-        }
-        .attendance-item:last-child {
-            border-bottom: none;
-        }
-        .attendance-item .name {
-            font-weight: 500;
-        }
-        .attendance-item .status {
-            font-size: 13px;
-            padding: 2px 12px;
-            border-radius: 12px;
-        }
-        .attendance-item .status.present {
-            background: #d4edda;
-            color: #155724;
-        }
-        .attendance-item .status.absent {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .toggle-btn {
-            padding: 4px 14px;
-            border-radius: 20px;
-            border: none;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .toggle-btn.present {
-            background: #28a745;
-            color: white;
-        }
-        .toggle-btn.present:hover {
-            background: #218838;
-        }
-        .toggle-btn.absent {
-            background: #dc3545;
-            color: white;
-        }
-        .toggle-btn.absent:hover {
-            background: #c82333;
-        }
-        .btn-primary {
-            background: var(--purple);
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-primary:hover {
-            background: var(--purple-dark);
-        }
-        .btn-secondary {
-            background: #e8e0f0;
-            color: var(--text-dark);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-secondary:hover {
-            background: #d5cae0;
-        }
-        .feedback-item {
-            background: #f8f5fa;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-        .feedback-item .scout-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--purple-dark);
-        }
-        .feedback-item .feedback-text {
-            font-size: 14px;
-            color: var(--text-dark);
-            margin-top: 4px;
-        }
-        .leader-notes-area {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #e0d6ec;
-            font-family: inherit;
-            font-size: 14px;
-            min-height: 80px;
-            resize: vertical;
-        }
-        .scout-feedback-area {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #e0d6ec;
-            font-family: inherit;
-            font-size: 14px;
-            min-height: 60px;
-            resize: vertical;
-        }
-        .meta-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .meta-item .label {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .meta-item .value {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 16px;
-            color: #8baa9a;
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .back-link:hover {
-            color: var(--purple-dark);
-        }
-        .attendance-stats {
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-            margin-bottom: 16px;
-        }
-        .attendance-stats .stat {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-        .attendance-stats .stat strong {
-            color: var(--text-dark);
-        }
-        .mark-all-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-bottom: 12px;
-        }
-        .mark-all-btn:hover {
-            background: #218838;
-        }
-        @media (max-width: 768px) {
-            .meta-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container" style="max-width:800px;margin:0 auto;padding:32px 20px;">
-        <span class="back-link" id="back-link">← Back to Sessions</span>
+import { auth, db } from './firebase-config.js';
+import { 
+    doc, getDoc, setDoc, collection, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        <div id="session-detail">
-            <div style="text-align:center;padding:40px 0;">
-                <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-                <p style="color:var(--text-muted);">Loading session details...</p>
+// ─── HARDCODED REQUIREMENTS ──────────────────────────────
+const membershipRequirements = [
+    "Law and Promise",
+    "Scout Uniform, Badges and Positions",
+    "Knots and Whipping",
+    "Woodcraft Signs",
+    "National Flag, Anthem, Emblem, Tree, Flower",
+    "Scouting History",
+    "Salutes, Signs, Handshake, Scout Staff",
+    "Dress a Wound",
+    "Whistle Calls, Silent Signs, Formations",
+    "Re-test Membership",
+    "Interview by Scouter",
+    "Investiture"
+];
+
+const secondClassRequirements = [
+    "Scouting History",
+    "Pitch Strike and Store a Hike or Patrol Tent",
+    "Knots and Lashing",
+    "Wood Craft Signs",
+    "Hand Axe, Froe and Kathi Valhi",
+    "Cooking",
+    "Fire Lighting",
+    "Hike",
+    "First Aid",
+    "Rules of Health",
+    "Swimming",
+    "Observation Skills",
+    "Common Trees, Birds and Fishes",
+    "Compass and the Safety Regulations of a Sea Going Vessel",
+    "Environmental Education",
+    "Re-test Scout Standard"
+];
+
+const firstClassRequirements = [
+    "Emergencies",
+    "First Aid",
+    "Common Trees, Birds and Fishes",
+    "Felling Axes and Maldivian Tools Mulhoa, Odaa",
+    "Mapping and Compass",
+    "Estimation",
+    "Knots, Lashing and Splices",
+    "Tracking",
+    "Swimming",
+    "Cooking",
+    "Camping",
+    "Environmental Education",
+    "Hike - Expedition",
+    "Re-test Advance Scout Standard"
+];
+
+// ─── State ──────────────────────────────────────────────
+const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+if (!currentUser || currentUser.role !== 'leader') {
+    window.location.href = 'index.html';
+}
+
+const pageContent = document.getElementById('page-content');
+const sidebarName = document.getElementById('sidebar-name');
+const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+if (sidebarName) sidebarName.textContent = displayName;
+
+let allScouts = [];
+let allStatus = {};
+let allSessions = [];
+let currentView = 'dashboard';
+let selectedScout = null;
+let usersUnsubscribe = null;
+let statusUnsubscribe = null;
+let sessionsUnsubscribe = null;
+
+// ─── Badge Colors ──────────────────────────────────────
+const badgeColors = {
+    membership: { bg: '#d4edda', text: '#155724', border: '#7bcb7b', label: 'Membership' },
+    secondClass: { bg: '#c3e6cb', text: '#0b5e1f', border: '#4caf50', label: 'Second Class' },
+    firstClass: { bg: '#a8d5a2', text: '#1b5e20', border: '#2e7d32', label: 'First Class' },
+    badge: { bg: '#b2dfdb', text: '#004d40', border: '#00897b', label: 'Badges' }
+};
+
+function getBadgeInfo(fieldName) {
+    if (fieldName.startsWith('membership_')) return badgeColors.membership;
+    if (fieldName.startsWith('secondClass_')) return badgeColors.secondClass;
+    if (fieldName.startsWith('firstClass_')) return badgeColors.firstClass;
+    return badgeColors.membership;
+}
+
+function getBadgeLabel(fieldName) {
+    if (fieldName.startsWith('membership_')) return 'Membership';
+    if (fieldName.startsWith('secondClass_')) return 'Second Class';
+    if (fieldName.startsWith('firstClass_')) return 'First Class';
+    return 'Membership';
+}
+
+function getBadgesForRank(rank) {
+    const badges = [];
+    if (rank === 'Membership' || rank === 'Second Class' || rank === 'First Class') {
+        badges.push({ key: 'membership', reqs: membershipRequirements, label: 'Membership' });
+    }
+    if (rank === 'Second Class' || rank === 'First Class') {
+        badges.push({ key: 'secondClass', reqs: secondClassRequirements, label: 'Second Class' });
+    }
+    if (rank === 'First Class') {
+        badges.push({ key: 'firstClass', reqs: firstClassRequirements, label: 'First Class' });
+        badges.push({ key: 'badge', reqs: [], label: 'Badges' });
+    }
+    return badges;
+}
+
+// ─── Check if scout is ready for promotion ──────────────
+function isReadyForPromotion(email) {
+    const status = allStatus[email] || {};
+    const scout = allScouts.find(s => s.email === email);
+    if (!scout) return null;
+    
+    const rank = scout.rank || 'Membership';
+    
+    if (rank === 'Membership') {
+        let done = 0;
+        for (const req of membershipRequirements) {
+            const key = `membership_${req}`;
+            if (status[key]?.status === 'approved') done++;
+        }
+        if (done === membershipRequirements.length) {
+            return { currentRank: 'Membership', nextRank: 'Second Class' };
+        }
+    } else if (rank === 'Second Class') {
+        let done = 0;
+        for (const req of secondClassRequirements) {
+            const key = `secondClass_${req}`;
+            if (status[key]?.status === 'approved') done++;
+        }
+        if (done === secondClassRequirements.length) {
+            return { currentRank: 'Second Class', nextRank: 'First Class' };
+        }
+    }
+    return null;
+}
+
+// ─── Real-time Users Listener ──────────────────────────
+function listenToUsers() {
+    if (usersUnsubscribe) {
+        usersUnsubscribe();
+        usersUnsubscribe = null;
+    }
+    
+    usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+        allScouts = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.role === 'scout') {
+                allScouts.push({ email: doc.id, ...data });
+            }
+        });
+        if (!selectedScout) {
+            renderView();
+        } else {
+            renderScoutProfile(selectedScout);
+        }
+    }, (error) => {
+        console.error('Users listener error:', error);
+    });
+}
+
+// ─── Real-time Status Listener ─────────────────────────
+function listenToStatus() {
+    if (statusUnsubscribe) {
+        statusUnsubscribe();
+        statusUnsubscribe = null;
+    }
+    
+    statusUnsubscribe = onSnapshot(collection(db, 'scoutStatus'), (snapshot) => {
+        allStatus = {};
+        snapshot.forEach(doc => {
+            allStatus[doc.id] = doc.data();
+        });
+        if (!selectedScout) {
+            renderView();
+        } else {
+            renderScoutProfile(selectedScout);
+        }
+    }, (error) => {
+        console.error('Status listener error:', error);
+    });
+}
+
+// ─── Real-time Sessions Listener ──────────────────────
+function listenToSessions() {
+    if (sessionsUnsubscribe) {
+        sessionsUnsubscribe();
+        sessionsUnsubscribe = null;
+    }
+    
+    sessionsUnsubscribe = onSnapshot(collection(db, 'sessions'), (snapshot) => {
+        allSessions = [];
+        snapshot.forEach(doc => {
+            allSessions.push({ id: doc.id, ...doc.data() });
+        });
+        if (currentView === 'sessions' || currentView === 'dashboard') {
+            renderView();
+        }
+    }, (error) => {
+        console.error('Sessions listener error:', error);
+    });
+}
+
+// ─── Render Views ──────────────────────────────────────
+function renderView() {
+    if (!pageContent) return;
+    pageContent.innerHTML = '';
+    
+    if (selectedScout) {
+        renderScoutProfile(selectedScout);
+        return;
+    }
+    
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'scouts') renderAllScouts();
+    else if (currentView === 'pending') renderPendingApprovals();
+    else if (currentView === 'sessions') renderSessions();
+    else if (currentView === 'export') renderExport();
+}
+
+// ─── Dashboard ──────────────────────────────────────────
+function renderDashboard() {
+    let totalScouts = allScouts.length;
+    let totalPending = 0;
+    let readyForPromotion = [];
+
+    for (const scout of allScouts) {
+        const status = allStatus[scout.email] || {};
+        for (const key in status) {
+            if (status[key].status === 'pending') totalPending++;
+        }
+        const promo = isReadyForPromotion(scout.email);
+        if (promo) readyForPromotion.push({ scout, promo });
+    }
+
+    let totalServiceHours = 0;
+    for (const session of allSessions) {
+        totalServiceHours += session.duration || 0;
+    }
+
+    let html = `
+        <h2 style="color:var(--purple-dark);margin-bottom:24px;">📊 Leader Dashboard</h2>
+        
+        ${readyForPromotion.length > 0 ? `
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #b8860b;">
+                <div style="font-weight:600;color:#6b8e23;">🌟 Scouts Ready for Promotion</div>
+                ${readyForPromotion.map(p => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:8px 12px;background:white;border-radius:8px;">
+                        <span>${p.scout.fullName || p.scout.username} — ${p.promo.currentRank} → ${p.promo.nextRank}</span>
+                        <a href="#" data-view="pending" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:4px 16px;border-radius:20px;font-size:13px;text-decoration:none;cursor:pointer;">View in Pending</a>
+                    </div>
+                `).join('')}
+            </div>
+        ` : `
+            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
+                <span style="color:#155724;">✅ No scouts ready for promotion right now.</span>
+            </div>
+        `}
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
+            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
+                <div style="font-size:32px;font-weight:700;color:var(--purple);">${totalScouts}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Total Scouts</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
+                <div style="font-size:32px;font-weight:700;color:var(--orange);">${totalPending}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Pending Approvals</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
+                <div style="font-size:32px;font-weight:700;color:#8fbcbb;">${allSessions.length}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Total Sessions</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);text-align:center;">
+                <div style="font-size:32px;font-weight:700;color:#4caf50;">${totalServiceHours}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
             </div>
         </div>
-    </div>
 
-    <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { 
-            doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot 
-        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <h3 style="color:var(--text-dark);margin-bottom:16px;">🟢 Badge Legend</h3>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#7bcb7b;"></span>
+                        <span>Membership</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#4caf50;"></span>
+                        <span>Second Class</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:#2e7d32;"></span>
+                        <span>First Class</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,#b8860b,#6b8e23);"></span>
+                        <span>Ready for Promotion</span>
+                    </div>
+                </div>
+            </div>
+            <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <h3 style="color:var(--text-dark);margin-bottom:16px;">📋 Quick Actions</h3>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                    <a href="#" data-view="pending" style="background:var(--orange);color:white;padding:12px 20px;border-radius:12px;text-align:center;text-decoration:none;font-weight:500;">View Pending Approvals</a>
+                    <a href="#" data-view="scouts" style="background:var(--purple);color:white;padding:12px 20px;border-radius:12px;text-align:center;text-decoration:none;font-weight:500;">View All Scouts</a>
+                </div>
+            </div>
+        </div>
+    `;
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        }
+    pageContent.innerHTML = html;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const sessionId = urlParams.get('id');
-        if (!sessionId) {
-            document.getElementById('session-detail').innerHTML = `<p style="color:#e74c3c;">No session ID provided.</p>`;
-        }
-
-        const isLeader = currentUser.role === 'leader';
-        const userEmail = `${currentUser.username}@gis-scout.local`;
-        const container = document.getElementById('session-detail');
-
-        let allScouts = [];
-
-        document.getElementById('back-link').addEventListener('click', function() {
-            window.location.href = 'leader-dashboard.html#sessions';
+    document.querySelectorAll('a[data-view]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentView = this.dataset.view;
+            selectedScout = null;
+            renderView();
         });
+    });
+}
 
-        async function loadScouts() {
-            const snap = await getDocs(collection(db, 'users'));
-            allScouts = [];
-            snap.forEach(doc => {
-                const data = doc.data();
-                if (data.role === 'scout') {
-                    allScouts.push({ email: doc.id, ...data });
-                }
-            });
+// ─── All Scouts ──────────────────────────────────────────
+function renderAllScouts() {
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <h2 style="color:var(--purple-dark);">👥 All Scouts</h2>
+            <span style="color:var(--text-muted);font-size:14px;">${allScouts.length} scouts</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    `;
+
+    for (const scout of allScouts) {
+        const status = allStatus[scout.email] || {};
+        const name = scout.fullName || scout.username;
+        const patrol = scout.patrol || 'No patrol';
+        const rank = scout.rank || 'Membership';
+        const role = scout.scoutRole || 'Scout';
+
+        const badges = getBadgesForRank(rank);
+        let totalDone = 0;
+        let totalReqs = 0;
+
+        let progressHtml = '';
+        for (const badge of badges) {
+            let done = 0;
+            for (const req of badge.reqs) {
+                const key = `${badge.key}_${req}`;
+                if (status[key]?.status === 'approved') done++;
+            }
+            totalDone += done;
+            totalReqs += badge.reqs.length;
+            const pct = badge.reqs.length > 0 ? Math.round((done / badge.reqs.length) * 100) : 0;
+            progressHtml += `
+                <div style="margin-bottom:6px;">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+                        <span>${badge.label}</span>
+                        <span>${done}/${badge.reqs.length}</span>
+                    </div>
+                    <div style="background:#e8e0f0;border-radius:20px;height:4px;overflow:hidden;">
+                        <div style="background:#7bcb7b;height:100%;width:${pct}%;border-radius:20px;"></div>
+                    </div>
+                </div>
+            `;
         }
 
-        function renderSession(session) {
-            const isAttending = session.attendance ? session.attendance[userEmail] === true : false;
-            const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
-            const totalScouts = allScouts.length;
-            const attendancePercent = totalScouts > 0 ? Math.round((attendeeCount / totalScouts) * 100) : 0;
+        const overall = totalReqs > 0 ? Math.round((totalDone / totalReqs) * 100) : 0;
+        const promo = isReadyForPromotion(scout.email);
 
-            let html = `
-                <div class="detail-section">
-                    <h2 style="color:var(--purple-dark);margin:0 0 8px 0;">${session.name}</h2>
-                    <div class="meta-grid">
-                        <div class="meta-item"><span class="label">📅 Date</span><span class="value">${session.date}</span></div>
-                        <div class="meta-item"><span class="label">⏰ Time</span><span class="value">${session.time}</span></div>
-                        <div class="meta-item"><span class="label">📍 Location</span><span class="value">${session.location || 'TBD'}</span></div>
-                        <div class="meta-item"><span class="label">⏱️ Duration</span><span class="value">${session.duration || 0} hours</span></div>
+        html += `
+            <div class="scout-card" data-email="${scout.email}" style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${name}</div>
+                    <span style="font-size:12px;background:#e8e0f0;padding:2px 10px;border-radius:12px;color:var(--text-muted);">${role}</span>
+                </div>
+                <div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">${patrol} · ${rank}</div>
+                ${progressHtml}
+                <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:var(--text-muted);">${overall}% overall</span>
+                    ${promo ? '<span style="font-size:11px;background:linear-gradient(135deg,#fdf8e7,#f0f7e6);padding:2px 10px;border-radius:12px;color:#6b8e23;border:1px solid #b8860b;">🌟 Ready for Promotion</span>' : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    pageContent.innerHTML = html;
+
+    document.querySelectorAll('.scout-card').forEach(card => {
+        card.addEventListener('click', function() {
+            selectedScout = this.dataset.email;
+            renderView();
+        });
+    });
+}
+
+// ─── Scout Profile ──────────────────────────────────────
+async function renderScoutProfile(email) {
+    const scout = allScouts.find(s => s.email === email);
+    if (!scout) {
+        pageContent.innerHTML = `<p>Scout not found.</p>`;
+        return;
+    }
+
+    const status = allStatus[email] || {};
+    const rank = scout.rank || 'Membership';
+    const badges = getBadgesForRank(rank);
+    const role = scout.scoutRole || 'Scout';
+    const promo = isReadyForPromotion(email);
+
+    const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[email] === true);
+    const totalHours = attendedSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+
+    let html = `
+        <div style="margin-bottom:24px;">
+            <button id="back-to-scouts" style="background:none;border:none;color:var(--purple);font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px;">← Back to All Scouts</button>
+        </div>
+
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h2 style="color:var(--purple-dark);margin:0;">${scout.fullName || scout.username}</h2>
+                    <div style="color:var(--text-muted);margin-top:4px;">${scout.patrol || 'No patrol'} · ${rank}</div>
+                    <div style="color:var(--text-muted);font-size:14px;margin-top:4px;">Role: ${role}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:14px;color:var(--text-muted);">DOB: ${scout.dob || 'Not set'}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Joined: ${scout.joinDate || 'Not set'}</div>
+                    <div style="font-size:14px;color:var(--text-muted);">⏱️ ${totalHours}h service</div>
+                </div>
+            </div>
+            ${scout.emergencyContact ? `
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
+                    <div style="font-weight:600;font-size:14px;">📞 Emergency Contact</div>
+                    <div style="font-size:14px;color:var(--text-muted);">
+                        ${scout.emergencyContact.name || 'N/A'} · 
+                        ${scout.emergencyContact.phone || 'N/A'} · 
+                        ${scout.emergencyContact.relation || 'N/A'}
                     </div>
-                    ${session.purpose ? `<p style="margin-top:16px;color:var(--text-dark);">📝 ${session.purpose}</p>` : ''}
-                    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
-                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">👥 ${attendeeCount} attendees</span>
-                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">📊 ${attendancePercent}% attendance</span>
-                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 14px;border-radius:20px;font-size:13px;">✅ You attended</span>' : ''}
+                </div>
+            ` : ''}
+            
+            ${promo ? `
+                <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
+                    <div style="background:linear-gradient(135deg,#fdf8e7,#f0f7e6);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid #b8860b;">
+                        <span style="color:#6b8e23;font-weight:500;">🌟 Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
+                        <button class="promote-btn" data-email="${email}" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote Now</button>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">⭐ Leadership Roles</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                ${['Scout', 'Patrol Leader', 'Assistant Patrol Leader', 'Senior Patrol Leader', 'Quartermaster', 'Scribe', 'Treasurer'].map(r => `
+                    <button class="role-btn" data-email="${email}" data-role="${r}" style="padding:6px 16px;border-radius:20px;border:2px solid ${role === r ? 'var(--purple)' : '#e0d6ec'};background:${role === r ? 'var(--purple)' : 'white'};color:${role === r ? 'white' : 'var(--text-dark)'};cursor:pointer;font-size:13px;transition:all 0.2s;">${r}</button>
+                `).join('')}
+            </div>
+            <div id="role-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">🏅 Badge Progress</h3>
+    `;
+
+    for (const badge of badges) {
+        const color = badgeColors[badge.key];
+        let done = 0;
+        let reqHtml = '';
+        for (const req of badge.reqs) {
+            const key = `${badge.key}_${req}`;
+            const data = status[key];
+            const statusText = data ? data.status : 'todo';
+            const statusIcons = {
+                'approved': '✅',
+                'pending': '⏳',
+                'ready': '📝',
+                'todo': '🚩'
+            };
+            const icon = statusIcons[statusText] || '🚩';
+            
+            reqHtml += `
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f0f8;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span>${icon}</span>
+                        <span style="font-size:14px;">${req}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:12px;color:var(--text-muted);">${statusText}</span>
+                        <button class="approve-req-btn" data-email="${email}" data-field="${key}" style="background:${color.border};color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
                     </div>
                 </div>
             `;
+            if (statusText === 'approved') done++;
+        }
 
-            if (isLeader) {
-                html += `
-                    <div class="detail-section">
-                        <h3>📝 Leader Notes</h3>
-                        <textarea id="leader-notes" class="leader-notes-area">${session.leaderNotes || ''}</textarea>
-                        <button id="save-leader-notes" class="btn-primary" style="margin-top:12px;">💾 Save Notes</button>
-                        <div id="leader-notes-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
-                    </div>
-                `;
-            }
+        const pct = badge.reqs.length > 0 ? Math.round((done / badge.reqs.length) * 100) : 0;
 
-            if (isLeader) {
-                html += `
-                    <div class="detail-section">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-                            <h3 style="margin:0;">👥 Attendance (${totalScouts} scouts)</h3>
-                            <button class="mark-all-btn" id="mark-all-present">✅ Mark All Present</button>
-                        </div>
-                        <div id="attendance-list">
-                            ${allScouts.map(scout => {
-                                const present = session.attendance ? session.attendance[scout.email] === true : false;
-                                return `
-                                    <div class="attendance-item">
-                                        <span class="name">${scout.fullName || scout.username}</span>
-                                        <div style="display:flex;align-items:center;gap:8px;">
-                                            <span class="status ${present ? 'present' : 'absent'}">${present ? '✅ Present' : '❌ Absent'}</span>
-                                            <button class="toggle-btn ${present ? 'present' : 'absent'}" data-email="${scout.email}">${present ? 'Mark Absent' : 'Mark Present'}</button>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                        <div id="attendance-message" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
-                    </div>
-                `;
-            }
-
-            html += `
-                <div class="detail-section">
-                    <h3>💬 Scout Feedback</h3>
-                    ${isLeader ? `
-                        ${Object.keys(session.scoutNotes || {}).length === 0 ? '<p style="color:var(--text-muted);">No feedback submitted yet.</p>' : ''}
-                        ${Object.entries(session.scoutNotes || {}).map(([email, note]) => {
-                            const scout = allScouts.find(s => s.email === email);
-                            const name = scout ? scout.fullName || scout.username : email;
-                            return `
-                                <div class="feedback-item">
-                                    <div class="scout-name">${name}</div>
-                                    <div class="feedback-text">${note}</div>
-                                </div>
-                            `;
-                        }).join('')}
-                    ` : `
-                        <div style="margin-bottom:12px;">
-                            <label style="font-weight:500;display:block;margin-bottom:6px;">Your Feedback</label>
-                            <textarea id="scout-feedback" class="scout-feedback-area" placeholder="What did you learn? Any suggestions?">${session.scoutNotes ? session.scoutNotes[userEmail] || '' : ''}</textarea>
-                            <button id="submit-feedback" class="btn-primary" style="margin-top:12px;">📤 Submit Feedback</button>
-                            <div id="feedback-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
-                        </div>
-                        ${Object.keys(session.scoutNotes || {}).length > 1 ? `
-                            <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
-                                <div style="font-weight:500;margin-bottom:8px;">Other Scouts Said:</div>
-                                ${Object.entries(session.scoutNotes || {}).filter(([email]) => email !== userEmail).map(([email, note]) => {
-                                    const scout = allScouts.find(s => s.email === email);
-                                    const name = scout ? scout.fullName || scout.username : email;
-                                    return `
-                                        <div class="feedback-item">
-                                            <div class="scout-name">${name}</div>
-                                            <div class="feedback-text">${note}</div>
-                                        </div>
-                                    `;
-                                }).join('')}
-                            </div>
-                        ` : ''}
-                    `}
+        html += `
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="font-weight:600;color:${color.text};">${color.label}</span>
+                    <span style="font-size:14px;color:var(--text-muted);">${done}/${badge.reqs.length}</span>
                 </div>
-            `;
+                <div style="background:#e8e0f0;border-radius:20px;height:6px;overflow:hidden;margin-bottom:12px;">
+                    <div style="background:${color.border};height:100%;width:${pct}%;border-radius:20px;"></div>
+                </div>
+                ${reqHtml}
+            </div>
+        `;
+    }
 
-            container.innerHTML = html;
+    html += `
+        </div>
 
-            if (isLeader) {
-                document.getElementById('save-leader-notes')?.addEventListener('click', async function() {
-                    const notes = document.getElementById('leader-notes').value.trim();
-                    try {
-                        await updateDoc(doc(db, 'sessions', sessionId), {
-                            leaderNotes: notes,
-                            lastEditedBy: currentUser.username,
-                            lastEditedAt: new Date().toISOString()
-                        });
-                        document.getElementById('leader-notes-message').textContent = '✅ Notes saved!';
-                        document.getElementById('leader-notes-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('leader-notes-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('leader-notes-message').style.color = '#e74c3c';
-                    }
-                });
-            }
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">📋 Attendance & Sessions</h3>
+            <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
+                <div><span style="font-weight:600;">${attendedSessions.length}</span> sessions attended</div>
+                <div><span style="font-weight:600;">${totalHours}</span> total service hours</div>
+            </div>
+            ${attendedSessions.length === 0 ? '<p style="color:var(--text-muted);">No sessions attended yet.</p>' : ''}
+            ${attendedSessions.map(s => `
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f0f8;font-size:14px;">
+                    <span>${s.name}</span>
+                    <span style="color:var(--text-muted);">${s.date} · ${s.duration || 0}h</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
 
-            document.getElementById('mark-all-present')?.addEventListener('click', async function() {
+    pageContent.innerHTML = html;
+
+    document.getElementById('back-to-scouts').addEventListener('click', () => {
+        selectedScout = null;
+        renderView();
+    });
+
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const scout = allScouts.find(s => s.email === email);
+            if (!scout) return;
+            
+            const promo = isReadyForPromotion(email);
+            if (!promo) return;
+            
+            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
                 try {
-                    const docRef = doc(db, 'sessions', sessionId);
-                    const docSnap = await getDoc(docRef);
-                    const data = docSnap.data();
-                    const attendance = data.attendance || {};
-                    for (const scout of allScouts) {
-                        attendance[scout.email] = true;
-                    }
-                    await updateDoc(docRef, { attendance });
-                    document.getElementById('attendance-message').textContent = '✅ All scouts marked present!';
-                    document.getElementById('attendance-message').style.color = '#4caf50';
+                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    scout.rank = promo.nextRank;
+                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
-                    document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
-                    document.getElementById('attendance-message').style.color = '#e74c3c';
+                    alert('Error promoting: ' + error.message);
                 }
-            });
+            }
+        });
+    });
 
-            document.querySelectorAll('.toggle-btn').forEach(btn => {
-                btn.addEventListener('click', async function() {
-                    const email = this.dataset.email;
-                    const currentPresent = this.textContent === 'Mark Absent';
-                    const newStatus = !currentPresent;
+    document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const scoutEmail = this.dataset.email;
+            const newRole = this.dataset.role;
+            try {
+                await setDoc(doc(db, 'users', scoutEmail), { scoutRole: newRole }, { merge: true });
+                document.getElementById('role-message').textContent = `✅ Role updated to: ${newRole}`;
+                document.getElementById('role-message').style.color = '#4caf50';
+                const scout = allScouts.find(s => s.email === scoutEmail);
+                if (scout) scout.scoutRole = newRole;
+                setTimeout(() => renderScoutProfile(scoutEmail), 1000);
+            } catch (error) {
+                document.getElementById('role-message').textContent = `❌ Error: ${error.message}`;
+                document.getElementById('role-message').style.color = '#e74c3c';
+            }
+        });
+    });
 
-                    try {
-                        const docRef = doc(db, 'sessions', sessionId);
-                        const docSnap = await getDoc(docRef);
-                        const data = docSnap.data();
-                        const attendance = data.attendance || {};
-                        attendance[email] = newStatus;
-                        await updateDoc(docRef, { attendance });
-                        document.getElementById('attendance-message').textContent = `✅ ${email} marked ${newStatus ? 'present' : 'absent'}`;
-                        document.getElementById('attendance-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('attendance-message').style.color = '#e74c3c';
-                    }
-                });
-            });
+    document.querySelectorAll('.approve-req-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const scoutEmail = this.dataset.email;
+            const field = this.dataset.field;
+            
+            try {
+                const docRef = doc(db, 'scoutStatus', scoutEmail);
+                const docSnap = await getDoc(docRef);
+                const data = docSnap.data() || {};
+                data[field] = { 
+                    status: 'approved', 
+                    approvedBy: currentUser.username,
+                    approvedAt: new Date().toISOString()
+                };
+                await setDoc(docRef, data);
+            } catch (error) {
+                alert('Error approving: ' + error.message);
+            }
+        });
+    });
+}
 
-            if (!isLeader) {
-                document.getElementById('submit-feedback')?.addEventListener('click', async function() {
-                    const feedback = document.getElementById('scout-feedback').value.trim();
-                    if (!feedback) {
-                        document.getElementById('feedback-message').textContent = '⚠️ Please write something.';
-                        document.getElementById('feedback-message').style.color = '#e67e22';
-                        return;
-                    }
+// ─── Pending Approvals ──────────────────────────────────
+function renderPendingApprovals() {
+    let pendingItems = [];
+    let readyForPromotion = [];
 
-                    try {
-                        const docRef = doc(db, 'sessions', sessionId);
-                        const docSnap = await getDoc(docRef);
-                        const data = docSnap.data();
-                        const scoutNotes = data.scoutNotes || {};
-                        scoutNotes[userEmail] = feedback;
-                        await updateDoc(docRef, { scoutNotes });
-                        document.getElementById('feedback-message').textContent = '✅ Feedback submitted!';
-                        document.getElementById('feedback-message').style.color = '#4caf50';
-                    } catch (error) {
-                        document.getElementById('feedback-message').textContent = '❌ Error: ' + error.message;
-                        document.getElementById('feedback-message').style.color = '#e74c3c';
-                    }
+    for (const scout of allScouts) {
+        const status = allStatus[scout.email] || {};
+        
+        for (const key in status) {
+            if (status[key].status === 'pending') {
+                let reqName = key;
+                let badgeType = 'membership';
+                if (key.startsWith('membership_')) {
+                    reqName = key.replace('membership_', '');
+                    badgeType = 'membership';
+                } else if (key.startsWith('secondClass_')) {
+                    reqName = key.replace('secondClass_', '');
+                    badgeType = 'secondClass';
+                } else if (key.startsWith('firstClass_')) {
+                    reqName = key.replace('firstClass_', '');
+                    badgeType = 'firstClass';
+                } else if (key.startsWith('badge_')) {
+                    reqName = key.replace('badge_', '');
+                    badgeType = 'badge';
+                }
+
+                pendingItems.push({
+                    scout: scout,
+                    field: key,
+                    reqName: reqName,
+                    badgeType: badgeType,
+                    status: status[key]
                 });
             }
         }
+        
+        const promo = isReadyForPromotion(scout.email);
+        if (promo) {
+            readyForPromotion.push({ scout, promo });
+        }
+    }
 
-        async function init() {
-            await loadScouts();
+    const order = { membership: 0, secondClass: 1, firstClass: 2, badge: 3 };
+    pendingItems.sort((a, b) => order[a.badgeType] - order[b.badgeType]);
 
-            onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
-                if (!docSnap.exists()) {
-                    container.innerHTML = `<p style="color:#e74c3c;">Session not found.</p>`;
-                    return;
+    const totalPending = pendingItems.length + readyForPromotion.length;
+
+    if (totalPending === 0) {
+        pageContent.innerHTML = `
+            <h2 style="color:var(--purple-dark);margin-bottom:24px;">✅ Pending Approvals</h2>
+            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:48px;margin-bottom:16px;">🎉</div>
+                <p style="color:var(--text-muted);font-size:18px;">No pending approvals! All caught up.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+            <h2 style="color:var(--purple-dark);">⏳ Pending Approvals</h2>
+            <span style="color:var(--text-muted);font-size:14px;">${totalPending} items</span>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#7bcb7b;color:white;font-size:12px;font-weight:500;">Membership</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#4caf50;color:white;font-size:12px;font-weight:500;">Second Class</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#2e7d32;color:white;font-size:12px;font-weight:500;">First Class</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#00897b;color:white;font-size:12px;font-weight:500;">Badges</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;font-size:12px;font-weight:500;">🌟 Ready for Promotion</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+    `;
+
+    for (const item of pendingItems) {
+        const color = getBadgeInfo(item.field);
+        const label = getBadgeLabel(item.field);
+        const name = item.scout.fullName || item.scout.username;
+
+        html += `
+            <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid ${color.border};">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${color.border};"></span>
+                    <span style="font-size:12px;font-weight:600;color:${color.text};background:${color.bg};padding:2px 10px;border-radius:8px;">${label}</span>
+                    <span style="font-weight:500;">${item.reqName}</span>
+                    <span style="color:var(--text-muted);font-size:14px;">— ${name}</span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button class="approve-btn" data-email="${item.scout.email}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Approve</button>
+                    <button class="reject-btn" data-email="${item.scout.email}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Reject</button>
+                </div>
+            </div>
+        `;
+    }
+
+    for (const item of readyForPromotion) {
+        const name = item.scout.fullName || item.scout.username;
+        const goldenGreen = 'linear-gradient(135deg, #b8860b, #6b8e23)';
+
+        html += `
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${goldenGreen};"></span>
+                    <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">🌟 Ready for Promotion</span>
+                    <span style="font-weight:500;">${name}</span>
+                    <span style="color:var(--text-muted);font-size:14px;">${item.promo.currentRank} → ${item.promo.nextRank}</span>
+                </div>
+                <button class="promote-btn" data-email="${item.scout.email}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">🌟 Promote Now</button>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    pageContent.innerHTML = html;
+
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const field = this.dataset.field;
+            
+            const docRef = doc(db, 'scoutStatus', email);
+            const docSnap = await getDoc(docRef);
+            const data = docSnap.data() || {};
+            data[field] = { 
+                status: 'approved', 
+                approvedBy: currentUser.username,
+                approvedAt: new Date().toISOString()
+            };
+            await setDoc(docRef, data);
+        });
+    });
+
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const field = this.dataset.field;
+            const docRef = doc(db, 'scoutStatus', email);
+            const docSnap = await getDoc(docRef);
+            const data = docSnap.data() || {};
+            data[field] = { status: 'todo' };
+            await setDoc(docRef, data);
+        });
+    });
+
+    document.querySelectorAll('.promote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const email = this.dataset.email;
+            const scout = allScouts.find(s => s.email === email);
+            if (!scout) return;
+            
+            const promo = isReadyForPromotion(email);
+            if (!promo) return;
+            
+            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
+                try {
+                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    scout.rank = promo.nextRank;
+                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                } catch (error) {
+                    alert('Error promoting: ' + error.message);
                 }
-                renderSession({ id: docSnap.id, ...docSnap.data() });
-            }, (error) => {
-                console.error('Session listener error:', error);
-                container.innerHTML = `<p style="color:#e74c3c;">Error loading session: ${error.message}</p>`;
+            }
+        });
+    });
+}
+
+// ─── Sessions View ──────────────────────────────────────
+function renderSessions() {
+    let totalSessions = allSessions.length;
+    let totalHours = 0;
+    let totalAttendees = new Set();
+
+    for (const session of allSessions) {
+        totalHours += session.duration || 0;
+        if (session.attendance) {
+            Object.keys(session.attendance).forEach(email => {
+                if (session.attendance[email] === true) {
+                    totalAttendees.add(email);
+                }
             });
         }
+    }
 
-        init();
-    </script>
-</body>
-</html>
+    let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h2 style="color:var(--purple-dark);margin:0;">📋 Sessions</h2>
+                <p style="color:var(--text-muted);margin-top:4px;">All scout sessions</p>
+            </div>
+            <a href="new-session.html" class="new-session-btn" style="background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;">➕ New Session</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:var(--purple);">${totalSessions}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Sessions</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:#4caf50;">${totalHours}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Scouting Hours</div>
+            </div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${totalAttendees.size}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Attendees</div>
+            </div>
+        </div>
+    `;
+
+    if (allSessions.length === 0) {
+        html += `
+            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:64px;margin-bottom:16px;">📅</div>
+                <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
+                <p style="color:var(--text-muted);">Click "New Session" to create your first session!</p>
+            </div>
+        `;
+        pageContent.innerHTML = html;
+        return;
+    }
+
+    const sortedSessions = [...allSessions].sort((a, b) => {
+        if (a.date > b.date) return -1;
+        if (a.date < b.date) return 1;
+        return 0;
+    });
+
+    html += `<div style="display:flex;flex-direction:column;gap:12px;">`;
+
+    for (const session of sortedSessions) {
+        const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
+        const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
+        
+        // Status badge
+        const today = new Date().toISOString().split('T')[0];
+        let statusBadge = '';
+        let statusColor = '';
+        if (session.date === today) {
+            statusBadge = 'Today';
+            statusColor = '#28a745';
+        } else if (session.date > today) {
+            statusBadge = 'Upcoming';
+            statusColor = '#007bff';
+        } else {
+            statusBadge = 'Completed';
+            statusColor = '#6c757d';
+        }
+
+        html += `
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                    <div style="flex:1;min-width:200px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                            <span style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</span>
+                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
+                        </div>
+                        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
+                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                        </div>
+                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <div style="text-align:center;">
+                            <div style="font-size:20px;font-weight:700;color:var(--purple);">${session.duration || 0}</div>
+                            <div style="font-size:10px;color:var(--text-muted);">hours</div>
+                        </div>
+                        <div style="text-align:center;min-width:45px;">
+                            <div style="font-size:18px;font-weight:600;color:#8fbcbb;">${attendeeCount}</div>
+                            <div style="font-size:10px;color:var(--text-muted);">attended</div>
+                        </div>
+                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;">✅ Attended</span>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    pageContent.innerHTML = html;
+
+    document.querySelectorAll('.session-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const id = this.dataset.id;
+            window.location.href = `session-detail.html?id=${id}`;
+        });
+    });
+}
+
+// ─── Export ────────────────────────────────────────────
+function renderExport() {
+    pageContent.innerHTML = `
+        <h2 style="color:var(--purple-dark);margin-bottom:24px;">📤 Export Data</h2>
+        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="font-size:48px;margin-bottom:16px;">📊</div>
+            <p style="color:var(--text-muted);font-size:16px;">Export feature coming soon.</p>
+        </div>
+    `;
+}
+
+// ─── Navigation ──────────────────────────────────────────
+document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        currentView = this.dataset.view;
+        selectedScout = null;
+        renderView();
+    });
+});
+
+// ─── Logout ──────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', () => {
+    if (usersUnsubscribe) usersUnsubscribe();
+    if (statusUnsubscribe) statusUnsubscribe();
+    if (sessionsUnsubscribe) sessionsUnsubscribe();
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+});
+
+// ─── Init ────────────────────────────────────────────────
+async function init() {
+    listenToUsers();
+    listenToStatus();
+    listenToSessions();
+    renderView();
+}
+
+init();
