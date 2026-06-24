@@ -2,12 +2,59 @@ import { auth, db } from './firebase-config.js';
 import { 
     doc, getDoc, setDoc, collection, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { membershipRequirements } from './data/membership-requirements.js';
-import { secondClassRequirements } from './data/secondclass-requirements.js';
-import { firstClassRequirements } from './data/firstclass-requirements.js';
 
-// ─── HARDCODED REQUIREMENTS (fallback if imports fail) ──
-// These are here as backup, but imports from data files will be used first
+// ─── HARDCODED REQUIREMENTS ──────────────────────────────
+const membershipRequirements = [
+    "Law and Promise",
+    "Scout Uniform, Badges and Positions",
+    "Knots and Whipping",
+    "Woodcraft Signs",
+    "National Flag, Anthem, Emblem, Tree, Flower",
+    "Scouting History",
+    "Salutes, Signs, Handshake, Scout Staff",
+    "Dress a Wound",
+    "Whistle Calls, Silent Signs, Formations",
+    "Re-test Membership",
+    "Interview by Scouter",
+    "Investiture"
+];
+
+const secondClassRequirements = [
+    "Scouting History",
+    "Pitch Strike and Store a Hike or Patrol Tent",
+    "Knots and Lashing",
+    "Wood Craft Signs",
+    "Hand Axe, Froe and Kathi Valhi",
+    "Cooking",
+    "Fire Lighting",
+    "Hike",
+    "First Aid",
+    "Rules of Health",
+    "Swimming",
+    "Observation Skills",
+    "Common Trees, Birds and Fishes",
+    "Compass and the Safety Regulations of a Sea Going Vessel",
+    "Environmental Education",
+    "Re-test Scout Standard"
+];
+
+const firstClassRequirements = [
+    "Emergencies",
+    "First Aid",
+    "Common Trees, Birds and Fishes",
+    "Felling Axes and Maldivian Tools Mulhoa, Odaa",
+    "Mapping and Compass",
+    "Estimation",
+    "Knots, Lashing and Splices",
+    "Tracking",
+    "Swimming",
+    "Cooking",
+    "Camping",
+    "Environmental Education",
+    "Hike - Expedition",
+    "Re-test Advance Scout Standard"
+];
+
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 if (!currentUser || currentUser.role !== 'leader') {
@@ -441,13 +488,18 @@ async function renderScoutProfile(email) {
             };
             const icon = statusIcons[statusText] || '🚩';
             
+            // Check if report exists
+            const reportKey = `${badge.key}_${req}_report`;
+            const hasReport = status[reportKey] && (status[reportKey].note || (status[reportKey].images && status[reportKey].images.length > 0));
+            
             reqHtml += `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f0f8;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span>${icon}</span>
                         <span style="font-size:14px;">${req}</span>
                     </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        ${hasReport ? `<a href="report-viewer.html?email=${email}&tab=${badge.key}&req=${encodeURIComponent(req)}" target="_blank" style="font-size:11px;color:var(--purple);text-decoration:underline;cursor:pointer;">📄 View Report</a>` : ''}
                         <span style="font-size:12px;color:var(--text-muted);">${statusText}</span>
                         <button class="approve-req-btn" data-email="${email}" data-field="${key}" style="background:${color.border};color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
                     </div>
@@ -552,6 +604,13 @@ async function renderScoutProfile(email) {
                     approvedAt: new Date().toISOString()
                 };
                 await setDoc(docRef, data);
+                
+                // Refresh status
+                allStatus = {};
+                const statusSnap = await getDocs(collection(db, 'scoutStatus'));
+                statusSnap.forEach(doc => {
+                    allStatus[doc.id] = doc.data();
+                });
             } catch (error) {
                 alert('Error approving: ' + error.message);
             }
@@ -689,6 +748,13 @@ function renderPendingApprovals() {
                 approvedAt: new Date().toISOString()
             };
             await setDoc(docRef, data);
+            
+            allStatus = {};
+            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
+            statusSnap.forEach(doc => {
+                allStatus[doc.id] = doc.data();
+            });
+            renderPendingApprovals();
         });
     });
 
@@ -701,6 +767,13 @@ function renderPendingApprovals() {
             const data = docSnap.data() || {};
             data[field] = { status: 'todo' };
             await setDoc(docRef, data);
+            
+            allStatus = {};
+            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
+            statusSnap.forEach(doc => {
+                allStatus[doc.id] = doc.data();
+            });
+            renderPendingApprovals();
         });
     });
 
@@ -863,7 +936,7 @@ function renderSessions() {
     document.querySelectorAll('.session-card').forEach(card => {
         card.addEventListener('click', function() {
             const id = this.dataset.id;
-            window.location.href = `session-detail.html?id=${id}`;
+            window.location.href = `session-detail-leader.html?id=${id}`;
         });
     });
 }
