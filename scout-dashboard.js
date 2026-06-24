@@ -315,7 +315,13 @@ function renderRequirements(tab, reqs, title) {
                 
                 const reportKey = `${tab}_${req.name}_report`;
                 const hasReport = scoutStatus[reportKey] && (scoutStatus[reportKey].note || (scoutStatus[reportKey].images && scoutStatus[reportKey].images.length > 0));
-                const reportBtn = `<button class="report-btn ${hasReport ? 'has-report' : 'no-report'}" data-req="${req.name}" data-tab="${tab}">${hasReport ? '📄 Report' : '📄 Add Report'}</button>`;
+                
+                let reportBtn = '';
+                if (hasReport) {
+                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">📄 View Report</a>`;
+                } else {
+                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:6px 16px;border-radius:40px;font-size:13px;cursor:pointer;font-weight:500;">📄 Add Report</button>`;
+                }
                 
                 return `
                     <div class="req-card">
@@ -363,7 +369,7 @@ function renderRequirements(tab, reqs, title) {
     });
 
     // ─── Report button ─────────────────────────────────────
-    document.querySelectorAll('.report-btn').forEach(btn => {
+    document.querySelectorAll('.report-btn.no-report').forEach(btn => {
         btn.addEventListener('click', function() {
             currentReportTab = this.dataset.tab;
             currentReportReq = this.dataset.req;
@@ -378,12 +384,7 @@ function renderRequirements(tab, reqs, title) {
 function renderReportModal() {
     const key = `${currentReportTab}_${currentReportReq}_report`;
     const report = scoutStatus[key] || { note: '', images: [], updatedAt: null };
-    const reqKey = `${currentReportTab}_${currentReportReq}`;
-    const reqStatus = scoutStatus[reqKey] ? scoutStatus[reqKey].status : 'todo';
-
-    // Use existing images from report
-    const existingImages = report.images || [];
-    const allImages = [...existingImages];
+    const allImages = report.images || [];
 
     let html = `
         <div class="report-modal-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -404,7 +405,7 @@ function renderReportModal() {
                     <div id="drop-zone" style="border:2px dashed #e0d6ec;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;">
                         <div style="font-size:40px;margin-bottom:8px;">📸</div>
                         <p style="color:var(--text-muted);">Drag & drop images here, or click to select</p>
-                        <p style="font-size:12px;color:var(--text-muted);">Images will be compressed to ~100-200KB</p>
+                        <p style="font-size:12px;color:var(--text-muted);">Images will be compressed to ~100-200KB (max 5 images)</p>
                         <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
                     </div>
                 </div>
@@ -470,6 +471,13 @@ function renderReportModal() {
         const container = document.getElementById('image-preview-container');
         const message = document.getElementById('report-message');
         
+        // Check if adding these would exceed 5
+        if (allImages.length + files.length > 5) {
+            message.textContent = '⚠️ Maximum 5 images allowed. You have ' + allImages.length + ' already.';
+            message.style.color = '#e67e22';
+            return;
+        }
+        
         for (const file of files) {
             if (!file.type.startsWith('image/')) {
                 message.textContent = '⚠️ Please select image files only.';
@@ -478,11 +486,9 @@ function renderReportModal() {
             }
             
             try {
-                // Resize image to Instagram quality
                 const base64 = await resizeImage(file, 600, 0.7);
                 allImages.push(base64);
                 
-                // Update preview
                 const imgDiv = document.createElement('div');
                 imgDiv.className = 'image-preview-item';
                 imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;';
@@ -495,7 +501,6 @@ function renderReportModal() {
                 message.textContent = `✅ ${file.name} uploaded (${Math.round(base64.length / 1024)}KB)`;
                 message.style.color = '#4caf50';
                 
-                // Re-attach remove event
                 imgDiv.querySelector('.remove-image').addEventListener('click', function() {
                     const idx = parseInt(this.dataset.index);
                     removeImage(idx);
