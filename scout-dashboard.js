@@ -18,13 +18,21 @@ const scoutNameEl = document.getElementById('scout-name');
 const scoutSubtitle = document.getElementById('scout-subtitle');
 const sidebarName = document.getElementById('sidebar-name');
 const sidebarRank = document.getElementById('sidebar-rank');
-const headerAvatar = document.getElementById('header-avatar');
 const sidebarAvatar = document.getElementById('sidebar-avatar');
+const pageHeading = document.getElementById('page-heading');
 
 // ─── Set user info ──────────────────────────────────────
-const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-if (scoutNameEl) scoutNameEl.textContent = displayName;
-if (sidebarName) sidebarName.textContent = displayName;
+let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+
+function updateDisplayName(name) {
+    displayName = name;
+    if (scoutNameEl) scoutNameEl.textContent = name;
+    if (sidebarName) sidebarName.textContent = name;
+    // Update heading if on campsite
+    if (currentView === 'dashboard' && pageHeading) {
+        pageHeading.innerHTML = `Good morning, <span id="scout-name">${name}</span>! 👋`;
+    }
+}
 
 // ─── Avatar colors ──────────────────────────────────────
 const colors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
@@ -35,7 +43,6 @@ function getColor(name) {
 }
 
 const avatarColor = getColor(currentUser.username);
-if (headerAvatar) headerAvatar.style.background = avatarColor;
 if (sidebarAvatar) sidebarAvatar.style.background = avatarColor;
 
 // ─── IMPORTANT: Use email as document ID ──────────────
@@ -59,6 +66,11 @@ async function loadScoutData() {
     scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
     
     if (sidebarRank) sidebarRank.textContent = `Scout · ${scoutData.rank || 'Membership'}`;
+    
+    // Update display name if fullName exists
+    if (scoutData.fullName) {
+        updateDisplayName(scoutData.fullName);
+    }
 }
 
 // ─── Real-time status listener ──────────────────────────
@@ -71,7 +83,6 @@ function listenToStatus() {
     const docRef = doc(db, 'scoutStatus', userEmail);
     statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
         scoutStatus = docSnap.exists() ? docSnap.data() : {};
-        // Re-render current view (except profile and report modal)
         if (currentView !== 'profile' && currentView !== 'reportModal') {
             renderView();
         }
@@ -183,24 +194,51 @@ function renderLockedMessage(tab) {
 function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
+    
+    // Update page heading based on view
+    if (pageHeading) {
+        if (currentView === 'dashboard') {
+            pageHeading.innerHTML = `Good morning, <span id="scout-name">${displayName}</span>! 👋`;
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Welcome to your Campsite';
+        } else if (currentView === 'membership') {
+            pageHeading.textContent = '🏅 Membership Badge';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
+        } else if (currentView === 'second') {
+            pageHeading.textContent = '⭐ Second Class Badge';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
+        } else if (currentView === 'first') {
+            pageHeading.textContent = '🌟 First Class Badge';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
+        } else if (currentView === 'badges') {
+            pageHeading.textContent = '🏆 Proficiency Badges';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Start earning badges for your skills!';
+        } else if (currentView === 'sessions') {
+            pageHeading.textContent = '📋 My Sessions';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
+        } else if (currentView === 'profile') {
+            pageHeading.textContent = '👤 My Profile';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your personal information';
+        }
+    }
+    
     if (currentView === 'dashboard') renderDashboard();
     else if (currentView === 'membership') {
         if (isBadgeAccessible('membership')) {
-            renderRequirements('membership', membershipRequirements, '🏅 Membership Badge');
+            renderRequirements('membership', membershipRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('membership');
         }
     }
     else if (currentView === 'second') {
         if (isBadgeAccessible('secondClass')) {
-            renderRequirements('secondClass', secondClassRequirements, '⭐ Second Class Badge');
+            renderRequirements('secondClass', secondClassRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('secondClass');
         }
     }
     else if (currentView === 'first') {
         if (isBadgeAccessible('firstClass')) {
-            renderRequirements('firstClass', firstClassRequirements, '🌟 First Class Badge');
+            renderRequirements('firstClass', firstClassRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('firstClass');
         }
@@ -230,9 +268,8 @@ function renderDashboard() {
 
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">👋</div>
-            <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">Welcome back, ${displayName}!</h2>
-            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Rank: ${scoutData.rank || 'Membership'}</p>
+            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
+            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Campsite is under construction. Check back soon!</p>
 
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
                 <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -249,7 +286,7 @@ function renderDashboard() {
                 </div>
                 <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                     <div style="font-size:28px;font-weight:700;color:#4caf50;">${scoutServiceHours}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
+                    <div style="font-size:14px;color:var(--text-muted);">Hours of Scouting</div>
                 </div>
             </div>
 
@@ -274,7 +311,13 @@ function renderDashboard() {
 }
 
 // ─── Requirements View ──────────────────────────────────
-function renderRequirements(tab, reqs, title) {
+function renderRequirements(tab, reqs) {
+    const titles = {
+        'membership': '🏅 Membership Badge',
+        'secondClass': '⭐ Second Class Badge',
+        'firstClass': '🌟 First Class Badge'
+    };
+    
     let completed = 0, pending = 0;
     for (const req of reqs) {
         const key = `${tab}_${req.name}`;
@@ -286,7 +329,6 @@ function renderRequirements(tab, reqs, title) {
     const progress = Math.round((completed / total) * 100);
 
     let html = `
-        <h2 style="color:var(--purple-dark);margin-bottom:16px;">${title}</h2>
         <div class="progress-section" style="margin-bottom:20px;">
             <div class="progress-header"><span>Progress</span><span>${completed}/${total}</span></div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
@@ -577,29 +619,9 @@ function renderReportModal() {
 
 // ─── Sessions View ──────────────────────────────────────
 function renderSessions() {
-    let html = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
-            <span style="color:var(--text-muted);font-size:14px;">Loading...</span>
-        </div>
-        <div style="text-align:center;padding:40px 0;">
-            <div style="display:inline-block;width:40px;height:40px;border:4px solid #e8e0f0;border-top-color:var(--purple);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-            <p style="color:var(--text-muted);margin-top:12px;">Loading your sessions...</p>
-        </div>
-        <style>
-            @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
-    `;
-    
-    pageContent.innerHTML = html;
-
     if (allSessions.length === 0) {
         pageContent.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
-                <span style="color:var(--text-muted);font-size:14px;">0 sessions</span>
-            </div>
-            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="text-align:center;padding:40px 0;">
                 <div style="font-size:64px;margin-bottom:16px;">📅</div>
                 <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
                 <p style="color:var(--text-muted);">You haven't attended any sessions yet.</p>
@@ -614,11 +636,6 @@ function renderSessions() {
     }
 
     let contentHtml = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2 style="color:var(--purple-dark);">📋 My Sessions</h2>
-            <span style="color:var(--text-muted);font-size:14px;">⏱️ ${totalHours} total hours</span>
-        </div>
-
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
             <div style="background:white;border-radius:16px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:24px;font-weight:700;color:var(--purple);">${allSessions.length}</div>
@@ -626,7 +643,7 @@ function renderSessions() {
             </div>
             <div style="background:white;border-radius:16px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:24px;font-weight:700;color:#4caf50;">${totalHours}</div>
-                <div style="font-size:12px;color:var(--text-muted);">Service Hours</div>
+                <div style="font-size:12px;color:var(--text-muted);">Hours of Scouting</div>
             </div>
         </div>
 
@@ -686,7 +703,7 @@ async function renderProfile() {
 
             <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
-                    <div class="person-avatar" style="width:80px;height:80px;background:${avatarColor};border:2px solid var(--orange-light);">
+                    <div class="person-avatar" style="width:80px;height:80px;background:${avatarColor};">
                         <div class="head" style="width:24px;height:24px;top:16px;"></div>
                         <div class="body" style="width:38px;height:22px;bottom:14px;"></div>
                     </div>
@@ -713,6 +730,14 @@ async function renderProfile() {
                             <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Patrol</label>
                             <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
                         </div>
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Role</label>
+                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8e0f0;font-size:14px;background:#f5f0f8;color:var(--text-muted);">
+                            <span style="font-size:12px;color:var(--text-muted);">(Set by leader)</span>
+                        </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Rank</label>
                             <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8e0f0;font-size:14px;background:#f5f0f8;color:var(--text-muted);">
@@ -782,6 +807,12 @@ async function renderProfile() {
 
         try {
             await setDoc(doc(db, 'users', userEmail), updateData, { merge: true });
+            
+            // Update display name everywhere
+            if (fullName) {
+                updateDisplayName(fullName);
+            }
+            
             document.getElementById('profile-message').textContent = '✅ Profile saved successfully!';
             document.getElementById('profile-message').style.color = '#8fbcbb';
             setTimeout(() => renderProfile(), 1200);
@@ -822,12 +853,6 @@ document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
 
 // ─── Avatar click → Profile ─────────────────────────────
 document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
-    currentView = 'profile';
-    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-    renderView();
-});
-
-document.getElementById('header-avatar')?.addEventListener('click', () => {
     currentView = 'profile';
     document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
     renderView();
