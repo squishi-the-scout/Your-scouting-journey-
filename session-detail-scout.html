@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Detail — GIS Scouts</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .detail-section {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            margin-bottom: 20px;
+        }
+        .detail-section h3 {
+            color: var(--text-dark);
+            margin-bottom: 16px;
+        }
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .scout-feedback-area {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e0d6ec;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .meta-item .label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .meta-item .value {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 16px;
+            color: #8baa9a;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .back-link:hover {
+            color: var(--purple-dark);
+        }
+        .attendance-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .attendance-status.present {
+            background: #d4edda;
+            color: #155724;
+        }
+        .attendance-status.absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        @media (max-width: 768px) {
+            .meta-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width:800px;margin:0 auto;padding:32px 20px;">
+        <span class="back-link" id="back-link">← Back to My Sessions</span>
+
+        <div id="session-detail">
+            <div style="text-align:center;padding:40px 0;">
+                <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+                <p style="color:var(--text-muted);">Loading session details...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { 
+            doc, getDoc, updateDoc, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser || currentUser.role !== 'scout') {
+            window.location.href = 'index.html';
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('id');
+        if (!sessionId) {
+            document.getElementById('session-detail').innerHTML = `<p style="color:#e74c3c;">No session ID provided.</p>`;
+        }
+
+        const userEmail = `${currentUser.username}@gis-scout.local`;
+        const container = document.getElementById('session-detail');
+
+        // ─── Back button ──────────────────────────────────────
+        document.getElementById('back-link').addEventListener('click', function() {
+            window.location.href = 'scout-dashboard.html#sessions';
+        });
+
+        // ─── Render session ──────────────────────────────────
+        function renderSession(session) {
+            const isAttending = session.attendance ? session.attendance[userEmail] === true : false;
+
+            let html = `
+                <div class="detail-section">
+                    <h2 style="color:var(--purple-dark);margin:0 0 8px 0;">${session.name}</h2>
+                    <div class="meta-grid">
+                        <div class="meta-item"><span class="label">📅 Date</span><span class="value">${session.date}</span></div>
+                        <div class="meta-item"><span class="label">⏰ Time</span><span class="value">${session.time}</span></div>
+                        <div class="meta-item"><span class="label">📍 Location</span><span class="value">${session.location || 'TBD'}</span></div>
+                        <div class="meta-item"><span class="label">⏱️ Duration</span><span class="value">${session.duration || 0} hours</span></div>
+                    </div>
+                    ${session.purpose ? `<p style="margin-top:16px;color:var(--text-dark);">📝 ${session.purpose}</p>` : ''}
+                    
+                    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                            <div>
+                                <span style="font-weight:500;">Your Attendance:</span>
+                                <span class="attendance-status ${isAttending ? 'present' : 'absent'}">
+                                    ${isAttending ? '✅ Attended' : '❌ Not Attended'}
+                                </span>
+                            </div>
+                            <div>
+                                ${isAttending ? `
+                                    <button id="mark-absent-btn" class="btn-danger">Mark as Absent</button>
+                                ` : `
+                                    <button id="mark-present-btn" class="btn-success">Mark as Present</button>
+                                `}
+                            </div>
+                        </div>
+                        <div id="attendance-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>💬 Your Feedback</h3>
+                    <div style="margin-bottom:12px;">
+                        <textarea id="scout-feedback" class="scout-feedback-area" placeholder="What did you learn? Any suggestions?">${session.scoutNotes ? session.scoutNotes[userEmail] || '' : ''}</textarea>
+                        <button id="submit-feedback" class="btn-primary" style="margin-top:12px;">📤 Submit Feedback</button>
+                        <div id="feedback-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // ─── Mark Present ──────────────────────────────────
+            document.getElementById('mark-present-btn')?.addEventListener('click', async function() {
+                try {
+                    const docRef = doc(db, 'sessions', sessionId);
+                    const docSnap = await getDoc(docRef);
+                    const data = docSnap.data();
+                    const attendance = data.attendance || {};
+                    attendance[userEmail] = true;
+                    await updateDoc(docRef, { attendance });
+                    document.getElementById('attendance-message').textContent = '✅ You are now marked as present!';
+                    document.getElementById('attendance-message').style.color = '#4caf50';
+                } catch (error) {
+                    document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
+                    document.getElementById('attendance-message').style.color = '#e74c3c';
+                }
+            });
+
+            // ─── Mark Absent ──────────────────────────────────
+            document.getElementById('mark-absent-btn')?.addEventListener('click', async function() {
+                try {
+                    const docRef = doc(db, 'sessions', sessionId);
+                    const docSnap = await getDoc(docRef);
+                    const data = docSnap.data();
+                    const attendance = data.attendance || {};
+                    attendance[userEmail] = false;
+                    await updateDoc(docRef, { attendance });
+                    document.getElementById('attendance-message').textContent = '✅ You are now marked as absent.';
+                    document.getElementById('attendance-message').style.color = '#4caf50';
+                } catch (error) {
+                    document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
+                    document.getElementById('attendance-message').style.color = '#e74c3c';
+                }
+            });
+
+            // ─── Submit Feedback ──────────────────────────────
+            document.getElementById('submit-feedback')?.addEventListener('click', async function() {
+                const feedback = document.getElementById('scout-feedback').value.trim();
+                if (!feedback) {
+                    document.getElementById('feedback-message').textContent = '⚠️ Please write something.';
+                    document.getElementById('feedback-message').style.color = '#e67e22';
+                    return;
+                }
+
+                try {
+                    const docRef = doc(db, 'sessions', sessionId);
+                    const docSnap = await getDoc(docRef);
+                    const data = docSnap.data();
+                    const scoutNotes = data.scoutNotes || {};
+                    scoutNotes[userEmail] = feedback;
+                    await updateDoc(docRef, { scoutNotes });
+                    document.getElementById('feedback-message').textContent = '✅ Feedback submitted!';
+                    document.getElementById('feedback-message').style.color = '#4caf50';
+                } catch (error) {
+                    document.getElementById('feedback-message').textContent = '❌ Error: ' + error.message;
+                    document.getElementById('feedback-message').style.color = '#e74c3c';
+                }
+            });
+        }
+
+        // ─── Real-time listener ─────────────────────────────
+        onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
+            if (!docSnap.exists()) {
+                container.innerHTML = `<p style="color:#e74c3c;">Session not found.</p>`;
+                return;
+            }
+            renderSession({ id: docSnap.id, ...docSnap.data() });
+        }, (error) => {
+            console.error('Session listener error:', error);
+            container.innerHTML = `<p style="color:#e74c3c;">Error loading session: ${error.message}</p>`;
+        });
+    </script>
+</body>
+</html>
