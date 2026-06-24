@@ -226,7 +226,6 @@
 
         let allScouts = [];
 
-        // ─── Fix back button ──────────────────────────────────
         document.getElementById('back-link').addEventListener('click', function() {
             window.location.href = 'leader-dashboard.html#sessions';
         });
@@ -346,7 +345,6 @@
 
             container.innerHTML = html;
 
-            // ─── Leader Notes ──────────────────────────────────
             if (isLeader) {
                 document.getElementById('save-leader-notes')?.addEventListener('click', async function() {
                     const notes = document.getElementById('leader-notes').value.trim();
@@ -365,7 +363,6 @@
                 });
             }
 
-            // ─── Mark All Present ─────────────────────────────
             document.getElementById('mark-all-present')?.addEventListener('click', async function() {
                 try {
                     const docRef = doc(db, 'sessions', sessionId);
@@ -384,7 +381,6 @@
                 }
             });
 
-            // ─── Toggle Attendance ─────────────────────────────
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const email = this.dataset.email;
@@ -407,7 +403,6 @@
                 });
             });
 
-            // ─── Scout Feedback ────────────────────────────────
             if (!isLeader) {
                 document.getElementById('submit-feedback')?.addEventListener('click', async function() {
                     const feedback = document.getElementById('scout-feedback').value.trim();
