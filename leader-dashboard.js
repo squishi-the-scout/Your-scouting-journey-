@@ -152,6 +152,83 @@ function isReadyForPromotion(email) {
     return null;
 }
 
+// ─── Check for stagnant scouts ──────────────────────────
+function checkStagnation() {
+    const stagnantScouts = [];
+    const daysThreshold = 21; // 21 days of inactivity
+    
+    const now = new Date();
+    
+    for (const scout of allScouts) {
+        const status = allStatus[scout.email] || {};
+        let lastActivity = null;
+        let lastRequirement = 'No activity recorded';
+        
+        // Find the most recent activity across all requirements
+        for (const key in status) {
+            // Check for updatedAt on any status change
+            if (status[key].updatedAt) {
+                const activityDate = new Date(status[key].updatedAt);
+                if (!lastActivity || activityDate > lastActivity) {
+                    lastActivity = activityDate;
+                    // Extract requirement name
+                    let reqName = key;
+                    if (key.includes('_')) {
+                        reqName = key.split('_').slice(1).join('_');
+                    }
+                    lastRequirement = reqName;
+                }
+            }
+            // Also check approvedAt if updatedAt doesn't exist
+            if (status[key].approvedAt && !status[key].updatedAt) {
+                const activityDate = new Date(status[key].approvedAt);
+                if (!lastActivity || activityDate > lastActivity) {
+                    lastActivity = activityDate;
+                    let reqName = key;
+                    if (key.includes('_')) {
+                        reqName = key.split('_').slice(1).join('_');
+                    }
+                    lastRequirement = reqName;
+                }
+            }
+            // Also check createdAt for initial status (like when first marked)
+            if (status[key].createdAt && !status[key].updatedAt && !status[key].approvedAt) {
+                const activityDate = new Date(status[key].createdAt);
+                if (!lastActivity || activityDate > lastActivity) {
+                    lastActivity = activityDate;
+                    let reqName = key;
+                    if (key.includes('_')) {
+                        reqName = key.split('_').slice(1).join('_');
+                    }
+                    lastRequirement = reqName;
+                }
+            }
+        }
+        
+        // If no activity found, use join date
+        if (!lastActivity) {
+            lastActivity = scout.joinDate ? new Date(scout.joinDate) : new Date();
+            lastRequirement = 'Joined Scouting';
+        }
+        
+        const daysSince = Math.floor((now - lastActivity) / (1000 * 60 * 60 * 24));
+        
+        if (daysSince >= daysThreshold) {
+            stagnantScouts.push({
+                scout: scout,
+                daysSince: daysSince,
+                lastActivity: lastActivity,
+                lastRequirement: lastRequirement
+            });
+        }
+    }
+    
+    // Sort by days stagnant (most stagnant first)
+    stagnantScouts.sort((a, b) => b.daysSince - a.daysSince);
+    
+    return stagnantScouts;
+}
+
 function updatePendingBadge() {
     if (!pendingBadge) return;
     let count = 0;
@@ -272,14 +349,63 @@ function renderView() {
     else if (currentView === 'profile') renderLeaderProfile();
 }
 
+// ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    let html = `
+    const stagnantScouts = checkStagnation();
+    
+    let html = '';
+    
+    // ─── Stagnation Alert Banner ──────────────────────────
+    if (stagnantScouts.length > 0) {
+        html += `
+            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+                    <div style="font-weight:600;color:#856404;">⚠️ Stagnation Alerts</div>
+                    <span style="font-size:12px;color:#856404;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
+                </div>
+                ${stagnantScouts.map(item => {
+                    const name = item.scout.fullName || item.scout.username;
+                    const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
+                    const emoji = item.daysSince >= 30 ? '🔴' : '🟠';
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:white;border-radius:8px;margin-top:6px;cursor:pointer;transition:background 0.2s;" 
+                             onmouseover="this.style.background='#f8f5fa'"
+                             onmouseout="this.style.background='white'"
+                             onclick="window.selectScout('${item.scout.email}')">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span style="font-size:18px;">${emoji}</span>
+                                <span style="font-weight:500;">${name}</span>
+                                <span style="font-size:13px;color:var(--text-muted);">${item.daysSince} days · Last: ${item.lastRequirement}</span>
+                            </div>
+                            <span style="font-size:12px;color:${color};font-weight:600;">${item.daysSince >= 30 ? '⚠️ Critical' : '⚠️ Inactive'}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else {
+        html += `
+            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
+                <span style="color:#155724;">✅ All scouts are active! No stagnation alerts.</span>
+            </div>
+        `;
+    }
+
+    // ─── Heart placeholder ──────────────────────────────────
+    html += `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">💜</div>
+            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Home is under construction. Check back soon!</p>
         </div>
     `;
+
     pageContent.innerHTML = html;
+    
+    // ─── Click handler for scout cards ─────────────────────
+    window.selectScout = function(email) {
+        selectedScout = email;
+        renderView();
+    };
 }
 
 function renderAllScouts() {
@@ -306,7 +432,6 @@ function renderAllScouts() {
         const total = latestBadge.reqs.length;
         const pct = total > 0 ? Math.round((done / total) * 100) : 0;
         
-        const noteKey = `${scout.email}_note`;
         const scoutNote = scout.note || '';
 
         html += `
@@ -563,7 +688,8 @@ async function renderScoutProfile(email) {
                 data[field] = { 
                     status: 'approved', 
                     approvedBy: currentUser.username,
-                    approvedAt: new Date().toISOString()
+                    approvedAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
                 await setDoc(docRef, data);
                 
@@ -708,7 +834,8 @@ function renderPendingApprovals() {
             data[field] = { 
                 status: 'approved', 
                 approvedBy: currentUser.username,
-                approvedAt: new Date().toISOString()
+                approvedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
             await setDoc(docRef, data);
             
@@ -729,7 +856,7 @@ function renderPendingApprovals() {
             const docRef = doc(db, 'scoutStatus', email);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data() || {};
-            data[field] = { status: 'todo' };
+            data[field] = { status: 'todo', updatedAt: new Date().toISOString() };
             await setDoc(docRef, data);
             
             allStatus = {};
