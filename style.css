@@ -45,7 +45,7 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;  /* ← ADDED: extra centering insurance */
+    text-align: center;
     padding: 16px 0 20px 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
     margin-bottom: 20px;
@@ -85,13 +85,13 @@ a {
     font-size: 16px;
     font-weight: 600;
     color: #e8f0ec;
-    width: 100%;  /* ← ADDED: ensures full width for centering */
+    width: 100%;
 }
 .sidebar-role {
     font-size: 12px;
     color: #a8c4d4;
     margin-top: 2px;
-    width: 100%;  /* ← ADDED: ensures full width for centering */
+    width: 100%;
 }
 
 .sidebar-nav {
@@ -351,6 +351,184 @@ a {
     cursor: pointer;
 }
 
+/* ===== MOBILE SIDEBAR ===== */
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #2d5a4a;
+    cursor: pointer;
+    padding: 4px 8px;
+    z-index: 1001;
+}
+
+.mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+}
+
+.mobile-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    background: #2d5a4a;
+    color: #e8f0ec;
+    padding: 28px 20px;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-sidebar.open {
+    left: 0;
+}
+
+.mobile-sidebar .close-btn {
+    background: none;
+    border: none;
+    color: #e8f0ec;
+    font-size: 28px;
+    cursor: pointer;
+    text-align: right;
+    margin-bottom: 16px;
+    padding: 0;
+}
+
+.mobile-sidebar .sidebar-brand {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: white;
+}
+.mobile-sidebar .sidebar-brand span {
+    color: #a8c4d4;
+}
+
+.mobile-sidebar .sidebar-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0 20px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.mobile-sidebar .person-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #7a9e8a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    margin-bottom: 8px;
+}
+.mobile-sidebar .person-avatar .head {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 12px;
+}
+.mobile-sidebar .person-avatar .body {
+    width: 28px;
+    height: 16px;
+    border-radius: 50% 50% 0 0;
+    background: white;
+    position: absolute;
+    bottom: 10px;
+}
+
+.mobile-sidebar .sidebar-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e8f0ec;
+}
+.mobile-sidebar .sidebar-role {
+    font-size: 12px;
+    color: #a8c4d4;
+    margin-top: 2px;
+}
+
+.mobile-sidebar .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.mobile-sidebar .sidebar-nav a {
+    color: #c4d9ce;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+.mobile-sidebar .sidebar-nav a:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+}
+.mobile-sidebar .sidebar-nav a.active {
+    background: #3d6e5c;
+    color: white;
+}
+.mobile-sidebar .sidebar-nav a .nav-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
+.mobile-sidebar .sidebar-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.mobile-sidebar .sidebar-footer a {
+    color: #c4d9ce;
+    padding: 12px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+.mobile-sidebar .sidebar-footer a:hover {
+    background: rgba(255,255,255,0.08);
+    color: white;
+}
+.mobile-sidebar .sidebar-footer a .nav-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+}
+
 /* ============================================================
    📱 MOBILE — BOTTOM NAV + RESPONSIVE
    ============================================================ */
@@ -359,9 +537,15 @@ a {
     .sidebar {
         display: none !important;
     }
+    .hamburger {
+        display: block !important;
+    }
+    .mobile-overlay.active {
+        display: block !important;
+    }
     .main-content {
         padding: 12px !important;
-        padding-bottom: 70px !important;
+        padding-bottom: 20px !important;
         max-width: 100% !important;
     }
     .header {
@@ -369,6 +553,7 @@ a {
         justify-content: space-between !important;
         align-items: center !important;
         margin-bottom: 12px !important;
+        gap: 12px;
     }
     .header-left h1 {
         font-size: 18px !important;
@@ -438,45 +623,7 @@ a {
         padding: 10px !important;
     }
     .bottom-nav {
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        background: #2d5a4a !important;
-        display: flex !important;
-        justify-content: space-around !important;
-        align-items: center !important;
-        padding: 10px 0 !important;
-        border-top: 1px solid rgba(255,255,255,0.08) !important;
-        z-index: 9999 !important;
-    }
-    .bottom-nav a {
-        color: #c4d9ce !important;
-        text-decoration: none !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        gap: 2px !important;
-        font-size: 18px !important;
-    }
-    .bottom-nav a.active {
-        color: white !important;
-    }
-    .bottom-nav a span {
-        font-size: 9px !important;
-        color: #a8c4d4 !important;
-    }
-    .bottom-nav a.active span {
-        color: white !important;
-    }
-    .bottom-nav .badge {
-        background: #d4a86a !important;
-        color: #2d5a4a !important;
-        font-size: 9px !important;
-        font-weight: 700 !important;
-        padding: 1px 6px !important;
-        border-radius: 40px !important;
-        margin-left: 4px !important;
+        display: none !important;
     }
 }
 
