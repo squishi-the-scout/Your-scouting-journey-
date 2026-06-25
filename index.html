@@ -210,7 +210,7 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ─── Leader roles ──────────────────────────────────────
         const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
@@ -320,6 +320,7 @@
                     docId = doc.id;
                 });
 
+                // ─── Check ID number ──────────────────────────
                 if (userData.idNumber !== idNumber) {
                     errorDiv.innerText = 'Invalid ID number. Please try again.';
                     loginBtn.textContent = 'Sign In';
@@ -334,6 +335,7 @@
                     return;
                 }
 
+                // ─── Save to localStorage ──────────────────────
                 localStorage.setItem('currentUser', JSON.stringify({
                     username: username,
                     role: userData.role,
@@ -341,6 +343,7 @@
                     uid: docId
                 }));
 
+                // ─── Redirect based on role ────────────────────
                 if (leaderRoles.includes(userData.role)) {
                     window.location.href = 'leader-dashboard.html';
                 } else {
