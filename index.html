@@ -212,6 +212,9 @@
         import { db } from './firebase-config.js';
         import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ─── Leader roles ──────────────────────────────────────
+        const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
+
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const loginBtn = document.getElementById('login-btn');
@@ -219,16 +222,49 @@
         const togglePassword = document.getElementById('toggle-password');
         const roleText = document.getElementById('role-text');
 
-        // ─── Auto-show role based on username ──────────────
+        // ─── Auto-check role from Firestore ──────────────────
+        let roleCheckTimeout = null;
+
         usernameInput.addEventListener('input', function() {
-            const username = this.value.trim();
-            if (username.length > 0) {
-                roleText.textContent = 'Checking...';
-                roleText.style.color = '#8a9e96';
-            } else {
+            const username = this.value.trim().toLowerCase();
+            
+            if (!username) {
                 roleText.textContent = 'Scout';
                 roleText.style.color = '#5a7c6e';
+                return;
             }
+
+            roleText.textContent = 'Checking...';
+            roleText.style.color = '#8a9e96';
+
+            clearTimeout(roleCheckTimeout);
+            roleCheckTimeout = setTimeout(async () => {
+                try {
+                    const docRef = doc(db, 'users', username);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (leaderRoles.includes(data.role)) {
+                            roleText.textContent = 'Leader';
+                            roleText.style.color = '#2d5a4a';
+                        } else if (data.role === 'scout') {
+                            roleText.textContent = 'Scout';
+                            roleText.style.color = '#5a7c6e';
+                        } else {
+                            roleText.textContent = 'Unknown Role';
+                            roleText.style.color = '#d45a7a';
+                        }
+                    } else {
+                        roleText.textContent = 'User not found';
+                        roleText.style.color = '#d45a7a';
+                    }
+                } catch (error) {
+                    roleText.textContent = 'Error checking';
+                    roleText.style.color = '#d45a7a';
+                    console.error('Role check error:', error);
+                }
+            }, 500);
         });
 
         // ─── Toggle password visibility ────────────────────
@@ -266,7 +302,6 @@
             loginBtn.classList.add('loading');
 
             try {
-                // ─── Query Firestore for user ────────────────
                 const usersRef = collection(db, 'users');
                 const q = query(usersRef, where('username', '==', username));
                 const querySnapshot = await getDocs(q);
@@ -285,7 +320,6 @@
                     docId = doc.id;
                 });
 
-                // ─── Check ID number ──────────────────────────
                 if (userData.idNumber !== idNumber) {
                     errorDiv.innerText = 'Invalid ID number. Please try again.';
                     loginBtn.textContent = 'Sign In';
@@ -293,7 +327,6 @@
                     return;
                 }
 
-                // ─── Check if user has a role ─────────────────
                 if (!userData.role) {
                     errorDiv.innerText = 'Account not configured. Contact your leader.';
                     loginBtn.textContent = 'Sign In';
@@ -301,7 +334,6 @@
                     return;
                 }
 
-                // ─── Save to localStorage ──────────────────────
                 localStorage.setItem('currentUser', JSON.stringify({
                     username: username,
                     role: userData.role,
@@ -309,8 +341,7 @@
                     uid: docId
                 }));
 
-                // ─── Redirect based on role ────────────────────
-                if (userData.role === 'leader') {
+                if (leaderRoles.includes(userData.role)) {
                     window.location.href = 'leader-dashboard.html';
                 } else {
                     window.location.href = 'scout-dashboard.html';
