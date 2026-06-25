@@ -1,4 +1,4 @@
-import { auth, db } from './firebase-config.js';
+import { db } from './firebase-config.js';
 import { 
     doc, getDoc, setDoc, collection, getDocs, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -67,7 +67,7 @@ const sidebarRole = document.getElementById('sidebar-role');
 const pageHeading = document.getElementById('page-heading');
 const pageSubtitle = document.getElementById('page-subtitle');
 const pendingBadge = document.getElementById('pending-badge');
-const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 if (sidebarName) sidebarName.textContent = displayName;
 if (sidebarRole) sidebarRole.textContent = currentUser.role || 'Leader';
 
@@ -80,13 +80,13 @@ let usersUnsubscribe = null;
 let statusUnsubscribe = null;
 let sessionsUnsubscribe = null;
 
-// ─── Avatar colors ──────────────────────────────────────  ← ADD THIS
-const colors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
+// ─── Avatar colors ──────────────────────────────────────
+const avatarColors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
 function getColor(name) {
-    if (!name) return colors[0];
+    if (!name) return avatarColors[0];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
+    return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
 // ─── Badge Colors ──────────────────────────────────────
@@ -114,23 +114,18 @@ function getBadgeLabel(fieldName) {
 function getBadgesForRank(rank) {
     const badges = [];
     
-    // Everyone sees Membership (if they have a valid rank)
     if (rank === 'Membership' || rank === 'Second Class' || rank === 'First Class') {
         badges.push({ key: 'membership', reqs: membershipRequirements, label: 'Membership' });
     }
     
-    // Second Class and First Class see Second Class
     if (rank === 'Second Class' || rank === 'First Class') {
         badges.push({ key: 'secondClass', reqs: secondClassRequirements, label: 'Second Class' });
     }
     
-    // Only First Class sees First Class
     if (rank === 'First Class') {
         badges.push({ key: 'firstClass', reqs: firstClassRequirements, label: 'First Class' });
     }
     
-    // ─── BADGES: ALWAYS UNLOCKED ──────────────────────────
-    // EVERYONE sees Badges, regardless of rank!
     badges.push({ key: 'badge', reqs: [], label: 'Badges' });
     
     return badges;
@@ -142,9 +137,9 @@ function getLatestBadge(rank) {
     return { key: 'membership', label: 'Membership', reqs: membershipRequirements };
 }
 
-function isReadyForPromotion(email) {
-    const status = allStatus[email] || {};
-    const scout = allScouts.find(s => s.email === email);
+function isReadyForPromotion(username) {
+    const status = allStatus[username] || {};
+    const scout = allScouts.find(s => s.username === username);
     if (!scout) return null;
     
     const rank = scout.rank || 'Membership';
@@ -179,7 +174,7 @@ function checkStagnation() {
     const now = new Date();
     
     for (const scout of allScouts) {
-        const status = allStatus[scout.email] || {};
+        const status = allStatus[scout.username] || {};
         let lastActivity = null;
         let lastRequirement = 'No activity recorded';
         
@@ -244,7 +239,7 @@ function updatePendingBadge() {
     if (!pendingBadge) return;
     let count = 0;
     for (const scout of allScouts) {
-        const status = allStatus[scout.email] || {};
+        const status = allStatus[scout.username] || {};
         for (const key in status) {
             if (status[key].status === 'pending') count++;
         }
@@ -263,7 +258,7 @@ function listenToUsers() {
         snapshot.forEach(doc => {
             const data = doc.data();
             if (data.role === 'scout') {
-                allScouts.push({ email: doc.id, ...data });
+                allScouts.push({ username: doc.id, ...data });
             }
         });
         updatePendingBadge();
@@ -366,7 +361,6 @@ function renderDashboard() {
     
     let html = '';
     
-    // ─── Stagnation Alert Banner ──────────────────────────
     if (stagnantScouts.length > 0) {
         html += `
             <div class="stagnation-banner">
@@ -379,7 +373,7 @@ function renderDashboard() {
                     const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
                     const emoji = item.daysSince >= 30 ? '⚠️' : '⚡';
                     return `
-                        <div class="stagnation-item" onclick="window.selectScout('${item.scout.email}')">
+                        <div class="stagnation-item" onclick="window.selectScout('${item.scout.username}')">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                                 <span style="font-size:16px;">${emoji}</span>
                                 <span style="font-weight:500;">${name}</span>
@@ -399,7 +393,6 @@ function renderDashboard() {
         `;
     }
 
-    // ─── Heart placeholder ──────────────────────────────────
     html += `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
             <div style="font-size:48px;margin-bottom:16px;">❤️</div>
@@ -409,8 +402,8 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
     
-    window.selectScout = function(email) {
-        selectedScout = email;
+    window.selectScout = function(username) {
+        selectedScout = username;
         renderView();
     };
 }
@@ -424,7 +417,7 @@ function renderAllScouts() {
     `;
 
     for (const scout of allScouts) {
-        const status = allStatus[scout.email] || {};
+        const status = allStatus[scout.username] || {};
         const name = scout.fullName || scout.username;
         const patrol = scout.patrol || 'No patrol';
         const rank = scout.rank || 'Membership';
@@ -442,7 +435,7 @@ function renderAllScouts() {
         const scoutNote = scout.note || '';
 
         html += `
-            <div class="scout-card" data-email="${scout.email}">
+            <div class="scout-card" data-username="${scout.username}">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div class="name">${name}</div>
                     <span class="role-tag">${role}</span>
@@ -469,26 +462,26 @@ function renderAllScouts() {
 
     document.querySelectorAll('.scout-card').forEach(card => {
         card.addEventListener('click', function() {
-            selectedScout = this.dataset.email;
+            selectedScout = this.dataset.username;
             renderView();
         });
     });
 }
 
-async function renderScoutProfile(email) {
-    const scout = allScouts.find(s => s.email === email);
+async function renderScoutProfile(username) {
+    const scout = allScouts.find(s => s.username === username);
     if (!scout) {
         pageContent.innerHTML = `<p>Scout not found.</p>`;
         return;
     }
 
-    const status = allStatus[email] || {};
+    const status = allStatus[username] || {};
     const rank = scout.rank || 'Membership';
     const badges = getBadgesForRank(rank);
     const role = scout.scoutRole || 'Scout';
-    const promo = isReadyForPromotion(email);
+    const promo = isReadyForPromotion(username);
 
-    const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[email] === true);
+    const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[username] === true);
     const totalHours = attendedSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
 
     let html = `
@@ -524,7 +517,7 @@ async function renderScoutProfile(email) {
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
                     <div style="background:linear-gradient(135deg,#fdf8e7,#f0f7e6);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid #b8860b;">
                         <span style="color:#6b8e23;font-weight:500;">Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
-                        <button class="promote-btn" data-email="${email}" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote Now</button>
+                        <button class="promote-btn" data-username="${username}" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote Now</button>
                     </div>
                 </div>
             ` : ''}
@@ -534,7 +527,7 @@ async function renderScoutProfile(email) {
             <h3 style="color:var(--text-dark);margin-bottom:16px;">Leadership Roles</h3>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 ${['Scout', 'Patrol Leader', 'Assistant Patrol Leader', 'Senior Patrol Leader', 'Quartermaster', 'Scribe', 'Treasurer'].map(r => `
-                    <button class="role-btn" data-email="${email}" data-role="${r}" style="padding:6px 16px;border-radius:20px;border:2px solid ${role === r ? 'var(--green-primary)' : '#e0d6ec'};background:${role === r ? 'var(--green-primary)' : 'white'};color:${role === r ? 'white' : 'var(--text-dark)'};cursor:pointer;font-size:13px;transition:all 0.2s;">${r}</button>
+                    <button class="role-btn" data-username="${username}" data-role="${r}" style="padding:6px 16px;border-radius:20px;border:2px solid ${role === r ? 'var(--green-primary)' : '#e0d6ec'};background:${role === r ? 'var(--green-primary)' : 'white'};color:${role === r ? 'white' : 'var(--text-dark)'};cursor:pointer;font-size:13px;transition:all 0.2s;">${r}</button>
                 `).join('')}
             </div>
             <div id="role-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
@@ -571,9 +564,9 @@ async function renderScoutProfile(email) {
                         <span style="font-size:14px;">${req}</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        ${hasReport ? `<a href="report-viewer.html?email=${email}&tab=${badge.key}&req=${encodeURIComponent(req)}" target="_blank" style="font-size:11px;color:var(--green-primary);text-decoration:underline;cursor:pointer;">View Report</a>` : ''}
+                        ${hasReport ? `<a href="report-viewer.html?email=${username}&tab=${badge.key}&req=${encodeURIComponent(req)}" target="_blank" style="font-size:11px;color:var(--green-primary);text-decoration:underline;cursor:pointer;">View Report</a>` : ''}
                         ${statusDisplay}
-                        <button class="approve-req-btn" data-email="${email}" data-field="${key}" style="background:var(--green-primary);color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
+                        <button class="approve-req-btn" data-username="${username}" data-field="${key}" style="background:var(--green-primary);color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
                     </div>
                 </div>
             `;
@@ -634,8 +627,8 @@ async function renderScoutProfile(email) {
         const message = document.getElementById('note-message');
         
         try {
-            await setDoc(doc(db, 'users', email), { note: note }, { merge: true });
-            const scout = allScouts.find(s => s.email === email);
+            await setDoc(doc(db, 'users', username), { note: note }, { merge: true });
+            const scout = allScouts.find(s => s.username === username);
             if (scout) scout.note = note;
             message.textContent = 'Note saved successfully!';
             message.style.color = '#4caf50';
@@ -647,16 +640,16 @@ async function renderScoutProfile(email) {
 
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const email = this.dataset.email;
-            const scout = allScouts.find(s => s.email === email);
+            const username = this.dataset.username;
+            const scout = allScouts.find(s => s.username === username);
             if (!scout) return;
             
-            const promo = isReadyForPromotion(email);
+            const promo = isReadyForPromotion(username);
             if (!promo) return;
             
             if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
                 try {
-                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    await setDoc(doc(db, 'users', username), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
                     alert(`${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
@@ -668,15 +661,15 @@ async function renderScoutProfile(email) {
 
     document.querySelectorAll('.role-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const scoutEmail = this.dataset.email;
+            const scoutUsername = this.dataset.username;
             const newRole = this.dataset.role;
             try {
-                await setDoc(doc(db, 'users', scoutEmail), { scoutRole: newRole }, { merge: true });
+                await setDoc(doc(db, 'users', scoutUsername), { scoutRole: newRole }, { merge: true });
                 document.getElementById('role-message').textContent = `Role updated to: ${newRole}`;
                 document.getElementById('role-message').style.color = '#4caf50';
-                const scout = allScouts.find(s => s.email === scoutEmail);
+                const scout = allScouts.find(s => s.username === scoutUsername);
                 if (scout) scout.scoutRole = newRole;
-                setTimeout(() => renderScoutProfile(scoutEmail), 1000);
+                setTimeout(() => renderScoutProfile(scoutUsername), 1000);
             } catch (error) {
                 document.getElementById('role-message').textContent = 'Error: ' + error.message;
                 document.getElementById('role-message').style.color = '#e74c3c';
@@ -686,11 +679,11 @@ async function renderScoutProfile(email) {
 
     document.querySelectorAll('.approve-req-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const scoutEmail = this.dataset.email;
+            const scoutUsername = this.dataset.username;
             const field = this.dataset.field;
             
             try {
-                const docRef = doc(db, 'scoutStatus', scoutEmail);
+                const docRef = doc(db, 'scoutStatus', scoutUsername);
                 const docSnap = await getDoc(docRef);
                 const data = docSnap.data() || {};
                 data[field] = { 
@@ -707,7 +700,7 @@ async function renderScoutProfile(email) {
                     allStatus[doc.id] = doc.data();
                 });
                 updatePendingBadge();
-                renderScoutProfile(scoutEmail);
+                renderScoutProfile(scoutUsername);
             } catch (error) {
                 alert('Error approving: ' + error.message);
             }
@@ -720,7 +713,7 @@ function renderPendingApprovals() {
     let readyForPromotion = [];
 
     for (const scout of allScouts) {
-        const status = allStatus[scout.email] || {};
+        const status = allStatus[scout.username] || {};
         
         for (const key in status) {
             if (status[key].status === 'pending') {
@@ -750,7 +743,7 @@ function renderPendingApprovals() {
             }
         }
         
-        const promo = isReadyForPromotion(scout.email);
+        const promo = isReadyForPromotion(scout.username);
         if (promo) {
             readyForPromotion.push({ scout, promo });
         }
@@ -804,8 +797,8 @@ function renderPendingApprovals() {
                     <span class="scout-name">— ${name}</span>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <button class="approve-btn" data-email="${item.scout.email}" data-field="${item.field}">Approve</button>
-                    <button class="reject-btn" data-email="${item.scout.email}" data-field="${item.field}">Reject</button>
+                    <button class="approve-btn" data-username="${item.scout.username}" data-field="${item.field}">Approve</button>
+                    <button class="reject-btn" data-username="${item.scout.username}" data-field="${item.field}">Reject</button>
                 </div>
             </div>
         `;
@@ -823,7 +816,7 @@ function renderPendingApprovals() {
                     <span style="font-weight:500;">${name}</span>
                     <span style="color:var(--text-muted);font-size:14px;">${item.promo.currentRank} → ${item.promo.nextRank}</span>
                 </div>
-                <button class="promote-btn" data-email="${item.scout.email}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">Promote Now</button>
+                <button class="promote-btn" data-username="${item.scout.username}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">Promote Now</button>
             </div>
         `;
     }
@@ -833,10 +826,10 @@ function renderPendingApprovals() {
 
     document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const email = this.dataset.email;
+            const username = this.dataset.username;
             const field = this.dataset.field;
             
-            const docRef = doc(db, 'scoutStatus', email);
+            const docRef = doc(db, 'scoutStatus', username);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data() || {};
             data[field] = { 
@@ -859,9 +852,9 @@ function renderPendingApprovals() {
 
     document.querySelectorAll('.reject-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const email = this.dataset.email;
+            const username = this.dataset.username;
             const field = this.dataset.field;
-            const docRef = doc(db, 'scoutStatus', email);
+            const docRef = doc(db, 'scoutStatus', username);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data() || {};
             data[field] = { status: 'todo', updatedAt: new Date().toISOString() };
@@ -879,16 +872,16 @@ function renderPendingApprovals() {
 
     document.querySelectorAll('.promote-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const email = this.dataset.email;
-            const scout = allScouts.find(s => s.email === email);
+            const username = this.dataset.username;
+            const scout = allScouts.find(s => s.username === username);
             if (!scout) return;
             
-            const promo = isReadyForPromotion(email);
+            const promo = isReadyForPromotion(username);
             if (!promo) return;
             
             if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
                 try {
-                    await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
+                    await setDoc(doc(db, 'users', username), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
                     alert(`${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
@@ -947,7 +940,7 @@ function renderSessions() {
 
     for (const session of sortedSessions) {
         const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
-        const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
+        const isAttending = session.attendance ? session.attendance[currentUser.username] === true : false;
         
         const today = new Date().toISOString().split('T')[0];
         let statusClass = '';
@@ -1017,119 +1010,150 @@ function renderExport() {
     `;
 }
 
-// ─── Leader Profile ──────────────────────────────────────
-function renderLeaderProfile() {
-    // Get fresh user data
-    const userData = JSON.parse(localStorage.getItem('currentUser')) || currentUser;
-    
+// ─── LEADER PROFILE (Copied from Scout, Adapted) ──────────
+async function renderLeaderProfile() {
+    const userDoc = await getDoc(doc(db, 'users', currentUser.username));
+    const data = userDoc.data();
+
+    if (!data) {
+        pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">Profile not found.</p>`;
+        return;
+    }
+
+    const fullName = data.fullName || currentUser.username;
+    const dob = data.dob || '';
+    const role = data.role || 'Leader';
+    const emergency = data.emergencyContact || {};
+
     let html = `
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
                 <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
                 <h2 style="color:var(--text-dark);margin:0;">My Profile</h2>
             </div>
+
             <div style="background:white;border-radius:24px;padding:32px;box-shadow:var(--shadow);">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
                     <div class="person-avatar" style="width:80px;height:80px;background:#aed581;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
-                        <div class="head" style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
-                        <div class="body" style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
+                        <div class="head" style="width:24px;height:24px;top:16px;"></div>
+                        <div class="body" style="width:38px;height:22px;bottom:14px;"></div>
                     </div>
                     <div>
-                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${userData.fullName || displayName}</div>
-                        <div style="color:var(--text-muted);">${userData.role || 'Leader'}</div>
+                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${fullName}</div>
+                        <div style="color:var(--text-muted);">${role}</div>
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div>
-                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Full Name</label>
-                        <input type="text" id="leader-fullname" value="${userData.fullName || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+
+                <form id="profile-form">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Full Name</label>
+                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Date of Birth</label>
+                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
                     </div>
-                    <div>
-                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Date of Birth</label>
-                        <input type="date" id="leader-dob" value="${userData.dob || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Role</label>
+                            <select id="profile-role" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                                <option value="Leader" ${role === 'Leader' ? 'selected' : ''}>Leader</option>
+                                <option value="Rover Leader" ${role === 'Rover Leader' ? 'selected' : ''}>Rover Leader</option>
+                                <option value="GSL" ${role === 'GSL' ? 'selected' : ''}>GSL</option>
+                                <option value="AGSL" ${role === 'AGSL' ? 'selected' : ''}>AGSL</option>
+                                <option value="Advisor" ${role === 'Advisor' ? 'selected' : ''}>Advisor</option>
+                                <option value="Section Head" ${role === 'Section Head' ? 'selected' : ''}>Section Head</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Role</label>
-                        <select id="leader-role" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
-                            <option value="Leader" ${userData.role === 'Leader' ? 'selected' : ''}>Leader</option>
-                            <option value="Rover Leader" ${userData.role === 'Rover Leader' ? 'selected' : ''}>Rover Leader</option>
-                            <option value="GSL" ${userData.role === 'GSL' ? 'selected' : ''}>GSL</option>
-                            <option value="AGSL" ${userData.role === 'AGSL' ? 'selected' : ''}>AGSL</option>
-                            <option value="Advisor" ${userData.role === 'Advisor' ? 'selected' : ''}>Advisor</option>
-                            <option value="Section Head" ${userData.role === 'Section Head' ? 'selected' : ''}>Section Head</option>
-                        </select>
+
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-bottom:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;">Emergency Contact</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Name</label>
+                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Phone</label>
+                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;">
+                            <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Relation</label>
+                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        </div>
                     </div>
-                </div>
-                <button id="save-leader-profile" class="btn-primary" style="margin-top:16px;width:100%;">Save Profile</button>
-                <div id="profile-message" style="margin-top:12px;text-align:center;color:var(--text-muted);"></div>
+
+                    <button type="submit" style="background:var(--green-primary);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">Save Profile</button>
+                </form>
+
+                <div id="profile-message" style="margin-top:16px;color:var(--text-muted);text-align:center;"></div>
             </div>
         </div>
     `;
-    
+
     pageContent.innerHTML = html;
-    
-    // ─── Back button ──────────────────────────────────────
+
     document.getElementById('profile-back').addEventListener('click', () => {
         currentView = 'dashboard';
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
         renderView();
     });
-    
-    // ─── Save profile ─────────────────────────────────────
-    document.getElementById('save-leader-profile').addEventListener('click', async function() {
-        const fullName = document.getElementById('leader-fullname').value.trim();
-        const dob = document.getElementById('leader-dob').value;
-        const role = document.getElementById('leader-role').value;
-        const message = document.getElementById('profile-message');
-        
-        if (!fullName) {
-            message.textContent = 'Please enter your full name.';
-            message.style.color = '#e67e22';
-            return;
-        }
-        
+
+    document.getElementById('profile-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const fullName = document.getElementById('profile-fullname').value.trim();
+        const dob = document.getElementById('profile-dob').value;
+        const role = document.getElementById('profile-role').value;
+        const emergencyName = document.getElementById('profile-emergency-name').value.trim();
+        const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
+        const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
+
+        const updateData = {
+            fullName: fullName || currentUser.username,
+            dob: dob || null,
+            role: role,
+            emergencyContact: {
+                name: emergencyName || null,
+                phone: emergencyPhone || null,
+                relation: emergencyRelation || null
+            }
+        };
+
         try {
-            const userEmail = `${currentUser.username}@gis-scout.local`;
-            await setDoc(doc(db, 'users', userEmail), {
-                fullName: fullName,
-                dob: dob || null,
-                role: role
-            }, { merge: true });
+            await setDoc(doc(db, 'users', currentUser.username), updateData, { merge: true });
             
-            // ─── Update everything ──────────────────────────
-            // 1. Update currentUser in memory
-            currentUser.fullName = fullName;
-            currentUser.dob = dob;
-            currentUser.role = role;
-            
-            // 2. Update localStorage
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            
-            // 3. Update sidebar name
-            if (sidebarName) sidebarName.textContent = fullName;
-            if (sidebarRole) sidebarRole.textContent = role;
-            
-            // 4. Update page heading
-            if (pageHeading) {
-                pageHeading.innerHTML = `Good morning, <span id="leader-name">${fullName}</span>!`;
+            // Update display name
+            if (fullName) {
+                displayName = fullName;
+                if (sidebarName) sidebarName.textContent = fullName;
+                if (sidebarRole) sidebarRole.textContent = role;
+                if (pageHeading) {
+                    pageHeading.innerHTML = `Good morning, <span id="leader-name">${fullName}</span>!`;
+                }
+                // Update localStorage
+                const user = JSON.parse(localStorage.getItem('currentUser'));
+                user.fullName = fullName;
+                user.role = role;
+                localStorage.setItem('currentUser', JSON.stringify(user));
             }
             
-            // 5. Update display name variable
-            displayName = fullName;
-            
-            message.textContent = 'Profile saved successfully!';
-            message.style.color = '#4caf50';
-            
-            setTimeout(() => {
-                currentView = 'dashboard';
-                renderView();
-            }, 1200);
-            
+            document.getElementById('profile-message').textContent = '✅ Profile saved successfully!';
+            document.getElementById('profile-message').style.color = '#4caf50';
+            setTimeout(() => renderLeaderProfile(), 1200);
         } catch (error) {
-            message.textContent = 'Error: ' + error.message;
-            message.style.color = '#e74c3c';
+            document.getElementById('profile-message').textContent = '❌ Error saving profile: ' + error.message;
+            document.getElementById('profile-message').style.color = '#c47a7a';
         }
     });
 }
+
 // ─── Navigation ──────────────────────────────────────────
 document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
     link.addEventListener('click', function(e) {
