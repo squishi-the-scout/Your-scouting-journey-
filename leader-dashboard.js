@@ -526,14 +526,7 @@ function renderDashboard() {
 
     // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        <!-- ===== WELCOME ===== -->
-        <div style="margin-bottom:24px;">
-            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
-                Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋
-            </h1>
-            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Home</p>
-        </div>
-
+        
         <!-- ===== STATS GRID ===== -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
             <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
