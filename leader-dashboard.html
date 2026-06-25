@@ -6,17 +6,18 @@
     <title>Leader Dashboard — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== LEADER DASHBOARD — SAGE & OLIVE THEME ===== */
+        /* ===== LEADER DASHBOARD — GREEN THEME ===== */
         :root {
-            --green-primary: #7cb342;
-            --green-primary-dark: #558b2f;
-            --green-primary-light: #aed581;
-            --green-secondary: #dcedc8;
-            --green-background: #f1f8e9;
+            --green-primary: #2e7d32;
+            --green-primary-dark: #1b5e20;
+            --green-primary-light: #4caf50;
+            --green-secondary: #81c784;
+            --green-secondary-light: #a5d6a7;
+            --green-background: #f0f7f0;
             --green-mint: #e8f5e9;
             --gold: #f9a825;
             --gold-light: #ffd54f;
-            --text-dark: #2e3b2e;
+            --text-dark: #1b3a1b;
             --text-muted: #5a7a5a;
             --card-bg: #ffffff;
             --shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -44,7 +45,7 @@
         .sidebar {
             width: 220px;
             background: var(--text-dark);
-            color: #dcedc8;
+            color: #c8e6c9;
             padding: 28px 20px;
             display: flex;
             flex-direction: column;
@@ -116,7 +117,7 @@
         }
         .sidebar-role {
             font-size: 12px;
-            color: var(--green-primary-light);
+            color: var(--green-secondary);
             margin-top: 2px;
         }
 
@@ -128,7 +129,7 @@
         }
 
         .sidebar-nav a {
-            color: #aed581;
+            color: #a5d6a7;
             padding: 12px 16px;
             border-radius: 12px;
             font-weight: 500;
@@ -162,7 +163,7 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .sidebar-footer a {
-            color: #aed581;
+            color: #a5d6a7;
             padding: 12px 16px;
             border-radius: 12px;
             display: flex;
@@ -207,6 +208,17 @@
             color: var(--text-muted);
             font-size: 16px;
             margin-top: 4px;
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--text-dark);
+            cursor: pointer;
+            padding: 4px 8px;
+            z-index: 1001;
         }
 
         /* ===== BADGE ===== */
@@ -272,7 +284,7 @@
 
         /* ===== SUCCESS BANNER ===== */
         .success-banner {
-            background: var(--green-secondary);
+            background: #e8f5e9;
             border-radius: 16px;
             padding: 12px 16px;
             margin-bottom: 24px;
@@ -300,7 +312,7 @@
         }
         .scout-card .role-tag {
             font-size: 12px;
-            background: var(--green-secondary);
+            background: var(--green-mint);
             padding: 2px 10px;
             border-radius: 12px;
             color: var(--text-muted);
@@ -319,7 +331,7 @@
         .scout-card .progress-bar {
             background: #e8e0f0;
             border-radius: 20px;
-            height: 6px;
+            height: 8px;
             overflow: hidden;
         }
         .scout-card .progress-bar .fill {
@@ -443,7 +455,7 @@
         }
         .stat-card.green .number { color: var(--green-primary); }
         .stat-card.gold .number { color: var(--gold); }
-        .stat-card.mint .number { color: var(--green-primary-light); }
+        .stat-card.mint .number { color: var(--green-secondary); }
 
         /* ===== PENDING ITEM ===== */
         .pending-item {
@@ -552,7 +564,7 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .bottom-nav a {
-            color: #aed581;
+            color: #a5d6a7;
             font-size: 18px;
             display: flex;
             flex-direction: column;
@@ -645,51 +657,85 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <div class="main-content" id="main-content">
+
+    <!-- ===== HEADER ===== -->
     <div class="header">
+        <button class="hamburger" id="hamburger-btn" aria-label="Toggle menu">☰</button>
         <div class="header-left">
             <h1 id="page-heading">Good morning, <span id="leader-name">Leader</span>!</h1>
             <p id="page-subtitle">Welcome to your Home</p>
         </div>
     </div>
-    <div id="page-content"></div>
-</div>
 
-<!-- ===== BOTTOM NAV ===== -->
-<div class="bottom-nav">
-    <a href="#" class="active" data-view="dashboard">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-        <span>Home</span>
-    </a>
-    <a href="#" data-view="scouts">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-        <span>Scouts</span>
-    </a>
-    <a href="#" data-view="pending">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <span>Pending</span>
-    </a>
-    <a href="#" data-view="sessions">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <span>Sessions</span>
-    </a>
-    <a href="#" data-view="export">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-        </svg>
-        <span>Export</span>
-    </a>
+    <!-- ===== MOBILE OVERLAY ===== -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <!-- ===== MOBILE SIDEBAR ===== -->
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <button class="close-btn" id="mobile-close-btn">✕</button>
+        <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+
+        <div class="sidebar-profile" id="mobile-profile-btn">
+            <div class="person-avatar" id="mobile-avatar">
+                <div class="head"></div>
+                <div class="body"></div>
+            </div>
+            <div class="sidebar-name" id="mobile-sidebar-name">Leader</div>
+            <div class="sidebar-role" id="mobile-sidebar-role">Leader</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="active" data-view="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span>Home</span>
+            </a>
+            <a href="#" data-view="scouts">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+                <span>All Scouts</span>
+            </a>
+            <a href="#" data-view="pending">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>Pending</span>
+            </a>
+            <a href="#" data-view="sessions">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>Sessions</span>
+            </a>
+            <a href="#" data-view="export">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span>Export</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" id="mobile-logout-btn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== DYNAMIC CONTENT ===== -->
+    <div id="page-content"></div>
+
 </div>
 
 <script type="module" src="leader-dashboard.js"></script>
