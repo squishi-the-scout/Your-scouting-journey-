@@ -958,3 +958,61 @@ async function init() {
 }
 
 init();
+
+// ─── Mobile Sidebar ──────────────────────────────────────
+const hamburger = document.getElementById('hamburger-btn');
+const mobileSidebar = document.getElementById('mobile-sidebar');
+const mobileOverlay = document.getElementById('mobile-overlay');
+const mobileClose = document.getElementById('mobile-close-btn');
+
+function openMobileSidebar() {
+    mobileSidebar.classList.add('open');
+    mobileOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileSidebar() {
+    mobileSidebar.classList.remove('open');
+    mobileOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+if (hamburger) {
+    hamburger.addEventListener('click', openMobileSidebar);
+}
+if (mobileClose) {
+    mobileClose.addEventListener('click', closeMobileSidebar);
+}
+if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', closeMobileSidebar);
+}
+
+// ─── Mobile sidebar navigation ──────────────────────────
+document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const view = this.dataset.view;
+        closeMobileSidebar();
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
+        currentView = view;
+        renderView();
+    });
+});
+
+// ─── Mobile sidebar profile click ────────────────────────
+document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
+    closeMobileSidebar();
+    currentView = 'profile';
+    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+    renderView();
+});
+
+// ─── Mobile logout ────────────────────────────────────────
+document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+    closeMobileSidebar();
+    if (statusUnsubscribe) statusUnsubscribe();
+    if (sessionsUnsubscribe) sessionsUnsubscribe();
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+});
