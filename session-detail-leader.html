@@ -3,46 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Session Detail — GIS Scouts (Leader)</title>
+    <title>Session Detail — Leader</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* ─── Base ─── */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f7f0;
+            color: #1b3a1b;
+            padding: 32px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* ─── Back Link ─── */
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2e7d32;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: #1b5e20;
+        }
+
+        /* ─── Cards ─── */
         .detail-section {
             background: white;
             border-radius: 24px;
             padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
             margin-bottom: 20px;
         }
+
         .detail-section h3 {
-            color: var(--text-dark);
+            color: #1b3a1b;
+            font-size: 17px;
+            font-weight: 600;
             margin-bottom: 16px;
         }
+
+        /* ─── Meta Grid ─── */
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-item .label {
+            font-size: 12px;
+            color: #5a7a5a;
+        }
+
+        .meta-item .value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1b3a1b;
+        }
+
+        /* ─── Attendance ─── */
         .attendance-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px 0;
-            border-bottom: 1px solid #f5f0f8;
+            border-bottom: 1px solid #f0f5f0;
         }
         .attendance-item:last-child {
             border-bottom: none;
         }
+
         .attendance-item .name {
             font-weight: 500;
+            font-size: 14px;
         }
+
         .attendance-item .status {
-            font-size: 13px;
+            font-size: 12px;
             padding: 2px 12px;
             border-radius: 12px;
+            font-weight: 500;
         }
+
         .attendance-item .status.present {
             background: #d4edda;
             color: #155724;
         }
+
         .attendance-item .status.absent {
             background: #f8d7da;
             color: #721c24;
         }
+
         .toggle-btn {
             padding: 4px 14px;
             border-radius: 20px;
@@ -52,6 +122,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .toggle-btn.present {
             background: #28a745;
             color: white;
@@ -59,6 +130,7 @@
         .toggle-btn.present:hover {
             background: #218838;
         }
+
         .toggle-btn.absent {
             background: #dc3545;
             color: white;
@@ -66,8 +138,10 @@
         .toggle-btn.absent:hover {
             background: #c82333;
         }
+
+        /* ─── Buttons ─── */
         .btn-primary {
-            background: var(--purple);
+            background: #2e7d32;
             color: white;
             border: none;
             padding: 10px 24px;
@@ -75,65 +149,12 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
+            transition: background 0.2s;
         }
         .btn-primary:hover {
-            background: var(--purple-dark);
+            background: #1b5e20;
         }
-        .feedback-item {
-            background: #f8f5fa;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-        .feedback-item .scout-name {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--purple-dark);
-        }
-        .feedback-item .feedback-text {
-            font-size: 14px;
-            color: var(--text-dark);
-            margin-top: 4px;
-        }
-        .leader-notes-area {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #e0d6ec;
-            font-family: inherit;
-            font-size: 14px;
-            min-height: 80px;
-            resize: vertical;
-        }
-        .meta-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .meta-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .meta-item .label {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-        .meta-item .value {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 16px;
-            color: #8baa9a;
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .back-link:hover {
-            color: var(--purple-dark);
-        }
+
         .mark-all-btn {
             background: #28a745;
             color: white;
@@ -143,56 +164,177 @@
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            margin-bottom: 12px;
+            transition: background 0.2s;
         }
         .mark-all-btn:hover {
             background: #218838;
         }
+
+        /* ─── Feedback ─── */
+        .feedback-item {
+            background: #f5f8f5;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .feedback-item .scout-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1b5e20;
+        }
+
+        .feedback-item .feedback-text {
+            font-size: 14px;
+            color: #1b3a1b;
+            margin-top: 4px;
+        }
+
+        .leader-notes-area {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #dce8dc;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+            background: #fafcfa;
+        }
+
+        .leader-notes-area:focus {
+            outline: 2px solid #2e7d32;
+            border-color: transparent;
+        }
+
+        .badge-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .badge-group .badge {
+            background: #e8f0e8;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #1b3a1b;
+        }
+
+        .badge-group .badge.green {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-group .badge.gold {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .mt-8 {
+            margin-top: 8px;
+        }
+
+        .mt-12 {
+            margin-top: 12px;
+        }
+
+        .text-muted {
+            color: #5a7a5a;
+        }
+
+        /* ─── Mobile ─── */
         @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
             .meta-grid {
                 grid-template-columns: 1fr;
+            }
+            .detail-section {
+                padding: 18px;
+            }
+            .flex-between {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .mark-all-btn {
+                width: 100%;
+                text-align: center;
+            }
+            .attendance-item {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+            .attendance-item .name {
+                flex: 1;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container" style="max-width:800px;margin:0 auto;padding:32px 20px;">
+
+    <div class="container">
         <span class="back-link" id="back-link">← Back to Sessions</span>
 
         <div id="session-detail">
-            <div style="text-align:center;padding:40px 0;">
+            <div style="text-align:center;padding:60px 20px;">
                 <div style="font-size:48px;margin-bottom:16px;">⏳</div>
-                <p style="color:var(--text-muted);">Loading session details...</p>
+                <p class="text-muted">Loading session details...</p>
             </div>
         </div>
     </div>
 
     <script type="module">
+        // ─── IMPORTS ──────────────────────────────────────────
         import { db } from './firebase-config.js';
-        import { 
-            doc, getDoc, updateDoc, collection, getDocs, onSnapshot 
+        import {
+            doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ─── USER ─────────────────────────────────────────────
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser || currentUser.role !== 'leader') {
+        if (!currentUser) {
             window.location.href = 'index.html';
         }
 
+        const isLeader = currentUser.role === 'leader' || 
+                         ['Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'].includes(currentUser.role);
+
+        if (!isLeader) {
+            window.location.href = 'scout-dashboard.html';
+        }
+
+        // ─── URL ──────────────────────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get('id');
+
         if (!sessionId) {
-            document.getElementById('session-detail').innerHTML = `<p style="color:#e74c3c;">No session ID provided.</p>`;
+            document.getElementById('session-detail').innerHTML = `
+                <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <p style="color:#e74c3c;">No session ID provided.</p>
+                </div>
+            `;
         }
 
         const container = document.getElementById('session-detail');
         let allScouts = [];
 
-        // ─── Back button ──────────────────────────────────────
+        // ─── BACK BUTTON ──────────────────────────────────────
         document.getElementById('back-link').addEventListener('click', function() {
             window.location.href = 'leader-dashboard.html#sessions';
         });
 
-        // ─── Load scouts ─────────────────────────────────────
+        // ─── LOAD SCOUTS ─────────────────────────────────────
         async function loadScouts() {
             const snap = await getDocs(collection(db, 'users'));
             allScouts = [];
@@ -204,40 +346,58 @@
             });
         }
 
-        // ─── Render session ──────────────────────────────────
+        // ─── RENDER ──────────────────────────────────────────
         function renderSession(session) {
             const attendeeCount = session.attendance ? Object.keys(session.attendance).filter(k => session.attendance[k] === true).length : 0;
             const totalScouts = allScouts.length;
             const attendancePercent = totalScouts > 0 ? Math.round((attendeeCount / totalScouts) * 100) : 0;
 
             let html = `
+                <!-- ─── SESSION INFO ─── -->
                 <div class="detail-section">
-                    <h2 style="color:var(--purple-dark);margin:0 0 8px 0;">${session.name}</h2>
+                    <h2 style="color:#1b3a1b;margin:0 0 8px 0;font-size:22px;">${session.name}</h2>
                     <div class="meta-grid">
-                        <div class="meta-item"><span class="label">📅 Date</span><span class="value">${session.date}</span></div>
-                        <div class="meta-item"><span class="label">⏰ Time</span><span class="value">${session.time}</span></div>
-                        <div class="meta-item"><span class="label">📍 Location</span><span class="value">${session.location || 'TBD'}</span></div>
-                        <div class="meta-item"><span class="label">⏱️ Duration</span><span class="value">${session.duration || 0} hours</span></div>
+                        <div class="meta-item">
+                            <span class="label">📅 Date</span>
+                            <span class="value">${session.date}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">⏰ Time</span>
+                            <span class="value">${session.time}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">📍 Location</span>
+                            <span class="value">${session.location || 'TBD'}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="label">⏱️ Duration</span>
+                            <span class="value">${session.duration || 0} hours</span>
+                        </div>
                     </div>
-                    ${session.purpose ? `<p style="margin-top:16px;color:var(--text-dark);">📝 ${session.purpose}</p>` : ''}
-                    <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap;">
-                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">👥 ${attendeeCount} attendees</span>
-                        <span style="background:#e8e0f0;padding:4px 14px;border-radius:20px;font-size:13px;color:var(--text-muted);">📊 ${attendancePercent}% attendance</span>
+
+                    ${session.purpose ? `<p style="margin-top:16px;color:#1b3a1b;">📝 ${session.purpose}</p>` : ''}
+
+                    <div class="badge-group">
+                        <span class="badge">👥 ${attendeeCount} attendees</span>
+                        <span class="badge ${attendancePercent > 70 ? 'green' : 'gold'}">📊 ${attendancePercent}% attendance</span>
                     </div>
                 </div>
 
+                <!-- ─── LEADER NOTES ─── -->
                 <div class="detail-section">
                     <h3>📝 Leader Notes</h3>
                     <textarea id="leader-notes" class="leader-notes-area">${session.leaderNotes || ''}</textarea>
                     <button id="save-leader-notes" class="btn-primary" style="margin-top:12px;">💾 Save Notes</button>
-                    <div id="leader-notes-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
+                    <div id="leader-notes-message" class="text-muted" style="margin-top:8px;font-size:13px;"></div>
                 </div>
 
+                <!-- ─── ATTENDANCE ─── -->
                 <div class="detail-section">
-                    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+                    <div class="flex-between" style="margin-bottom:16px;">
                         <h3 style="margin:0;">👥 Attendance (${totalScouts} scouts)</h3>
                         <button class="mark-all-btn" id="mark-all-present">✅ Mark All Present</button>
                     </div>
+
                     <div id="attendance-list">
                         ${allScouts.map(scout => {
                             const present = session.attendance ? session.attendance[scout.email] === true : false;
@@ -252,12 +412,13 @@
                             `;
                         }).join('')}
                     </div>
-                    <div id="attendance-message" style="margin-top:12px;font-size:13px;color:var(--text-muted);"></div>
+                    <div id="attendance-message" class="text-muted" style="margin-top:12px;font-size:13px;"></div>
                 </div>
 
+                <!-- ─── SCOUT FEEDBACK ─── -->
                 <div class="detail-section">
                     <h3>💬 Scout Feedback</h3>
-                    ${Object.keys(session.scoutNotes || {}).length === 0 ? '<p style="color:var(--text-muted);">No feedback submitted yet.</p>' : ''}
+                    ${Object.keys(session.scoutNotes || {}).length === 0 ? '<p class="text-muted">No feedback submitted yet.</p>' : ''}
                     ${Object.entries(session.scoutNotes || {}).map(([email, note]) => {
                         const scout = allScouts.find(s => s.email === email);
                         const name = scout ? scout.fullName || scout.username : email;
@@ -273,24 +434,25 @@
 
             container.innerHTML = html;
 
-            // ─── Save Leader Notes ────────────────────────────
+            // ─── SAVE LEADER NOTES ────────────────────────────
             document.getElementById('save-leader-notes')?.addEventListener('click', async function() {
                 const notes = document.getElementById('leader-notes').value.trim();
+                const msg = document.getElementById('leader-notes-message');
                 try {
                     await updateDoc(doc(db, 'sessions', sessionId), {
                         leaderNotes: notes,
                         lastEditedBy: currentUser.username,
                         lastEditedAt: new Date().toISOString()
                     });
-                    document.getElementById('leader-notes-message').textContent = '✅ Notes saved!';
-                    document.getElementById('leader-notes-message').style.color = '#4caf50';
+                    msg.textContent = '✅ Notes saved!';
+                    msg.style.color = '#28a745';
                 } catch (error) {
-                    document.getElementById('leader-notes-message').textContent = '❌ Error: ' + error.message;
-                    document.getElementById('leader-notes-message').style.color = '#e74c3c';
+                    msg.textContent = '❌ Error: ' + error.message;
+                    msg.style.color = '#e74c3c';
                 }
             });
 
-            // ─── Mark All Present ─────────────────────────────
+            // ─── MARK ALL PRESENT ─────────────────────────────
             document.getElementById('mark-all-present')?.addEventListener('click', async function() {
                 try {
                     const docRef = doc(db, 'sessions', sessionId);
@@ -302,14 +464,14 @@
                     }
                     await updateDoc(docRef, { attendance });
                     document.getElementById('attendance-message').textContent = '✅ All scouts marked present!';
-                    document.getElementById('attendance-message').style.color = '#4caf50';
+                    document.getElementById('attendance-message').style.color = '#28a745';
                 } catch (error) {
                     document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
                     document.getElementById('attendance-message').style.color = '#e74c3c';
                 }
             });
 
-            // ─── Toggle Individual Attendance ────────────────
+            // ─── TOGGLE ATTENDANCE ────────────────────────────
             document.querySelectorAll('.toggle-btn').forEach(btn => {
                 btn.addEventListener('click', async function() {
                     const email = this.dataset.email;
@@ -324,7 +486,7 @@
                         attendance[email] = newStatus;
                         await updateDoc(docRef, { attendance });
                         document.getElementById('attendance-message').textContent = `✅ ${email} marked ${newStatus ? 'present' : 'absent'}`;
-                        document.getElementById('attendance-message').style.color = '#4caf50';
+                        document.getElementById('attendance-message').style.color = '#28a745';
                     } catch (error) {
                         document.getElementById('attendance-message').textContent = '❌ Error: ' + error.message;
                         document.getElementById('attendance-message').style.color = '#e74c3c';
@@ -333,19 +495,27 @@
             });
         }
 
-        // ─── Init ─────────────────────────────────────────────
+        // ─── INIT ─────────────────────────────────────────────
         async function init() {
             await loadScouts();
 
             onSnapshot(doc(db, 'sessions', sessionId), (docSnap) => {
                 if (!docSnap.exists()) {
-                    container.innerHTML = `<p style="color:#e74c3c;">Session not found.</p>`;
+                    container.innerHTML = `
+                        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                            <p style="color:#e74c3c;">Session not found.</p>
+                        </div>
+                    `;
                     return;
                 }
                 renderSession({ id: docSnap.id, ...docSnap.data() });
             }, (error) => {
                 console.error('Session listener error:', error);
-                container.innerHTML = `<p style="color:#e74c3c;">Error loading session: ${error.message}</p>`;
+                container.innerHTML = `
+                    <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                        <p style="color:#e74c3c;">Error loading session: ${error.message}</p>
+                    </div>
+                `;
             });
         }
 
