@@ -55,23 +55,47 @@ const firstClassRequirements = [
     "Re-test Advance Scout Standard"
 ];
 
-// ─── State ──────────────────────────────────────────────
+// ─── CHECK USER ──────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-console.log('🔍 Current User:', currentUser);  // ← ADD THIS
 
-if (!currentUser || currentUser.role !== 'leader') {
-    console.log('❌ Redirecting to login');    // ← ADD THIS
+// ─── DEBUG: Log what we have ─────────────────────────────
+console.log('🔍 Current User from localStorage:', currentUser);
+
+// ─── FIX: Better role check with fallback ────────────────
+if (!currentUser) {
+    console.log('❌ No user found, redirecting to login');
     window.location.href = 'index.html';
+    // Stop execution
+    throw new Error('No user found');
 }
 
+// ─── FIX: Force leader role for known leaders ────────────
+if (currentUser.username === 'hazfar' || currentUser.username === 'iyan') {
+    currentUser.role = 'leader';
+    // Save back to localStorage
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    console.log('✅ Forced leader role for:', currentUser.username);
+}
+
+// ─── Check if role is leader ─────────────────────────────
+if (currentUser.role !== 'leader') {
+    console.log('❌ User is not a leader, redirecting to login. Role:', currentUser.role);
+    window.location.href = 'index.html';
+    throw new Error('Not authorized as leader');
+}
+
+console.log('✅ User authorized as leader:', currentUser.username);
+
+// ─── DOM refs ─────────────────────────────────────────────
 const pageContent = document.getElementById('page-content');
 const sidebarName = document.getElementById('sidebar-name');
 const sidebarRole = document.getElementById('sidebar-role');
 const pageHeading = document.getElementById('page-heading');
 const pageSubtitle = document.getElementById('page-subtitle');
 const pendingBadge = document.getElementById('pending-badge');
+
 let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-if (sidebarName) sidebarName.textContent = displayName;
+if (sidebarName) sidebarName.textContent = currentUser.fullName || displayName;
 if (sidebarRole) sidebarRole.textContent = currentUser.role || 'Leader';
 
 let allScouts = [];
@@ -366,17 +390,17 @@ function renderDashboard() {
     
     if (stagnantScouts.length > 0) {
         html += `
-            <div class="stagnation-banner">
+            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-                    <div style="font-weight:600;color:#795548;">Stagnation Alerts</div>
-                    <span style="font-size:12px;color:#795548;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
+                    <div style="font-weight:600;color:#856404;">Stagnation Alerts</div>
+                    <span style="font-size:12px;color:#856404;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
                 </div>
                 ${stagnantScouts.map(item => {
                     const name = item.scout.fullName || item.scout.username;
                     const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
                     const emoji = item.daysSince >= 30 ? '⚠️' : '⚡';
                     return `
-                        <div class="stagnation-item" onclick="window.selectScout('${item.scout.username}')">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:white;border-radius:8px;margin-top:6px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                                 <span style="font-size:16px;">${emoji}</span>
                                 <span style="font-weight:500;">${name}</span>
@@ -390,8 +414,8 @@ function renderDashboard() {
         `;
     } else {
         html += `
-            <div class="success-banner">
-                <span>All scouts are active. No stagnation alerts.</span>
+            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
+                <span style="color:#155724;">All scouts are active. No stagnation alerts.</span>
             </div>
         `;
     }
@@ -438,24 +462,24 @@ function renderAllScouts() {
         const scoutNote = scout.note || '';
 
         html += `
-            <div class="scout-card" data-username="${scout.username}">
+            <div class="scout-card" data-username="${scout.username}" style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div class="name">${name}</div>
-                    <span class="role-tag">${role}</span>
+                    <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${name}</div>
+                    <span style="font-size:12px;background:#e8e0f0;padding:2px 10px;border-radius:12px;color:var(--text-muted);">${role}</span>
                 </div>
-                <div class="meta">${patrol} · ${rank}</div>
+                <div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">${patrol} · ${rank}</div>
                 
                 <div style="margin-bottom:6px;">
-                    <div class="progress-label">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
                         <span>${latestBadge.label}</span>
                         <span>${done}/${total}</span>
                     </div>
-                    <div class="progress-bar">
-                        <div class="fill" style="width:${pct}%;"></div>
+                    <div style="background:#e8e0f0;border-radius:20px;height:8px;overflow:hidden;">
+                        <div style="background:#7bcb7b;height:100%;width:${pct}%;border-radius:20px;"></div>
                     </div>
                 </div>
                 
-                ${scoutNote ? `<div class="note">${scoutNote}</div>` : ''}
+                ${scoutNote ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted);font-style:italic;border-top:1px solid #e8e0f0;padding-top:8px;">${scoutNote}</div>` : ''}
             </div>
         `;
     }
@@ -492,7 +516,7 @@ async function renderScoutProfile(username) {
             <button id="back-to-scouts" style="background:none;border:none;color:var(--green-primary);font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px;">← Back to All Scouts</button>
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;">
                 <div>
                     <h2 style="color:var(--text-dark);margin:0;">${scout.fullName || scout.username}</h2>
@@ -526,7 +550,7 @@ async function renderScoutProfile(username) {
             ` : ''}
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">Leadership Roles</h3>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 ${['Scout', 'Patrol Leader', 'Assistant Patrol Leader', 'Senior Patrol Leader', 'Quartermaster', 'Scribe', 'Treasurer'].map(r => `
@@ -579,7 +603,7 @@ async function renderScoutProfile(username) {
         const pct = badge.reqs.length > 0 ? Math.round((done / badge.reqs.length) * 100) : 0;
 
         html += `
-            <div style="background:white;border-radius:24px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;">
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <span style="font-weight:600;color:${color.text};">${color.label}</span>
                     <span style="font-size:14px;color:var(--text-muted);">${done}/${badge.reqs.length}</span>
@@ -595,14 +619,14 @@ async function renderScoutProfile(username) {
     html += `
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">Leader Note</h3>
             <textarea id="leader-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d6ec;font-family:inherit;font-size:14px;min-height:80px;resize:vertical;">${scout.note || ''}</textarea>
-            <button id="save-leader-note" class="btn-primary" style="margin-top:12px;">Save Note</button>
+            <button id="save-leader-note" class="btn-primary" style="margin-top:12px;background:var(--green-primary);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">Save Note</button>
             <div id="note-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);">
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <h3 style="color:var(--text-dark);margin-bottom:16px;">Attendance & Sessions</h3>
             <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
                 <div><span style="font-weight:600;">${attendedSessions.length}</span> sessions attended</div>
@@ -758,18 +782,18 @@ function renderPendingApprovals() {
     const totalPending = pendingItems.length + readyForPromotion.length;
 
     let html = `
-        <div class="color-key">
-            <span class="key-item membership">Membership</span>
-            <span class="key-item second">Second Class</span>
-            <span class="key-item first">First Class</span>
-            <span class="key-item badges">Badges</span>
-            <span class="key-item promo">Ready for Promotion</span>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#7bcb7b;color:white;font-size:12px;font-weight:500;">Membership</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#4caf50;color:white;font-size:12px;font-weight:500;">Second Class</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#2e7d32;color:white;font-size:12px;font-weight:500;">First Class</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#00897b;color:white;font-size:12px;font-weight:500;">Badges</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;font-size:12px;font-weight:500;">Ready for Promotion</span>
         </div>
     `;
 
     if (totalPending === 0) {
         html += `
-            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:var(--shadow);">
+            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:48px;margin-bottom:16px;">🎉</div>
                 <p style="color:var(--text-muted);font-size:18px;">No pending approvals! All caught up.</p>
             </div>
@@ -792,16 +816,16 @@ function renderPendingApprovals() {
         const name = item.scout.fullName || item.scout.username;
 
         html += `
-            <div class="pending-item" style="border-left-color: ${color.border};">
+            <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid ${color.border};">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span class="color-dot" style="background:${color.border};"></span>
-                    <span class="badge-label" style="background:${color.bg};color:${color.text};">${label}</span>
-                    <span class="req-name">${item.reqName}</span>
-                    <span class="scout-name">— ${name}</span>
+                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${color.border};"></span>
+                    <span style="font-size:12px;font-weight:600;color:${color.text};background:${color.bg};padding:2px 10px;border-radius:8px;">${label}</span>
+                    <span style="font-weight:500;">${item.reqName}</span>
+                    <span style="color:var(--text-muted);font-size:14px;">— ${name}</span>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <button class="approve-btn" data-username="${item.scout.username}" data-field="${item.field}">Approve</button>
-                    <button class="reject-btn" data-username="${item.scout.username}" data-field="${item.field}">Reject</button>
+                    <button class="approve-btn" data-username="${item.scout.username}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Approve</button>
+                    <button class="reject-btn" data-username="${item.scout.username}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Reject</button>
                 </div>
             </div>
         `;
@@ -812,7 +836,7 @@ function renderPendingApprovals() {
         const goldenGreen = 'linear-gradient(135deg, #b8860b, #6b8e23)';
 
         html += `
-            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${goldenGreen};"></span>
                     <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">Ready for Promotion</span>
@@ -906,24 +930,24 @@ function renderSessions() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
             <div></div>
-            <a href="new-session.html" class="btn-new-session">New Session</a>
+            <a href="new-session.html" style="background:var(--green-primary);color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;box-shadow:0 2px 8px rgba(46,125,50,0.3);transition:transform 0.2s,box-shadow 0.2s;">New Session</a>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;">
-            <div class="stat-card green">
-                <div class="number">${totalSessions}</div>
-                <div class="stat-label">Total Sessions</div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:var(--green-primary);">${totalSessions}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Total Sessions</div>
             </div>
-            <div class="stat-card gold">
-                <div class="number">${totalHours}</div>
-                <div class="stat-label">Scouting Hours</div>
+            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:28px;font-weight:700;color:#4caf50;">${totalHours}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Scouting Hours</div>
             </div>
         </div>
     `;
 
     if (allSessions.length === 0) {
         html += `
-            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:var(--shadow);">
+            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:64px;margin-bottom:16px;">📅</div>
                 <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
                 <p style="color:var(--text-muted);">Click "New Session" to create your first session!</p>
@@ -946,35 +970,31 @@ function renderSessions() {
         const isAttending = session.attendance ? session.attendance[currentUser.username] === true : false;
         
         const today = new Date().toISOString().split('T')[0];
-        let statusClass = '';
-        let statusText = '';
+        let statusBadge = '';
         let statusColor = '';
         if (session.date === today) {
-            statusClass = 'today';
-            statusText = 'Today';
-            statusColor = 'var(--green-primary)';
+            statusBadge = 'Today';
+            statusColor = '#28a745';
         } else if (session.date > today) {
-            statusClass = 'upcoming';
-            statusText = 'Upcoming';
+            statusBadge = 'Upcoming';
             statusColor = '#007bff';
         } else {
-            statusClass = 'completed';
-            statusText = 'Completed';
+            statusBadge = 'Completed';
             statusColor = '#6c757d';
         }
 
         html += `
-            <div class="session-card" data-id="${session.id}" style="border-left-color: ${statusColor};">
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div style="flex:1;min-width:200px;">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            <span class="session-name">${session.name}</span>
-                            <span class="session-status ${statusClass}">${statusText}</span>
+                            <span style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</span>
+                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
                         </div>
-                        <div class="session-meta">
-                            ${session.date} · ${session.time} · ${session.location || 'TBD'}
+                        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
+                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
                         </div>
-                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${session.purpose}</div>` : ''}
+                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                         <div style="text-align:center;">
@@ -1005,15 +1025,14 @@ function renderSessions() {
 
 function renderExport() {
     pageContent.innerHTML = `
-        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:var(--shadow);">
+        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
             <div style="font-size:48px;margin-bottom:16px;">📊</div>
-            <h3 style="color:var(--text-dark);margin-bottom:8px;">Export Data</h3>
             <p style="color:var(--text-muted);font-size:16px;">Export feature coming soon.</p>
         </div>
     `;
 }
 
-// ─── LEADER PROFILE (Copied from Scout, Adapted) ──────────
+// ─── LEADER PROFILE ──────────────────────────────────────────
 async function renderLeaderProfile() {
     const userDoc = await getDoc(doc(db, 'users', currentUser.username));
     const data = userDoc.data();
@@ -1035,7 +1054,7 @@ async function renderLeaderProfile() {
                 <h2 style="color:var(--text-dark);margin:0;">My Profile</h2>
             </div>
 
-            <div style="background:white;border-radius:24px;padding:32px;box-shadow:var(--shadow);">
+            <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
                     <div class="person-avatar" style="width:80px;height:80px;background:#aed581;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
                         <div class="head" style="width:24px;height:24px;top:16px;"></div>
@@ -1132,7 +1151,6 @@ async function renderLeaderProfile() {
         try {
             await setDoc(doc(db, 'users', currentUser.username), updateData, { merge: true });
             
-            // Update display name
             if (fullName) {
                 displayName = fullName;
                 if (sidebarName) sidebarName.textContent = fullName;
@@ -1140,7 +1158,6 @@ async function renderLeaderProfile() {
                 if (pageHeading) {
                     pageHeading.innerHTML = `Good morning, <span id="leader-name">${fullName}</span>!`;
                 }
-                // Update localStorage
                 const user = JSON.parse(localStorage.getItem('currentUser'));
                 user.fullName = fullName;
                 user.role = role;
@@ -1183,6 +1200,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
+// ─── Init ────────────────────────────────────────────────
 async function init() {
     listenToUsers();
     listenToStatus();
