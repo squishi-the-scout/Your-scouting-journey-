@@ -57,7 +57,10 @@ const firstClassRequirements = [
 
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+console.log('🔍 Current User:', currentUser);  // ← ADD THIS
+
 if (!currentUser || currentUser.role !== 'leader') {
+    console.log('❌ Redirecting to login');    // ← ADD THIS
     window.location.href = 'index.html';
 }
 
