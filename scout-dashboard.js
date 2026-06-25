@@ -269,8 +269,6 @@ function renderDashboard() {
 
     // ─── Check if Second Class is accessible ────────────────
     const rank = scoutData.rank || 'Membership';
-    const showSecond = rank !== 'Membership';
-    const showFirst = rank === 'First Class';
 
     // ─── Upcoming sessions (next 2) ──────────────────────────
     const today = new Date().toISOString().split('T')[0];
@@ -282,8 +280,8 @@ function renderDashboard() {
     // ─── Achievements ─────────────────────────────────────────
     const achievements = [
         { key: 'membership', label: 'Membership', icon: '🏅', earned: completed === total },
-        { key: 'second', label: 'Second Class', icon: '⭐', earned: showSecond && false },
-        { key: 'first', label: 'First Class', icon: '🌟', earned: showFirst && false },
+        { key: 'second', label: 'Second Class', icon: '⭐', earned: false },
+        { key: 'first', label: 'First Class', icon: '🌟', earned: false },
         { key: 'badge1', label: 'Badge 1', icon: '🎯', earned: false },
         { key: 'badge2', label: 'Badge 2', icon: '🎯', earned: false },
         { key: 'badge3', label: 'Badge 3', icon: '🎯', earned: false },
@@ -320,8 +318,8 @@ function renderDashboard() {
             </span>
         </div>
 
-        <!-- ===== STATS GRID (4 cards) ===== -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+        <!-- ===== STATS GRID (3 cards) ===== -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
             <!-- Progress Ring -->
             <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;">
                 <div style="position:relative;width:100px;height:100px;margin:0 auto;">
@@ -343,14 +341,6 @@ function renderDashboard() {
                     </div>
                 </div>
                 <div style="font-size:13px;color:var(--text-muted);margin-top:8px;">Membership Progress</div>
-            </div>
-
-            <!-- Second Class (locked/unlocked) -->
-            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-                <div style="font-size:36px;margin-bottom:4px;">${showSecond ? '⭐' : '🔒'}</div>
-                <div style="font-size:16px;font-weight:600;color:var(--text-dark);">Second Class</div>
-                <div style="font-size:12px;color:var(--text-muted);">${showSecond ? 'In Progress' : 'Locked'}</div>
-                ${showSecond ? `<div style="font-size:11px;color:var(--text-muted);">Coming soon...</div>` : ''}
             </div>
 
             <!-- Sessions Attended -->
