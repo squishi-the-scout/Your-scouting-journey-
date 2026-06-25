@@ -6,18 +6,17 @@
     <title>Leader Dashboard — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== LEADER DASHBOARD — GREEN THEME ===== */
+        /* ===== LEADER DASHBOARD — SAGE & OLIVE THEME ===== */
         :root {
-            --green-primary: #2e7d32;
-            --green-primary-dark: #1b5e20;
-            --green-primary-light: #4caf50;
-            --green-secondary: #81c784;
-            --green-secondary-light: #a5d6a7;
-            --green-background: #f0f7f0;
+            --green-primary: #7cb342;
+            --green-primary-dark: #558b2f;
+            --green-primary-light: #aed581;
+            --green-secondary: #dcedc8;
+            --green-background: #f1f8e9;
             --green-mint: #e8f5e9;
             --gold: #f9a825;
             --gold-light: #ffd54f;
-            --text-dark: #1b3a1b;
+            --text-dark: #2e3b2e;
             --text-muted: #5a7a5a;
             --card-bg: #ffffff;
             --shadow: 0 2px 12px rgba(0,0,0,0.06);
@@ -45,7 +44,7 @@
         .sidebar {
             width: 220px;
             background: var(--text-dark);
-            color: #c8e6c9;
+            color: #dcedc8;
             padding: 28px 20px;
             display: flex;
             flex-direction: column;
@@ -117,7 +116,7 @@
         }
         .sidebar-role {
             font-size: 12px;
-            color: var(--green-secondary);
+            color: var(--green-primary-light);
             margin-top: 2px;
         }
 
@@ -129,7 +128,7 @@
         }
 
         .sidebar-nav a {
-            color: #a5d6a7;
+            color: #aed581;
             padding: 12px 16px;
             border-radius: 12px;
             font-weight: 500;
@@ -163,7 +162,7 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .sidebar-footer a {
-            color: #a5d6a7;
+            color: #aed581;
             padding: 12px 16px;
             border-radius: 12px;
             display: flex;
@@ -273,7 +272,7 @@
 
         /* ===== SUCCESS BANNER ===== */
         .success-banner {
-            background: #e8f5e9;
+            background: var(--green-secondary);
             border-radius: 16px;
             padding: 12px 16px;
             margin-bottom: 24px;
@@ -301,7 +300,7 @@
         }
         .scout-card .role-tag {
             font-size: 12px;
-            background: var(--green-mint);
+            background: var(--green-secondary);
             padding: 2px 10px;
             border-radius: 12px;
             color: var(--text-muted);
@@ -444,7 +443,7 @@
         }
         .stat-card.green .number { color: var(--green-primary); }
         .stat-card.gold .number { color: var(--gold); }
-        .stat-card.mint .number { color: var(--green-secondary); }
+        .stat-card.mint .number { color: var(--green-primary-light); }
 
         /* ===== PENDING ITEM ===== */
         .pending-item {
@@ -553,7 +552,7 @@
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .bottom-nav a {
-            color: #a5d6a7;
+            color: #aed581;
             font-size: 18px;
             display: flex;
             flex-direction: column;
