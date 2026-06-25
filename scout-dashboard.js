@@ -1,4 +1,4 @@
-import { auth, db } from './firebase-config.js';
+import { db } from './firebase-config.js';
 import { 
     doc, getDoc, setDoc, collection, getDocs, onSnapshot 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -36,6 +36,7 @@ function updateDisplayName(name) {
 // ─── Avatar colors ──────────────────────────────────────
 const colors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
 function getColor(name) {
+    if (!name) return colors[0];
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return colors[Math.abs(hash) % colors.length];
@@ -44,8 +45,8 @@ function getColor(name) {
 const avatarColor = getColor(currentUser.username);
 if (sidebarAvatar) sidebarAvatar.style.background = avatarColor;
 
-// ─── IMPORTANT: Use email as document ID ──────────────
-const userEmail = `${currentUser.username}@gis-scout.local`;
+// ─── IMPORTANT: Use username as document ID ──────────
+const userDocId = currentUser.username;
 
 // ─── State ──────────────────────────────────────────────
 let currentView = 'dashboard';
@@ -60,7 +61,7 @@ let tempReportImages = [];
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
-    const docRef = doc(db, 'users', userEmail);
+    const docRef = doc(db, 'users', userDocId);
     const docSnap = await getDoc(docRef);
     scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
     
@@ -78,7 +79,7 @@ function listenToStatus() {
         statusUnsubscribe = null;
     }
     
-    const docRef = doc(db, 'scoutStatus', userEmail);
+    const docRef = doc(db, 'scoutStatus', userDocId);
     statusUnsubscribe = onSnapshot(docRef, (docSnap) => {
         scoutStatus = docSnap.exists() ? docSnap.data() : {};
         if (currentView !== 'profile' && currentView !== 'reportModal') {
@@ -100,7 +101,7 @@ function listenToSessions() {
         allSessions = [];
         snapshot.forEach(doc => {
             const data = doc.data();
-            if (data.attendance && data.attendance[userEmail] === true) {
+            if (data.attendance && data.attendance[userDocId] === true) {
                 allSessions.push({ id: doc.id, ...data });
             }
         });
@@ -114,7 +115,7 @@ function listenToSessions() {
 
 // ─── Save status ─────────────────────────────────────────
 async function saveStatus() {
-    await setDoc(doc(db, 'scoutStatus', userEmail), scoutStatus);
+    await setDoc(doc(db, 'scoutStatus', userDocId), scoutStatus);
 }
 
 // ─── Resize image to thumbnail ──────────────────────────
@@ -263,7 +264,7 @@ function renderDashboard() {
 
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">🥰</div>
+            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Campsite is under construction. Check back soon!</p>
 
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
@@ -328,7 +329,6 @@ function renderRequirements(tab, reqs) {
                 const data = scoutStatus[key];
                 const status = data ? data.status : 'todo';
                 
-                // Status pill styling
                 let statusPill = '';
                 if (status === 'approved') {
                     statusPill = `<span class="approved-badge" style="background:#d4edda;color:#155724;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;">Complete</span>`;
@@ -350,7 +350,7 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">View Report</a>`;
                 } else {
                     reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">Add Report</button>`;
                 }
@@ -571,7 +571,7 @@ function renderReportModal() {
         }
         
         try {
-            const docRef = doc(db, 'scoutStatus', userEmail);
+            const docRef = doc(db, 'scoutStatus', userDocId);
             const docSnap = await getDoc(docRef);
             const data = docSnap.data() || {};
             
@@ -662,7 +662,7 @@ function renderSessions() {
 
 // ─── Profile View ──────────────────────────────────────────
 async function renderProfile() {
-    const userDoc = await getDoc(doc(db, 'users', userEmail));
+    const userDoc = await getDoc(doc(db, 'users', userDocId));
     const data = userDoc.data();
 
     if (!data) {
@@ -789,7 +789,7 @@ async function renderProfile() {
         };
 
         try {
-            await setDoc(doc(db, 'users', userEmail), updateData, { merge: true });
+            await setDoc(doc(db, 'users', userDocId), updateData, { merge: true });
             
             if (fullName) {
                 updateDisplayName(fullName);
