@@ -207,6 +207,17 @@
             margin-top: 4px;
         }
 
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: var(--text-dark);
+            cursor: pointer;
+            padding: 4px 8px;
+            z-index: 1001;
+        }
+
         /* ===== STATS CARDS ===== */
         .stats-grid {
             display: grid;
@@ -296,9 +307,6 @@
             font-weight: 600;
             font-size: 16px;
             color: var(--text-dark);
-        }
-        .req-status-icon {
-            font-size: 20px;
         }
 
         .req-actions {
@@ -494,6 +502,29 @@
             background: #d5cae0;
         }
 
+        /* ===== CONFETTI ===== */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+            animation: confetti-fall 3s ease-in forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
         /* ===== MOBILE ===== */
         @media (max-width: 768px) {
             .sidebar { display: none; }
@@ -503,45 +534,6 @@
             .header-left h1 { font-size: 22px; }
             .bottom-nav { display: flex !important; }
             .report-modal-content { padding: 20px; margin: 10px; }
-        }
-
-        /* ===== BOTTOM NAV ===== */
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--purple-dark);
-            padding: 8px 0;
-            justify-content: space-around;
-            z-index: 1000;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .bottom-nav a {
-            color: #c4b8d4;
-            font-size: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            text-decoration: none;
-            padding: 4px 8px;
-            border-radius: 8px;
-        }
-        .bottom-nav a.active {
-            color: white;
-            background: rgba(255,255,255,0.1);
-        }
-        .bottom-nav a span {
-            font-size: 9px;
-        }
-        .bottom-nav a .nav-icon {
-            width: 20px;
-            height: 20px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
         }
     </style>
 </head>
@@ -628,61 +620,96 @@
 
     <!-- ===== HEADER ===== -->
     <div class="header">
+        <button class="hamburger" id="hamburger-btn" aria-label="Toggle menu">☰</button>
         <div class="header-left">
             <h1 id="page-heading">Good morning, <span id="scout-name">Scout</span>!</h1>
             <p id="scout-subtitle">Welcome to your Campsite</p>
         </div>
     </div>
 
+    <!-- ===== MOBILE OVERLAY ===== -->
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+
+    <!-- ===== MOBILE SIDEBAR ===== -->
+    <div class="mobile-sidebar" id="mobile-sidebar">
+        <button class="close-btn" id="mobile-close-btn">✕</button>
+        <div class="sidebar-brand">🏕️ <span>GIS</span> Scouts</div>
+
+        <div class="sidebar-profile" id="mobile-profile-btn">
+            <div class="person-avatar" id="mobile-avatar">
+                <div class="head"></div>
+                <div class="body"></div>
+            </div>
+            <div class="sidebar-name" id="mobile-sidebar-name">Scout</div>
+            <div class="sidebar-role" id="mobile-sidebar-rank">Scout · Membership</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="active" data-view="dashboard">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span>Campsite</span>
+            </a>
+            <a href="#" data-view="membership">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <span>Membership</span>
+            </a>
+            <a href="#" data-view="second">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                    <path d="M12 22v-10"/>
+                </svg>
+                <span>Second Class</span>
+            </a>
+            <a href="#" data-view="first">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                    <path d="M12 22v-10"/>
+                    <path d="M8 7l4 2 4-2"/>
+                </svg>
+                <span>First Class</span>
+            </a>
+            <a href="#" data-view="badges">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L9.5 9.5L2 9.5L8 14.5L5.5 22L12 17.5L18.5 22L16 14.5L22 9.5L14.5 9.5L12 2z"/>
+                </svg>
+                <span>Badges</span>
+            </a>
+            <a href="#" data-view="sessions">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>My Sessions</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" id="mobile-logout-btn">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
     <!-- ===== DYNAMIC CONTENT ===== -->
     <div id="page-content"></div>
 
-</div>
-
-<!-- ===== BOTTOM NAV (mobile) ===== -->
-<div class="bottom-nav">
-    <a href="#" class="active" data-view="dashboard">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-        <span>Home</span>
-    </a>
-    <a href="#" data-view="membership">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-        </svg>
-        <span>Membership</span>
-    </a>
-    <a href="#" data-view="second">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-            <path d="M12 22v-10"/>
-        </svg>
-        <span>Second</span>
-    </a>
-    <a href="#" data-view="first">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-            <path d="M12 22v-10"/>
-            <path d="M8 7l4 2 4-2"/>
-        </svg>
-        <span>First</span>
-    </a>
-    <a href="#" data-view="sessions">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <span>Sessions</span>
-    </a>
 </div>
 
 <script type="module" src="scout-dashboard.js"></script>
