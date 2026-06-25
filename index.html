@@ -28,15 +28,21 @@
         label { display: block; color: #2d5a4a; font-weight: 500; margin-bottom: 6px; }
         input {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
+            padding: 12px 16px;
             border: 1px solid #d0e0d8;
             border-radius: 16px;
             font-size: 16px;
             background: #f9fbfa;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: #8fbcbb;
         }
         .password-wrapper {
             position: relative;
+            display: flex;
+            align-items: center;
         }
         .password-wrapper input {
             padding-right: 48px;
@@ -44,25 +50,33 @@
         }
         .toggle-password {
             position: absolute;
-            right: 14px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            font-size: 20px;
             cursor: pointer;
-            color: #8a9e96;
             padding: 0;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
+            color: #8a9e96;
+            transition: background 0.2s, color 0.2s;
         }
         .toggle-password:hover {
             background: #f0f4f2;
             color: #2d5a4a;
+        }
+        .toggle-password svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            display: block;
         }
         .password-field {
             margin-bottom: 20px;
@@ -70,7 +84,7 @@
         .password-field label {
             margin-bottom: 6px;
         }
-        button {
+        button[type="submit"] {
             width: 100%;
             padding: 14px;
             background: #8fbcbb;
@@ -81,17 +95,18 @@
             font-weight: 600;
             cursor: pointer;
             margin-top: 8px;
+            transition: background 0.2s;
         }
-        button:hover { background: #7da8a7; }
-        .error { color: #d45a7a; text-align: center; margin-top: 16px; font-size: 14px; }
+        button[type="submit"]:hover { background: #7da8a7; }
+        .error { color: #d45a7a; text-align: center; margin-top: 16px; font-size: 14px; min-height: 24px; }
         .role-display {
             text-align: center;
-            padding: 8px;
+            padding: 10px;
             background: #f0f7f4;
             border-radius: 12px;
             color: #5a7c6e;
             font-size: 14px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
         .role-display strong {
             color: #2d5a4a;
@@ -106,18 +121,24 @@
             <div class="role-display">
                 <span>Logging in as: <strong id="role-display-text">Scout</strong></span>
             </div>
-            <label>Username</label>
+            
+            <label for="username">Username</label>
             <input type="text" id="username" placeholder="Enter your username" autocomplete="username">
             
             <div class="password-field">
-                <label>Password</label>
+                <label for="password">Password</label>
                 <div class="password-wrapper">
                     <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
-                    <button type="button" class="toggle-password" id="toggle-password" aria-label="Show password">👁️</button>
+                    <button type="button" class="toggle-password" id="toggle-password" aria-label="Show password">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
             
-            <button id="login-btn">Log in</button>
+            <button type="submit" id="login-btn">Log in</button>
             <div id="error-message" class="error"></div>
         </div>
     </div>
@@ -151,9 +172,22 @@
 
         // ─── Toggle password visibility ──────────────────────
         togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.textContent = type === 'password' ? '👁️' : '🙈';
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            
+            // Update SVG icon
+            this.innerHTML = isPassword ? `
+                <svg viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                    <line x1="4" y1="4" x2="20" y2="20"/>
+                </svg>
+            ` : `
+                <svg viewBox="0 0 24 24">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                </svg>
+            `;
         });
 
         // ─── Login ────────────────────────────────────────────
@@ -180,13 +214,11 @@
 
                 const userData = userDoc.data();
 
-                // ─── Check if user has a role ──────────────────
                 if (!userData.role) {
                     errorDiv.innerText = 'Account not configured. Contact your leader.';
                     return;
                 }
 
-                // ─── Save to localStorage ──────────────────────
                 localStorage.setItem('currentUser', JSON.stringify({
                     uid: user.uid,
                     username: username,
@@ -194,7 +226,7 @@
                     fullName: userData.fullName || username
                 }));
 
-                // ─── Redirect based on role ────────────────────
+                // ─── Redirect to the RIGHT dashboard ────────────
                 if (userData.role === 'leader') {
                     window.location.href = 'leader-dashboard.html';
                 } else {
