@@ -55,36 +55,38 @@ const firstClassRequirements = [
     "Re-test Advance Scout Standard"
 ];
 
+// ─── LEADER ROLES ──────────────────────────────────────────
+const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
+
 // ─── CHECK USER ──────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-// ─── DEBUG: Log what we have ─────────────────────────────
-console.log('🔍 Current User from localStorage:', currentUser);
+console.log('🔍 Current User:', currentUser);
 
-// ─── FIX: Better role check with fallback ────────────────
+// ─── Check if user exists and has a leader role ──────────
 if (!currentUser) {
     console.log('❌ No user found, redirecting to login');
     window.location.href = 'index.html';
-    // Stop execution
     throw new Error('No user found');
 }
 
-// ─── FIX: Force leader role for known leaders ────────────
+// ─── Force leader role for known leaders (fallback) ──────
 if (currentUser.username === 'hazfar' || currentUser.username === 'iyan') {
-    currentUser.role = 'leader';
-    // Save back to localStorage
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    console.log('✅ Forced leader role for:', currentUser.username);
+    if (!currentUser.role || !leaderRoles.includes(currentUser.role)) {
+        currentUser.role = 'leader';
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        console.log('✅ Forced leader role for:', currentUser.username);
+    }
 }
 
-// ─── Check if role is leader ─────────────────────────────
-if (currentUser.role !== 'leader') {
-    console.log('❌ User is not a leader, redirecting to login. Role:', currentUser.role);
+// ─── Check if user has a valid leader role ───────────────
+if (!leaderRoles.includes(currentUser.role)) {
+    console.log('❌ User is not a leader. Role:', currentUser.role);
     window.location.href = 'index.html';
     throw new Error('Not authorized as leader');
 }
 
-console.log('✅ User authorized as leader:', currentUser.username);
+console.log('✅ Authorized as:', currentUser.role);
 
 // ─── DOM refs ─────────────────────────────────────────────
 const pageContent = document.getElementById('page-content');
@@ -94,8 +96,8 @@ const pageHeading = document.getElementById('page-heading');
 const pageSubtitle = document.getElementById('page-subtitle');
 const pendingBadge = document.getElementById('pending-badge');
 
-let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-if (sidebarName) sidebarName.textContent = currentUser.fullName || displayName;
+let displayName = currentUser.fullName || currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+if (sidebarName) sidebarName.textContent = displayName;
 if (sidebarRole) sidebarRole.textContent = currentUser.role || 'Leader';
 
 let allScouts = [];
