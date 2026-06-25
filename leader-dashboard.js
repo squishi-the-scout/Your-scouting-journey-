@@ -80,6 +80,15 @@ let usersUnsubscribe = null;
 let statusUnsubscribe = null;
 let sessionsUnsubscribe = null;
 
+// ─── Avatar colors ──────────────────────────────────────  ← ADD THIS
+const colors = ['#6c3b8c', '#e67e22', '#8a5aa8', '#f39c12', '#4a2a5e', '#d35400'];
+function getColor(name) {
+    if (!name) return colors[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
+
 // ─── Badge Colors ──────────────────────────────────────
 const badgeColors = {
     membership: { bg: '#d4edda', text: '#155724', border: '#7bcb7b', label: 'Membership' },
@@ -1010,6 +1019,9 @@ function renderExport() {
 
 // ─── Leader Profile ──────────────────────────────────────
 function renderLeaderProfile() {
+    // Get fresh user data
+    const userData = JSON.parse(localStorage.getItem('currentUser')) || currentUser;
+    
     let html = `
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
@@ -1023,28 +1035,28 @@ function renderLeaderProfile() {
                         <div class="body" style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
                     </div>
                     <div>
-                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${currentUser.fullName || displayName}</div>
-                        <div style="color:var(--text-muted);">${currentUser.role || 'Leader'}</div>
+                        <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${userData.fullName || displayName}</div>
+                        <div style="color:var(--text-muted);">${userData.role || 'Leader'}</div>
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                     <div>
                         <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Full Name</label>
-                        <input type="text" id="leader-fullname" value="${currentUser.fullName || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        <input type="text" id="leader-fullname" value="${userData.fullName || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
                     </div>
                     <div>
                         <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Date of Birth</label>
-                        <input type="date" id="leader-dob" value="${currentUser.dob || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                        <input type="date" id="leader-dob" value="${userData.dob || ''}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
                     </div>
                     <div>
                         <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Role</label>
                         <select id="leader-role" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
-                            <option value="Leader" ${currentUser.role === 'Leader' ? 'selected' : ''}>Leader</option>
-                            <option value="Rover Leader" ${currentUser.role === 'Rover Leader' ? 'selected' : ''}>Rover Leader</option>
-                            <option value="GSL" ${currentUser.role === 'GSL' ? 'selected' : ''}>GSL</option>
-                            <option value="AGSL" ${currentUser.role === 'AGSL' ? 'selected' : ''}>AGSL</option>
-                            <option value="Advisor" ${currentUser.role === 'Advisor' ? 'selected' : ''}>Advisor</option>
-                            <option value="Section Head" ${currentUser.role === 'Section Head' ? 'selected' : ''}>Section Head</option>
+                            <option value="Leader" ${userData.role === 'Leader' ? 'selected' : ''}>Leader</option>
+                            <option value="Rover Leader" ${userData.role === 'Rover Leader' ? 'selected' : ''}>Rover Leader</option>
+                            <option value="GSL" ${userData.role === 'GSL' ? 'selected' : ''}>GSL</option>
+                            <option value="AGSL" ${userData.role === 'AGSL' ? 'selected' : ''}>AGSL</option>
+                            <option value="Advisor" ${userData.role === 'Advisor' ? 'selected' : ''}>Advisor</option>
+                            <option value="Section Head" ${userData.role === 'Section Head' ? 'selected' : ''}>Section Head</option>
                         </select>
                     </div>
                 </div>
@@ -1056,11 +1068,13 @@ function renderLeaderProfile() {
     
     pageContent.innerHTML = html;
     
+    // ─── Back button ──────────────────────────────────────
     document.getElementById('profile-back').addEventListener('click', () => {
         currentView = 'dashboard';
         renderView();
     });
     
+    // ─── Save profile ─────────────────────────────────────
     document.getElementById('save-leader-profile').addEventListener('click', async function() {
         const fullName = document.getElementById('leader-fullname').value.trim();
         const dob = document.getElementById('leader-dob').value;
@@ -1074,30 +1088,48 @@ function renderLeaderProfile() {
         }
         
         try {
-            await setDoc(doc(db, 'users', currentUser.email), {
+            const userEmail = `${currentUser.username}@gis-scout.local`;
+            await setDoc(doc(db, 'users', userEmail), {
                 fullName: fullName,
                 dob: dob || null,
                 role: role
             }, { merge: true });
-            message.textContent = 'Profile saved successfully!';
-            message.style.color = '#4caf50';
+            
+            // ─── Update everything ──────────────────────────
+            // 1. Update currentUser in memory
             currentUser.fullName = fullName;
             currentUser.dob = dob;
             currentUser.role = role;
+            
+            // 2. Update localStorage
             localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // 3. Update sidebar name
             if (sidebarName) sidebarName.textContent = fullName;
             if (sidebarRole) sidebarRole.textContent = role;
+            
+            // 4. Update page heading
+            if (pageHeading) {
+                pageHeading.innerHTML = `Good morning, <span id="leader-name">${fullName}</span>!`;
+            }
+            
+            // 5. Update display name variable
+            displayName = fullName;
+            
+            message.textContent = 'Profile saved successfully!';
+            message.style.color = '#4caf50';
+            
             setTimeout(() => {
                 currentView = 'dashboard';
                 renderView();
             }, 1200);
+            
         } catch (error) {
             message.textContent = 'Error: ' + error.message;
             message.style.color = '#e74c3c';
         }
     });
 }
-
 // ─── Navigation ──────────────────────────────────────────
 document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
     link.addEventListener('click', function(e) {
