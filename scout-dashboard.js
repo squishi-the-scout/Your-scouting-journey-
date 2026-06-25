@@ -29,7 +29,7 @@ function updateDisplayName(name) {
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
     if (currentView === 'dashboard' && pageHeading) {
-        pageHeading.innerHTML = `Good morning, <span id="scout-name">${name}</span>! 👋`;
+        pageHeading.innerHTML = `Good morning, <span id="scout-name">${name}</span>!`;
     }
 }
 
@@ -167,21 +167,19 @@ function isBadgeAccessible(tab) {
 function renderLockedMessage(tab) {
     const messages = {
         'secondClass': {
-            title: '⭐ Second Class',
+            title: 'Second Class',
             message: 'Complete your Membership badge first to unlock Second Class!',
-            icon: '🔒'
         },
         'firstClass': {
-            title: '🌟 First Class',
+            title: 'First Class',
             message: 'Complete your Second Class badge first to unlock First Class!',
-            icon: '🔒'
         }
     };
     
     const info = messages[tab] || messages['secondClass'];
     return `
         <div style="text-align:center;padding:60px 20px;background:white;border-radius:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div style="font-size:64px;margin-bottom:16px;">${info.icon}</div>
+            <div style="font-size:48px;margin-bottom:16px;">🔒</div>
             <h2 style="color:var(--text-muted);">${info.title}</h2>
             <p style="color:var(--text-muted);font-size:16px;">${info.message}</p>
         </div>
@@ -195,25 +193,25 @@ function renderView() {
     
     if (pageHeading) {
         if (currentView === 'dashboard') {
-            pageHeading.innerHTML = `Good morning, <span id="scout-name">${displayName}</span>! 👋`;
+            pageHeading.innerHTML = `Good morning, <span id="scout-name">${displayName}</span>!`;
             if (scoutSubtitle) scoutSubtitle.textContent = 'Welcome to your Campsite';
         } else if (currentView === 'membership') {
-            pageHeading.textContent = '🏅 Membership Badge';
+            pageHeading.textContent = 'Membership Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'second') {
-            pageHeading.textContent = '⭐ Second Class Badge';
+            pageHeading.textContent = 'Second Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'first') {
-            pageHeading.textContent = '🌟 First Class Badge';
+            pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = '🏆 Proficiency Badges';
+            pageHeading.textContent = 'Proficiency Badges';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Start earning badges for your skills!';
         } else if (currentView === 'sessions') {
-            pageHeading.textContent = '📋 My Sessions';
+            pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
         } else if (currentView === 'profile') {
-            pageHeading.textContent = '👤 My Profile';
+            pageHeading.textContent = 'My Profile';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your personal information';
         }
     }
@@ -265,7 +263,7 @@ function renderDashboard() {
 
     let html = `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">🖤</div>
+            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Campsite is under construction. Check back soon!</p>
 
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
@@ -299,7 +297,7 @@ function renderDashboard() {
             </div>
 
             <div style="margin-top:24px;padding:16px;background:#f0ebf5;border-radius:16px;font-size:14px;color:var(--text-muted);">
-                💡 Use the sidebar to explore your requirements, sessions, and profile.
+                Use the sidebar to explore your requirements, sessions, and profile.
             </div>
         </div>
     `;
@@ -329,22 +327,22 @@ function renderRequirements(tab, reqs) {
                 const key = `${tab}_${req.name}`;
                 const data = scoutStatus[key];
                 const status = data ? data.status : 'todo';
-                const icon = status === 'approved' ? '🏁' : status === 'pending' ? '✋' : '🚩';
+                
+                // Status pill styling
+                let statusPill = '';
+                if (status === 'approved') {
+                    statusPill = `<span class="approved-badge" style="background:#d4edda;color:#155724;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;">Complete</span>`;
+                } else if (status === 'pending') {
+                    statusPill = `<span class="pending-badge" data-req="${req.name}" data-tab="${tab}" style="background:#fde8d0;color:#d35400;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Pending</span>`;
+                } else {
+                    statusPill = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}" style="background:var(--orange);color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Mark Ready</button>`;
+                }
                 
                 let approvedInfo = '';
                 if (status === 'approved' && data) {
                     const approvedBy = data.approvedBy || 'Unknown';
                     const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
-                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">✅ Approved by ${approvedBy} · ${approvedAt}</div>`;
-                }
-                
-                let actionHtml = '';
-                if (status === 'approved') {
-                    actionHtml = `<span class="approved-badge">✓ Completed</span>`;
-                } else if (status === 'pending') {
-                    actionHtml = `<span class="pending-badge" data-req="${req.name}" data-tab="${tab}">⏳ Undo</span>`;
-                } else {
-                    actionHtml = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
+                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Approved by ${approvedBy} · ${approvedAt}</div>`;
                 }
                 
                 const reportKey = `${tab}_${req.name}_report`;
@@ -352,23 +350,22 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">📄 View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userEmail}&tab=${tab}&req=${encodeURIComponent(req.name)}" target="_blank" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">View Report</a>`;
                 } else {
-                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">📄 Add Report</button>`;
+                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">Add Report</button>`;
                 }
                 
                 return `
                     <div class="req-card">
                         <div class="req-header">
                             <span class="req-title">${req.id}. ${req.name}</span>
-                            <span class="req-status-icon">${icon}</span>
                         </div>
                         <div class="req-actions" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">📖 Notes</a>
+                                <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" class="notes-link">Notes</a>
                                 ${reportBtn}
                             </div>
-                            ${actionHtml}
+                            ${statusPill}
                         </div>
                         ${approvedInfo}
                     </div>
@@ -425,7 +422,7 @@ function renderReportModal() {
             <div style="background:white;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
                 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                    <h2 style="color:var(--purple-dark);margin:0;">📄 Report: ${currentReportReq}</h2>
+                    <h2 style="color:var(--purple-dark);margin:0;">Report: ${currentReportReq}</h2>
                     <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:var(--text-muted);">×</button>
                 </div>
                 
@@ -435,7 +432,7 @@ function renderReportModal() {
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <label style="font-weight:600;display:block;margin-bottom:6px;">Upload Images (Instagram quality)</label>
+                    <label style="font-weight:600;display:block;margin-bottom:6px;">Upload Images</label>
                     <div id="drop-zone" style="border:2px dashed #e0d6ec;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;">
                         <div style="font-size:40px;margin-bottom:8px;">📸</div>
                         <p style="color:var(--text-muted);">Drag & drop images here, or click to select</p>
@@ -454,7 +451,7 @@ function renderReportModal() {
                 </div>
                 
                 <div style="display:flex;gap:12px;margin-top:16px;">
-                    <button id="save-report" class="btn-primary" style="flex:1;background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">💾 Save Report</button>
+                    <button id="save-report" class="btn-primary" style="flex:1;background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">Save Report</button>
                     <button id="cancel-report" class="btn-secondary" style="flex:1;background:#e8e0f0;color:var(--text-dark);border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
                 </div>
                 
@@ -645,7 +642,7 @@ function renderSessions() {
                         <div style="color:var(--text-muted);font-size:14px;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">✅ Attended</span>
+                        <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;">Attended</span>
                         <span style="font-size:14px;font-weight:600;color:var(--purple);">${session.duration || 0}h</span>
                     </div>
                 </div>
@@ -684,7 +681,7 @@ async function renderProfile() {
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
                 <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
-                <h2 style="color:var(--purple-dark);margin:0;">👤 My Profile</h2>
+                <h2 style="color:var(--purple-dark);margin:0;">My Profile</h2>
             </div>
 
             <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -732,7 +729,7 @@ async function renderProfile() {
                     </div>
 
                     <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-bottom:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
+                        <div style="font-weight:600;margin-bottom:8px;">Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
                                 <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Name</label>
@@ -749,13 +746,13 @@ async function renderProfile() {
                         </div>
                     </div>
 
-                    <button type="submit" style="background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">💾 Save Profile</button>
+                    <button type="submit" style="background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">Save Profile</button>
                 </form>
 
                 <div id="profile-message" style="margin-top:16px;color:var(--text-muted);text-align:center;"></div>
 
                 <div style="margin-top:16px;padding:12px;background:#f5f0f8;border-radius:12px;font-size:13px;color:var(--text-muted);text-align:center;">
-                    ⚠️ Rank and Role can only be changed by your leader.
+                    Rank and Role can only be changed by your leader.
                 </div>
             </div>
         </div>
@@ -818,7 +815,7 @@ function renderPlaceholder(title, unlockCondition = null) {
                 ${unlockCondition || 'This section is coming soon! Stay tuned.'}
             </p>
             <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <p style="color:var(--text-muted);font-size:14px;">⏳ More content is on the way. Check back later!</p>
+                <p style="color:var(--text-muted);font-size:14px;">More content is on the way. Check back later!</p>
             </div>
         </div>
     `;
