@@ -300,14 +300,7 @@ function renderDashboard() {
 
     // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        <!-- ===== WELCOME ===== -->
-        <div style="margin-bottom:24px;">
-            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
-                Good morning, <span style="color:var(--purple);">${displayName}</span>! 👋
-            </h1>
-            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Campsite</p>
-        </div>
-
+        
         <!-- ===== RANK + PATROL BADGES ===== -->
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
             <span style="background:var(--purple);color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
