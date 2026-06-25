@@ -45,9 +45,16 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
+    text-align: center;  /* ← Add this too */
     padding: 16px 0 20px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
     margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.sidebar-profile .sidebar-name {
+    text-align: center;  /* ← Add this */
+    width: 100%;         /* ← Add this */
 }
 
 .person-avatar {
