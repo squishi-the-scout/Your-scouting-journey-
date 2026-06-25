@@ -247,6 +247,7 @@ function renderView() {
 
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
+    // ─── Calculate stats ──────────────────────────────────────
     let completed = 0, pending = 0;
     for (const req of membershipRequirements) {
         const key = `membership_${req.name}`;
@@ -257,55 +258,175 @@ function renderDashboard() {
     const total = membershipRequirements.length;
     const progress = Math.round((completed / total) * 100);
 
+    // ─── Calculate service hours ─────────────────────────────
     let scoutServiceHours = 0;
     for (const session of allSessions) {
         scoutServiceHours += session.duration || 0;
     }
 
+    // ─── Attendance count ────────────────────────────────────
+    const attendanceCount = allSessions.length;
+
+    // ─── Check if Second Class is accessible ────────────────
+    const rank = scoutData.rank || 'Membership';
+    const showSecond = rank !== 'Membership';
+    const showFirst = rank === 'First Class';
+
+    // ─── Upcoming sessions (next 2) ──────────────────────────
+    const today = new Date().toISOString().split('T')[0];
+    const upcomingSessions = allSessions
+        .filter(s => s.date >= today)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 2);
+
+    // ─── Achievements ─────────────────────────────────────────
+    const achievements = [
+        { key: 'membership', label: 'Membership', icon: '🏅', earned: completed === total },
+        { key: 'second', label: 'Second Class', icon: '⭐', earned: showSecond && false },
+        { key: 'first', label: 'First Class', icon: '🌟', earned: showFirst && false },
+        { key: 'badge1', label: 'Badge 1', icon: '🎯', earned: false },
+        { key: 'badge2', label: 'Badge 2', icon: '🎯', earned: false },
+        { key: 'badge3', label: 'Badge 3', icon: '🎯', earned: false },
+    ];
+
+    // ─── Patrol badge ─────────────────────────────────────────
+    const patrolColors = {
+        'Eagle': '#f1c40f',
+        'Falcon': '#3498db',
+        'Wolf': '#95a5a6',
+        'Bear': '#8d6e63',
+        'Lion': '#e67e22'
+    };
+    const patrol = scoutData.patrol || 'No Patrol';
+    const patrolColor = patrolColors[patrol] || '#6c3b8c';
+
+    // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
-            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Campsite is under construction. Check back soon!</p>
+        <!-- ===== WELCOME ===== -->
+        <div style="margin-bottom:24px;">
+            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
+                Good morning, <span style="color:var(--purple);">${displayName}</span>! 👋
+            </h1>
+            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Campsite</p>
+        </div>
 
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
-                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="font-size:28px;font-weight:700;color:var(--purple);">${completed}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">Completed</div>
+        <!-- ===== RANK + PATROL BADGES ===== -->
+        <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+            <span style="background:var(--purple);color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                🏅 ${rank}
+            </span>
+            <span style="background:${patrolColor};color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                🦅 ${patrol} Patrol
+            </span>
+        </div>
+
+        <!-- ===== STATS GRID (4 cards) ===== -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+            <!-- Progress Ring -->
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;">
+                <div style="position:relative;width:100px;height:100px;margin:0 auto;">
+                    <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg);">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="#e8e0f0" stroke-width="10"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="url(#progressGradient)" stroke-width="10"
+                            stroke-dasharray="314.16" stroke-dashoffset="${314.16 * (1 - progress / 100)}"
+                            stroke-linecap="round"/>
+                        <defs>
+                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:var(--purple);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--orange);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                        <div style="font-size:22px;font-weight:700;color:var(--text-dark);">${progress}%</div>
+                        <div style="font-size:11px;color:var(--text-muted);">${completed}/${total}</div>
+                    </div>
                 </div>
-                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="font-size:28px;font-weight:700;color:var(--orange);">${pending}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">Pending</div>
-                </div>
-                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="font-size:28px;font-weight:700;color:#8fbcbb;">${total - completed - pending}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">Not Started</div>
-                </div>
-                <div style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                    <div style="font-size:28px;font-weight:700;color:#4caf50;">${scoutServiceHours}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">Hours of Scouting</div>
-                </div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:8px;">Membership Progress</div>
             </div>
 
-            <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--text-dark);margin-bottom:8px;">
-                    <span>Membership Badge</span>
-                    <span>${completed}/${total}</span>
-                </div>
-                <div style="background:#e8e0f0;border-radius:20px;height:10px;overflow:hidden;">
-                    <div style="background:linear-gradient(90deg,var(--purple),var(--orange));height:100%;width:${progress}%;border-radius:20px;transition:width 0.6s ease;"></div>
-                </div>
-                ${completed === total ? `<p style="margin-top:16px;color:var(--purple);font-weight:600;">🎉 You've earned your Membership Badge! Amazing work.</p>` : `<p style="margin-top:16px;color:var(--text-muted);font-size:14px;">Keep going — you're making progress!</p>`}
+            <!-- Second Class (locked/unlocked) -->
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:36px;margin-bottom:4px;">${showSecond ? '⭐' : '🔒'}</div>
+                <div style="font-size:16px;font-weight:600;color:var(--text-dark);">Second Class</div>
+                <div style="font-size:12px;color:var(--text-muted);">${showSecond ? 'In Progress' : 'Locked'}</div>
+                ${showSecond ? `<div style="font-size:11px;color:var(--text-muted);">Coming soon...</div>` : ''}
             </div>
 
-            <div style="margin-top:24px;padding:16px;background:#f0ebf5;border-radius:16px;font-size:14px;color:var(--text-muted);">
-                Use the sidebar to explore your requirements, sessions, and profile.
+            <!-- Sessions Attended -->
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:36px;margin-bottom:4px;">📋</div>
+                <div style="font-size:28px;font-weight:700;color:var(--purple);">${attendanceCount}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Sessions Attended</div>
+            </div>
+
+            <!-- Scouting Hours -->
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:36px;margin-bottom:4px;">⏱️</div>
+                <div style="font-size:28px;font-weight:700;color:#4caf50;">${scoutServiceHours}</div>
+                <div style="font-size:13px;color:var(--text-muted);">Hours of Scouting</div>
+            </div>
+        </div>
+
+        <!-- ===== ACHIEVEMENTS ===== -->
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;font-size:18px;">🏆 Achievements</h3>
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
+                ${achievements.map(a => `
+                    <div style="text-align:center;padding:12px;border-radius:16px;background:${a.earned ? 'var(--lavender-bg)' : '#f5f5f5'};border:2px solid ${a.earned ? 'var(--purple)' : 'transparent'};">
+                        <div style="font-size:32px;${a.earned ? '' : 'opacity:0.3;'}">${a.earned ? a.icon : '🔒'}</div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${a.label}</div>
+                        <div style="font-size:10px;color:${a.earned ? 'var(--purple)' : 'var(--text-muted)'};font-weight:600;margin-top:2px;">${a.earned ? '✅ Earned' : 'Locked'}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+
+        <!-- ===== UPCOMING SESSIONS ===== -->
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="color:var(--text-dark);font-size:18px;margin:0;">📅 Upcoming Sessions</h3>
+                <a href="#" data-view="sessions" style="color:var(--purple);font-size:13px;font-weight:500;text-decoration:none;">View All →</a>
+            </div>
+            ${upcomingSessions.length === 0 ? `
+                <p style="color:var(--text-muted);font-size:14px;">No upcoming sessions. Check back later!</p>
+            ` : `
+                ${upcomingSessions.map(s => `
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f5f0f8;">
+                        <div>
+                            <div style="font-weight:500;color:var(--text-dark);">${s.name}</div>
+                            <div style="font-size:13px;color:var(--text-muted);">${s.date} · ${s.time} · ${s.location || 'TBD'}</div>
+                        </div>
+                        <span style="background:#d4edda;color:#155724;padding:2px 12px;border-radius:20px;font-size:11px;font-weight:500;">Invited</span>
+                    </div>
+                `).join('')}
+            `}
+        </div>
+
+        <!-- ===== CONTINUE JOURNEY ===== -->
+        <div style="background:linear-gradient(135deg,var(--purple),var(--orange));border-radius:24px;padding:20px 24px;color:white;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <div style="font-weight:600;font-size:16px;">💡 Continue Your Journey</div>
+                    <div style="font-size:13px;opacity:0.9;">${completed === total ? 'You completed Membership! 🎉 Start Second Class' : `${completed}/${total} Membership requirements done`}</div>
+                </div>
+                <a href="#" data-view="${completed === total ? 'second' : 'membership'}" style="background:white;color:var(--purple);padding:8px 24px;border-radius:40px;font-weight:600;font-size:14px;text-decoration:none;">Continue →</a>
             </div>
         </div>
     `;
 
     pageContent.innerHTML = html;
-}
 
+    // ─── Event listeners for "Continue" button ──────────────
+    document.querySelectorAll('a[data-view]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentView = this.dataset.view;
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+            renderView();
+        });
+    });
+}
 // ─── Requirements View ──────────────────────────────────
 function renderRequirements(tab, reqs) {
     let completed = 0, pending = 0;
