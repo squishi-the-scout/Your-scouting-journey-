@@ -104,16 +104,26 @@ function getBadgeLabel(fieldName) {
 
 function getBadgesForRank(rank) {
     const badges = [];
+    
+    // Everyone sees Membership (if they have a valid rank)
     if (rank === 'Membership' || rank === 'Second Class' || rank === 'First Class') {
         badges.push({ key: 'membership', reqs: membershipRequirements, label: 'Membership' });
     }
+    
+    // Second Class and First Class see Second Class
     if (rank === 'Second Class' || rank === 'First Class') {
         badges.push({ key: 'secondClass', reqs: secondClassRequirements, label: 'Second Class' });
     }
+    
+    // Only First Class sees First Class
     if (rank === 'First Class') {
         badges.push({ key: 'firstClass', reqs: firstClassRequirements, label: 'First Class' });
-        badges.push({ key: 'badge', reqs: [], label: 'Badges' });
     }
+    
+    // ─── BADGES: ALWAYS UNLOCKED ──────────────────────────
+    // EVERYONE sees Badges, regardless of rank!
+    badges.push({ key: 'badge', reqs: [], label: 'Badges' });
+    
     return badges;
 }
 
