@@ -155,7 +155,7 @@ function isReadyForPromotion(email) {
 // ─── Check for stagnant scouts ──────────────────────────
 function checkStagnation() {
     const stagnantScouts = [];
-    const daysThreshold = 21; // 21 days of inactivity
+    const daysThreshold = 21;
     
     const now = new Date();
     
@@ -164,14 +164,11 @@ function checkStagnation() {
         let lastActivity = null;
         let lastRequirement = 'No activity recorded';
         
-        // Find the most recent activity across all requirements
         for (const key in status) {
-            // Check for updatedAt on any status change
             if (status[key].updatedAt) {
                 const activityDate = new Date(status[key].updatedAt);
                 if (!lastActivity || activityDate > lastActivity) {
                     lastActivity = activityDate;
-                    // Extract requirement name
                     let reqName = key;
                     if (key.includes('_')) {
                         reqName = key.split('_').slice(1).join('_');
@@ -179,7 +176,6 @@ function checkStagnation() {
                     lastRequirement = reqName;
                 }
             }
-            // Also check approvedAt if updatedAt doesn't exist
             if (status[key].approvedAt && !status[key].updatedAt) {
                 const activityDate = new Date(status[key].approvedAt);
                 if (!lastActivity || activityDate > lastActivity) {
@@ -191,7 +187,6 @@ function checkStagnation() {
                     lastRequirement = reqName;
                 }
             }
-            // Also check createdAt for initial status (like when first marked)
             if (status[key].createdAt && !status[key].updatedAt && !status[key].approvedAt) {
                 const activityDate = new Date(status[key].createdAt);
                 if (!lastActivity || activityDate > lastActivity) {
@@ -205,7 +200,6 @@ function checkStagnation() {
             }
         }
         
-        // If no activity found, use join date
         if (!lastActivity) {
             lastActivity = scout.joinDate ? new Date(scout.joinDate) : new Date();
             lastRequirement = 'Joined Scouting';
@@ -223,9 +217,7 @@ function checkStagnation() {
         }
     }
     
-    // Sort by days stagnant (most stagnant first)
     stagnantScouts.sort((a, b) => b.daysSince - a.daysSince);
-    
     return stagnantScouts;
 }
 
@@ -311,22 +303,22 @@ function updatePageHeading() {
     if (!pageHeading) return;
     
     if (currentView === 'dashboard') {
-        pageHeading.innerHTML = `Good morning, <span id="leader-name">${displayName}</span>! 👋`;
+        pageHeading.innerHTML = `Good morning, <span id="leader-name">${displayName}</span>!`;
         if (pageSubtitle) pageSubtitle.textContent = 'Welcome to your Home';
     } else if (currentView === 'scouts') {
-        pageHeading.textContent = '👥 All Scouts';
+        pageHeading.textContent = 'All Scouts';
         if (pageSubtitle) pageSubtitle.textContent = 'View and manage all scouts';
     } else if (currentView === 'pending') {
-        pageHeading.textContent = '⏳ Pending Approvals';
+        pageHeading.textContent = 'Pending Approvals';
         if (pageSubtitle) pageSubtitle.textContent = 'Review and approve scout requirements';
     } else if (currentView === 'sessions') {
-        pageHeading.textContent = '📋 Sessions';
+        pageHeading.textContent = 'Sessions';
         if (pageSubtitle) pageSubtitle.textContent = 'Manage scout sessions';
     } else if (currentView === 'export') {
-        pageHeading.textContent = '📤 Export Data';
+        pageHeading.textContent = 'Export Data';
         if (pageSubtitle) pageSubtitle.textContent = 'Export scout progress data';
     } else if (currentView === 'profile') {
-        pageHeading.textContent = '👤 My Profile';
+        pageHeading.textContent = 'My Profile';
         if (pageSubtitle) pageSubtitle.textContent = 'Manage your personal information';
     }
 }
@@ -358,26 +350,23 @@ function renderDashboard() {
     // ─── Stagnation Alert Banner ──────────────────────────
     if (stagnantScouts.length > 0) {
         html += `
-            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
+            <div class="stagnation-banner">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-                    <div style="font-weight:600;color:#856404;">⚠️ Stagnation Alerts</div>
-                    <span style="font-size:12px;color:#856404;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
+                    <div style="font-weight:600;color:#795548;">Stagnation Alerts</div>
+                    <span style="font-size:12px;color:#795548;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
                 </div>
                 ${stagnantScouts.map(item => {
                     const name = item.scout.fullName || item.scout.username;
                     const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
-                    const emoji = item.daysSince >= 30 ? '🔴' : '🟠';
+                    const emoji = item.daysSince >= 30 ? '⚠️' : '⚡';
                     return `
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:white;border-radius:8px;margin-top:6px;cursor:pointer;transition:background 0.2s;" 
-                             onmouseover="this.style.background='#f8f5fa'"
-                             onmouseout="this.style.background='white'"
-                             onclick="window.selectScout('${item.scout.email}')">
+                        <div class="stagnation-item" onclick="window.selectScout('${item.scout.email}')">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span style="font-size:18px;">${emoji}</span>
+                                <span style="font-size:16px;">${emoji}</span>
                                 <span style="font-weight:500;">${name}</span>
                                 <span style="font-size:13px;color:var(--text-muted);">${item.daysSince} days · Last: ${item.lastRequirement}</span>
                             </div>
-                            <span style="font-size:12px;color:${color};font-weight:600;">${item.daysSince >= 30 ? '⚠️ Critical' : '⚠️ Inactive'}</span>
+                            <span style="font-size:12px;color:${color};font-weight:600;">${item.daysSince >= 30 ? 'Critical' : 'Inactive'}</span>
                         </div>
                     `;
                 }).join('')}
@@ -385,8 +374,8 @@ function renderDashboard() {
         `;
     } else {
         html += `
-            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
-                <span style="color:#155724;">✅ All scouts are active! No stagnation alerts.</span>
+            <div class="success-banner">
+                <span>All scouts are active. No stagnation alerts.</span>
             </div>
         `;
     }
@@ -394,14 +383,13 @@ function renderDashboard() {
     // ─── Heart placeholder ──────────────────────────────────
     html += `
         <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">🖤</div>
+            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
             <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Home is under construction. Check back soon!</p>
         </div>
     `;
 
     pageContent.innerHTML = html;
     
-    // ─── Click handler for scout cards ─────────────────────
     window.selectScout = function(email) {
         selectedScout = email;
         renderView();
@@ -435,24 +423,24 @@ function renderAllScouts() {
         const scoutNote = scout.note || '';
 
         html += `
-            <div class="scout-card" data-email="${scout.email}" style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;">
+            <div class="scout-card" data-email="${scout.email}">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="font-weight:600;font-size:18px;color:var(--text-dark);">${name}</div>
-                    <span style="font-size:12px;background:#e8e0f0;padding:2px 10px;border-radius:12px;color:var(--text-muted);">${role}</span>
+                    <div class="name">${name}</div>
+                    <span class="role-tag">${role}</span>
                 </div>
-                <div style="font-size:14px;color:var(--text-muted);margin-bottom:12px;">${patrol} · ${rank}</div>
+                <div class="meta">${patrol} · ${rank}</div>
                 
                 <div style="margin-bottom:6px;">
-                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);">
+                    <div class="progress-label">
                         <span>${latestBadge.label}</span>
                         <span>${done}/${total}</span>
                     </div>
-                    <div style="background:#e8e0f0;border-radius:20px;height:4px;overflow:hidden;">
-                        <div style="background:#7bcb7b;height:100%;width:${pct}%;border-radius:20px;"></div>
+                    <div class="progress-bar">
+                        <div class="fill" style="width:${pct}%;"></div>
                     </div>
                 </div>
                 
-                ${scoutNote ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted);font-style:italic;border-top:1px solid #e8e0f0;padding-top:8px;">📝 ${scoutNote}</div>` : ''}
+                ${scoutNote ? `<div class="note">${scoutNote}</div>` : ''}
             </div>
         `;
     }
@@ -486,25 +474,25 @@ async function renderScoutProfile(email) {
 
     let html = `
         <div style="margin-bottom:24px;">
-            <button id="back-to-scouts" style="background:none;border:none;color:var(--purple);font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px;">← Back to All Scouts</button>
+            <button id="back-to-scouts" style="background:none;border:none;color:var(--green-primary);font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px;">← Back to All Scouts</button>
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
             <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px;">
                 <div>
-                    <h2 style="color:var(--purple-dark);margin:0;">${scout.fullName || scout.username}</h2>
+                    <h2 style="color:var(--text-dark);margin:0;">${scout.fullName || scout.username}</h2>
                     <div style="color:var(--text-muted);margin-top:4px;">${scout.patrol || 'No patrol'} · ${rank}</div>
                     <div style="color:var(--text-muted);font-size:14px;margin-top:4px;">Role: ${role}</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:14px;color:var(--text-muted);">DOB: ${scout.dob || 'Not set'}</div>
                     <div style="font-size:14px;color:var(--text-muted);">Joined: ${scout.joinDate || 'Not set'}</div>
-                    <div style="font-size:14px;color:var(--text-muted);">⏱️ ${totalHours}h service</div>
+                    <div style="font-size:14px;color:var(--text-muted);">${totalHours}h service</div>
                 </div>
             </div>
             ${scout.emergencyContact ? `
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
-                    <div style="font-weight:600;font-size:14px;">📞 Emergency Contact</div>
+                    <div style="font-weight:600;font-size:14px;">Emergency Contact</div>
                     <div style="font-size:14px;color:var(--text-muted);">
                         ${scout.emergencyContact.name || 'N/A'} · 
                         ${scout.emergencyContact.phone || 'N/A'} · 
@@ -516,25 +504,25 @@ async function renderScoutProfile(email) {
             ${promo ? `
                 <div style="margin-top:16px;padding-top:16px;border-top:1px solid #e8e0f0;">
                     <div style="background:linear-gradient(135deg,#fdf8e7,#f0f7e6);border-radius:12px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:1px solid #b8860b;">
-                        <span style="color:#6b8e23;font-weight:500;">🌟 Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
+                        <span style="color:#6b8e23;font-weight:500;">Ready for promotion: ${promo.currentRank} → ${promo.nextRank}</span>
                         <button class="promote-btn" data-email="${email}" style="background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;border:none;padding:6px 20px;border-radius:20px;font-size:14px;cursor:pointer;font-weight:500;">Promote Now</button>
                     </div>
                 </div>
             ` : ''}
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
-            <h3 style="color:var(--text-dark);margin-bottom:16px;">⭐ Leadership Roles</h3>
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">Leadership Roles</h3>
             <div style="display:flex;flex-wrap:wrap;gap:8px;">
                 ${['Scout', 'Patrol Leader', 'Assistant Patrol Leader', 'Senior Patrol Leader', 'Quartermaster', 'Scribe', 'Treasurer'].map(r => `
-                    <button class="role-btn" data-email="${email}" data-role="${r}" style="padding:6px 16px;border-radius:20px;border:2px solid ${role === r ? 'var(--purple)' : '#e0d6ec'};background:${role === r ? 'var(--purple)' : 'white'};color:${role === r ? 'white' : 'var(--text-dark)'};cursor:pointer;font-size:13px;transition:all 0.2s;">${r}</button>
+                    <button class="role-btn" data-email="${email}" data-role="${r}" style="padding:6px 16px;border-radius:20px;border:2px solid ${role === r ? 'var(--green-primary)' : '#e0d6ec'};background:${role === r ? 'var(--green-primary)' : 'white'};color:${role === r ? 'white' : 'var(--text-dark)'};cursor:pointer;font-size:13px;transition:all 0.2s;">${r}</button>
                 `).join('')}
             </div>
             <div id="role-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
         </div>
 
         <div style="margin-bottom:20px;">
-            <h3 style="color:var(--text-dark);margin-bottom:16px;">🏅 Badge Progress</h3>
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">Badge Progress</h3>
     `;
 
     for (const badge of badges) {
@@ -545,13 +533,15 @@ async function renderScoutProfile(email) {
             const key = `${badge.key}_${req}`;
             const data = status[key];
             const statusText = data ? data.status : 'todo';
-            const statusIcons = {
-                'approved': '✅',
-                'pending': '⏳',
-                'ready': '📝',
-                'todo': '🚩'
-            };
-            const icon = statusIcons[statusText] || '🚩';
+            
+            let statusDisplay = '';
+            if (statusText === 'approved') {
+                statusDisplay = `<span style="font-size:12px;color:#155724;background:#d4edda;padding:2px 8px;border-radius:12px;">Complete</span>`;
+            } else if (statusText === 'pending') {
+                statusDisplay = `<span style="font-size:12px;color:#856404;background:#fff3cd;padding:2px 8px;border-radius:12px;">Pending</span>`;
+            } else {
+                statusDisplay = `<span style="font-size:12px;color:var(--text-muted);">Todo</span>`;
+            }
             
             const reportKey = `${badge.key}_${req}_report`;
             const hasReport = status[reportKey] && (status[reportKey].note || (status[reportKey].images && status[reportKey].images.length > 0));
@@ -559,13 +549,12 @@ async function renderScoutProfile(email) {
             reqHtml += `
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f0f8;">
                     <div style="display:flex;align-items:center;gap:8px;">
-                        <span>${icon}</span>
                         <span style="font-size:14px;">${req}</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        ${hasReport ? `<a href="report-viewer.html?email=${email}&tab=${badge.key}&req=${encodeURIComponent(req)}" target="_blank" style="font-size:11px;color:var(--purple);text-decoration:underline;cursor:pointer;">📄 View Report</a>` : ''}
-                        <span style="font-size:12px;color:var(--text-muted);">${statusText}</span>
-                        <button class="approve-req-btn" data-email="${email}" data-field="${key}" style="background:${color.border};color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
+                        ${hasReport ? `<a href="report-viewer.html?email=${email}&tab=${badge.key}&req=${encodeURIComponent(req)}" target="_blank" style="font-size:11px;color:var(--green-primary);text-decoration:underline;cursor:pointer;">View Report</a>` : ''}
+                        ${statusDisplay}
+                        <button class="approve-req-btn" data-email="${email}" data-field="${key}" style="background:var(--green-primary);color:white;border:none;padding:2px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Approve</button>
                     </div>
                 </div>
             `;
@@ -575,7 +564,7 @@ async function renderScoutProfile(email) {
         const pct = badge.reqs.length > 0 ? Math.round((done / badge.reqs.length) * 100) : 0;
 
         html += `
-            <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
+            <div style="background:white;border-radius:24px;padding:20px;box-shadow:var(--shadow);margin-bottom:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <span style="font-weight:600;color:${color.text};">${color.label}</span>
                     <span style="font-size:14px;color:var(--text-muted);">${done}/${badge.reqs.length}</span>
@@ -591,15 +580,15 @@ async function renderScoutProfile(email) {
     html += `
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:20px;">
-            <h3 style="color:var(--text-dark);margin-bottom:16px;">📝 Leader Note</h3>
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);margin-bottom:20px;">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">Leader Note</h3>
             <textarea id="leader-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d6ec;font-family:inherit;font-size:14px;min-height:80px;resize:vertical;">${scout.note || ''}</textarea>
-            <button id="save-leader-note" class="btn-primary" style="margin-top:12px;background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;">💾 Save Note</button>
+            <button id="save-leader-note" class="btn-primary" style="margin-top:12px;">Save Note</button>
             <div id="note-message" style="margin-top:8px;font-size:13px;color:var(--text-muted);"></div>
         </div>
 
-        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <h3 style="color:var(--text-dark);margin-bottom:16px;">📋 Attendance & Sessions</h3>
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:var(--shadow);">
+            <h3 style="color:var(--text-dark);margin-bottom:16px;">Attendance & Sessions</h3>
             <div style="display:flex;gap:24px;margin-bottom:16px;flex-wrap:wrap;">
                 <div><span style="font-weight:600;">${attendedSessions.length}</span> sessions attended</div>
                 <div><span style="font-weight:600;">${totalHours}</span> total service hours</div>
@@ -629,10 +618,10 @@ async function renderScoutProfile(email) {
             await setDoc(doc(db, 'users', email), { note: note }, { merge: true });
             const scout = allScouts.find(s => s.email === email);
             if (scout) scout.note = note;
-            message.textContent = '✅ Note saved successfully!';
+            message.textContent = 'Note saved successfully!';
             message.style.color = '#4caf50';
         } catch (error) {
-            message.textContent = '❌ Error saving note: ' + error.message;
+            message.textContent = 'Error saving note: ' + error.message;
             message.style.color = '#e74c3c';
         }
     });
@@ -650,7 +639,7 @@ async function renderScoutProfile(email) {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                    alert(`${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
                 }
@@ -664,13 +653,13 @@ async function renderScoutProfile(email) {
             const newRole = this.dataset.role;
             try {
                 await setDoc(doc(db, 'users', scoutEmail), { scoutRole: newRole }, { merge: true });
-                document.getElementById('role-message').textContent = `✅ Role updated to: ${newRole}`;
+                document.getElementById('role-message').textContent = `Role updated to: ${newRole}`;
                 document.getElementById('role-message').style.color = '#4caf50';
                 const scout = allScouts.find(s => s.email === scoutEmail);
                 if (scout) scout.scoutRole = newRole;
                 setTimeout(() => renderScoutProfile(scoutEmail), 1000);
             } catch (error) {
-                document.getElementById('role-message').textContent = `❌ Error: ${error.message}`;
+                document.getElementById('role-message').textContent = 'Error: ' + error.message;
                 document.getElementById('role-message').style.color = '#e74c3c';
             }
         });
@@ -754,18 +743,18 @@ function renderPendingApprovals() {
     const totalPending = pendingItems.length + readyForPromotion.length;
 
     let html = `
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#7bcb7b;color:white;font-size:12px;font-weight:500;">Membership</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#4caf50;color:white;font-size:12px;font-weight:500;">Second Class</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#2e7d32;color:white;font-size:12px;font-weight:500;">First Class</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#00897b;color:white;font-size:12px;font-weight:500;">Badges</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;font-size:12px;font-weight:500;">🌟 Ready for Promotion</span>
+        <div class="color-key">
+            <span class="key-item membership">Membership</span>
+            <span class="key-item second">Second Class</span>
+            <span class="key-item first">First Class</span>
+            <span class="key-item badges">Badges</span>
+            <span class="key-item promo">Ready for Promotion</span>
         </div>
     `;
 
     if (totalPending === 0) {
         html += `
-            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:var(--shadow);">
                 <div style="font-size:48px;margin-bottom:16px;">🎉</div>
                 <p style="color:var(--text-muted);font-size:18px;">No pending approvals! All caught up.</p>
             </div>
@@ -788,16 +777,16 @@ function renderPendingApprovals() {
         const name = item.scout.fullName || item.scout.username;
 
         html += `
-            <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid ${color.border};">
+            <div class="pending-item" style="border-left-color: ${color.border};">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${color.border};"></span>
-                    <span style="font-size:12px;font-weight:600;color:${color.text};background:${color.bg};padding:2px 10px;border-radius:8px;">${label}</span>
-                    <span style="font-weight:500;">${item.reqName}</span>
-                    <span style="color:var(--text-muted);font-size:14px;">— ${name}</span>
+                    <span class="color-dot" style="background:${color.border};"></span>
+                    <span class="badge-label" style="background:${color.bg};color:${color.text};">${label}</span>
+                    <span class="req-name">${item.reqName}</span>
+                    <span class="scout-name">— ${name}</span>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <button class="approve-btn" data-email="${item.scout.email}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Approve</button>
-                    <button class="reject-btn" data-email="${item.scout.email}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Reject</button>
+                    <button class="approve-btn" data-email="${item.scout.email}" data-field="${item.field}">Approve</button>
+                    <button class="reject-btn" data-email="${item.scout.email}" data-field="${item.field}">Reject</button>
                 </div>
             </div>
         `;
@@ -808,14 +797,14 @@ function renderPendingApprovals() {
         const goldenGreen = 'linear-gradient(135deg, #b8860b, #6b8e23)';
 
         html += `
-            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
+            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:var(--shadow);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                     <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${goldenGreen};"></span>
-                    <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">🌟 Ready for Promotion</span>
+                    <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">Ready for Promotion</span>
                     <span style="font-weight:500;">${name}</span>
                     <span style="color:var(--text-muted);font-size:14px;">${item.promo.currentRank} → ${item.promo.nextRank}</span>
                 </div>
-                <button class="promote-btn" data-email="${item.scout.email}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">🌟 Promote Now</button>
+                <button class="promote-btn" data-email="${item.scout.email}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">Promote Now</button>
             </div>
         `;
     }
@@ -882,7 +871,7 @@ function renderPendingApprovals() {
                 try {
                     await setDoc(doc(db, 'users', email), { rank: promo.nextRank }, { merge: true });
                     scout.rank = promo.nextRank;
-                    alert(`✅ ${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
+                    alert(`${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
                 } catch (error) {
                     alert('Error promoting: ' + error.message);
                 }
@@ -902,26 +891,24 @@ function renderSessions() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
             <div></div>
-            <a href="new-session.html" style="background:#007bff;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;text-decoration:none;display:inline-block;box-shadow:0 2px 8px rgba(0,123,255,0.3);transition:transform 0.2s,box-shadow 0.2s;" 
-               onmouseover="this.style.transform='scale(1.05)';this.style.boxShadow='0 4px 16px rgba(0,123,255,0.4)';"
-               onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 8px rgba(0,123,255,0.3)';">➕ New Session</a>
+            <a href="new-session.html" class="btn-new-session">New Session</a>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px;">
-            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:28px;font-weight:700;color:var(--purple);">${totalSessions}</div>
-                <div style="font-size:13px;color:var(--text-muted);">Total Sessions</div>
+            <div class="stat-card green">
+                <div class="number">${totalSessions}</div>
+                <div class="stat-label">Total Sessions</div>
             </div>
-            <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:28px;font-weight:700;color:#4caf50;">${totalHours}</div>
-                <div style="font-size:13px;color:var(--text-muted);">Scouting Hours</div>
+            <div class="stat-card gold">
+                <div class="number">${totalHours}</div>
+                <div class="stat-label">Scouting Hours</div>
             </div>
         </div>
     `;
 
     if (allSessions.length === 0) {
         html += `
-            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;box-shadow:var(--shadow);">
                 <div style="font-size:64px;margin-bottom:16px;">📅</div>
                 <h3 style="color:var(--text-dark);margin-bottom:8px;">No sessions yet</h3>
                 <p style="color:var(--text-muted);">Click "New Session" to create your first session!</p>
@@ -944,42 +931,46 @@ function renderSessions() {
         const isAttending = session.attendance ? session.attendance[`${currentUser.username}@gis-scout.local`] === true : false;
         
         const today = new Date().toISOString().split('T')[0];
-        let statusBadge = '';
+        let statusClass = '';
+        let statusText = '';
         let statusColor = '';
         if (session.date === today) {
-            statusBadge = 'Today';
-            statusColor = '#28a745';
+            statusClass = 'today';
+            statusText = 'Today';
+            statusColor = 'var(--green-primary)';
         } else if (session.date > today) {
-            statusBadge = 'Upcoming';
+            statusClass = 'upcoming';
+            statusText = 'Upcoming';
             statusColor = '#007bff';
         } else {
-            statusBadge = 'Completed';
+            statusClass = 'completed';
+            statusText = 'Completed';
             statusColor = '#6c757d';
         }
 
         html += `
-            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
+            <div class="session-card" data-id="${session.id}" style="border-left-color: ${statusColor};">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div style="flex:1;min-width:200px;">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            <span style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</span>
-                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
+                            <span class="session-name">${session.name}</span>
+                            <span class="session-status ${statusClass}">${statusText}</span>
                         </div>
-                        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
-                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                        <div class="session-meta">
+                            ${session.date} · ${session.time} · ${session.location || 'TBD'}
                         </div>
-                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
+                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${session.purpose}</div>` : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                         <div style="text-align:center;">
-                            <div style="font-size:20px;font-weight:700;color:var(--purple);">${session.duration || 0}</div>
+                            <div style="font-size:20px;font-weight:700;color:var(--green-primary);">${session.duration || 0}</div>
                             <div style="font-size:10px;color:var(--text-muted);">hours</div>
                         </div>
                         <div style="text-align:center;min-width:45px;">
                             <div style="font-size:18px;font-weight:600;color:#8fbcbb;">${attendeeCount}</div>
                             <div style="font-size:10px;color:var(--text-muted);">attended</div>
                         </div>
-                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;">✅ Attended</span>' : ''}
+                        ${isAttending ? '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;">Attended</span>' : ''}
                     </div>
                 </div>
             </div>
@@ -999,9 +990,9 @@ function renderSessions() {
 
 function renderExport() {
     pageContent.innerHTML = `
-        <h2 style="color:var(--purple-dark);margin-bottom:24px;">📤 Export Data</h2>
-        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:var(--shadow);">
             <div style="font-size:48px;margin-bottom:16px;">📊</div>
+            <h3 style="color:var(--text-dark);margin-bottom:8px;">Export Data</h3>
             <p style="color:var(--text-muted);font-size:16px;">Export feature coming soon.</p>
         </div>
     `;
@@ -1013,11 +1004,11 @@ function renderLeaderProfile() {
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
                 <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
-                <h2 style="color:var(--purple-dark);margin:0;">👤 My Profile</h2>
+                <h2 style="color:var(--text-dark);margin:0;">My Profile</h2>
             </div>
-            <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+            <div style="background:white;border-radius:24px;padding:32px;box-shadow:var(--shadow);">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
-                    <div class="person-avatar" style="width:80px;height:80px;background:#3498db;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
+                    <div class="person-avatar" style="width:80px;height:80px;background:#aed581;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
                         <div class="head" style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
                         <div class="body" style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
                     </div>
@@ -1047,7 +1038,7 @@ function renderLeaderProfile() {
                         </select>
                     </div>
                 </div>
-                <button id="save-leader-profile" style="margin-top:16px;background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">💾 Save Profile</button>
+                <button id="save-leader-profile" class="btn-primary" style="margin-top:16px;width:100%;">Save Profile</button>
                 <div id="profile-message" style="margin-top:12px;text-align:center;color:var(--text-muted);"></div>
             </div>
         </div>
@@ -1067,7 +1058,7 @@ function renderLeaderProfile() {
         const message = document.getElementById('profile-message');
         
         if (!fullName) {
-            message.textContent = '⚠️ Please enter your full name.';
+            message.textContent = 'Please enter your full name.';
             message.style.color = '#e67e22';
             return;
         }
@@ -1078,7 +1069,7 @@ function renderLeaderProfile() {
                 dob: dob || null,
                 role: role
             }, { merge: true });
-            message.textContent = '✅ Profile saved successfully!';
+            message.textContent = 'Profile saved successfully!';
             message.style.color = '#4caf50';
             currentUser.fullName = fullName;
             currentUser.dob = dob;
@@ -1091,7 +1082,7 @@ function renderLeaderProfile() {
                 renderView();
             }, 1200);
         } catch (error) {
-            message.textContent = '❌ Error: ' + error.message;
+            message.textContent = 'Error: ' + error.message;
             message.style.color = '#e74c3c';
         }
     });
