@@ -63,14 +63,12 @@ const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
 console.log('🔍 Current User:', currentUser);
 
-// ─── Check if user exists and has a leader role ──────────
 if (!currentUser) {
     console.log('❌ No user found, redirecting to login');
     window.location.href = 'index.html';
     throw new Error('No user found');
 }
 
-// ─── Force leader role for known leaders (fallback) ──────
 if (currentUser.username === 'hazfar' || currentUser.username === 'iyan') {
     if (!currentUser.role || !leaderRoles.includes(currentUser.role)) {
         currentUser.role = 'leader';
@@ -79,7 +77,6 @@ if (currentUser.username === 'hazfar' || currentUser.username === 'iyan') {
     }
 }
 
-// ─── Check if user has a valid leader role ───────────────
 if (!leaderRoles.includes(currentUser.role)) {
     console.log('❌ User is not a leader. Role:', currentUser.role);
     window.location.href = 'index.html';
@@ -384,57 +381,309 @@ function renderView() {
     else if (currentView === 'profile') renderLeaderProfile();
 }
 
-// ─── Dashboard ──────────────────────────────────────────
+// ─── DASHBOARD ──────────────────────────────────────────
 function renderDashboard() {
-    const stagnantScouts = checkStagnation();
-    
-    let html = '';
-    
-    if (stagnantScouts.length > 0) {
-        html += `
-            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
-                    <div style="font-weight:600;color:#856404;">Stagnation Alerts</div>
-                    <span style="font-size:12px;color:#856404;">${stagnantScouts.length} scouts with no progress for 21+ days</span>
-                </div>
-                ${stagnantScouts.map(item => {
-                    const name = item.scout.fullName || item.scout.username;
-                    const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
-                    const emoji = item.daysSince >= 30 ? '⚠️' : '⚡';
-                    return `
-                        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:white;border-radius:8px;margin-top:6px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
-                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span style="font-size:16px;">${emoji}</span>
-                                <span style="font-weight:500;">${name}</span>
-                                <span style="font-size:13px;color:var(--text-muted);">${item.daysSince} days · Last: ${item.lastRequirement}</span>
-                            </div>
-                            <span style="font-size:12px;color:${color};font-weight:600;">${item.daysSince >= 30 ? 'Critical' : 'Inactive'}</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-    } else {
-        html += `
-            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
-                <span style="color:#155724;">All scouts are active. No stagnation alerts.</span>
-            </div>
-        `;
+    // ─── Calculate stats ──────────────────────────────────────
+    const totalScouts = allScouts.length;
+    let totalPending = 0;
+    let totalServiceHours = 0;
+
+    for (const scout of allScouts) {
+        const status = allStatus[scout.username] || {};
+        for (const key in status) {
+            if (status[key].status === 'pending') totalPending++;
+        }
     }
 
-    html += `
-        <div style="max-width:700px;margin:0 auto;text-align:center;padding:20px 0;">
-            <div style="font-size:48px;margin-bottom:16px;">❤️</div>
-            <p style="color:var(--text-muted);font-size:16px;margin-bottom:32px;">Your Home is under construction. Check back soon!</p>
+    for (const session of allSessions) {
+        totalServiceHours += session.duration || 0;
+    }
+
+    // ─── Pending items ────────────────────────────────────────
+    const pendingItems = [];
+    for (const scout of allScouts) {
+        const status = allStatus[scout.username] || {};
+        for (const key in status) {
+            if (status[key].status === 'pending') {
+                let reqName = key;
+                let badgeType = 'membership';
+                let color = '#7bcb7b';
+                if (key.startsWith('membership_')) {
+                    reqName = key.replace('membership_', '');
+                    badgeType = 'membership';
+                    color = '#7bcb7b';
+                } else if (key.startsWith('secondClass_')) {
+                    reqName = key.replace('secondClass_', '');
+                    badgeType = 'secondClass';
+                    color = '#4caf50';
+                } else if (key.startsWith('firstClass_')) {
+                    reqName = key.replace('firstClass_', '');
+                    badgeType = 'firstClass';
+                    color = '#2e7d32';
+                } else if (key.startsWith('badge_')) {
+                    reqName = key.replace('badge_', '');
+                    badgeType = 'badge';
+                    color = '#00897b';
+                }
+                pendingItems.push({
+                    scout: scout,
+                    reqName: reqName,
+                    badgeType: badgeType,
+                    color: color,
+                    label: badgeType.charAt(0).toUpperCase() + badgeType.slice(1)
+                });
+            }
+        }
+    }
+    pendingItems.sort((a, b) => a.badgeType.localeCompare(b.badgeType));
+
+    // ─── Patrol overview ──────────────────────────────────────
+    const patrols = ['Eagle', 'Falcon', 'Wolf', 'Bear', 'Lion'];
+    const patrolColors = {
+        'Eagle': '#f1c40f',
+        'Falcon': '#3498db',
+        'Wolf': '#95a5a6',
+        'Bear': '#8d6e63',
+        'Lion': '#e67e22'
+    };
+    const patrolData = [];
+
+    for (const patrol of patrols) {
+        const scoutsInPatrol = allScouts.filter(s => s.patrol === patrol);
+        if (scoutsInPatrol.length === 0) continue;
+
+        let totalDone = 0;
+        let totalReqs = 0;
+        let completedScouts = 0;
+
+        for (const scout of scoutsInPatrol) {
+            const status = allStatus[scout.username] || {};
+            let scoutDone = 0;
+            let scoutTotal = 0;
+
+            for (const req of membershipRequirements) {
+                const key = `membership_${req}`;
+                scoutTotal++;
+                if (status[key]?.status === 'approved') {
+                    scoutDone++;
+                    totalDone++;
+                }
+                totalReqs++;
+            }
+            if (scout.rank === 'Second Class' || scout.rank === 'First Class') {
+                for (const req of secondClassRequirements) {
+                    const key = `secondClass_${req}`;
+                    scoutTotal++;
+                    if (status[key]?.status === 'approved') {
+                        scoutDone++;
+                        totalDone++;
+                    }
+                    totalReqs++;
+                }
+            }
+            if (scout.rank === 'First Class') {
+                for (const req of firstClassRequirements) {
+                    const key = `firstClass_${req}`;
+                    scoutTotal++;
+                    if (status[key]?.status === 'approved') {
+                        scoutDone++;
+                        totalDone++;
+                    }
+                    totalReqs++;
+                }
+            }
+
+            const scoutPct = scoutTotal > 0 ? Math.round((scoutDone / scoutTotal) * 100) : 0;
+            if (scoutPct >= 100) completedScouts++;
+        }
+
+        const pct = totalReqs > 0 ? Math.round((totalDone / totalReqs) * 100) : 0;
+        patrolData.push({
+            name: patrol,
+            color: patrolColors[patrol] || '#6c3b8c',
+            pct: pct,
+            completed: completedScouts,
+            total: scoutsInPatrol.length,
+            scouts: scoutsInPatrol
+        });
+    }
+
+    // ─── Attendance overview ──────────────────────────────────
+    let totalAttendances = 0;
+    let totalPossible = 0;
+    for (const scout of allScouts) {
+        for (const session of allSessions) {
+            totalPossible++;
+            if (session.attendance && session.attendance[scout.username] === true) {
+                totalAttendances++;
+            }
+        }
+    }
+    const attendancePct = totalPossible > 0 ? Math.round((totalAttendances / totalPossible) * 100) : 0;
+
+    // ─── Stagnation ──────────────────────────────────────────
+    const stagnantScouts = checkStagnation();
+
+    // ─── Build HTML ──────────────────────────────────────────
+    let html = `
+        <!-- ===== WELCOME ===== -->
+        <div style="margin-bottom:24px;">
+            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
+                Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋
+            </h1>
+            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Home</p>
+        </div>
+
+        <!-- ===== STATS GRID ===== -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
+            <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px;font-weight:700;color:var(--purple);">${totalScouts}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Total Scouts</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px;font-weight:700;color:var(--orange);">${totalPending}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Pending Approvals</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px;font-weight:700;color:#8fbcbb;">${allSessions.length}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Total Sessions</div>
+            </div>
+            <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <div style="font-size:32px;font-weight:700;color:#4caf50;">${totalServiceHours}</div>
+                <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
+            </div>
+        </div>
+
+        <!-- ===== TWO COLUMN LAYOUT ===== -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+            <!-- ─── LEFT COLUMN ─── -->
+            <div style="display:flex;flex-direction:column;gap:20px;">
+
+                <!-- PENDING APPROVALS -->
+                <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="color:var(--text-dark);font-size:17px;margin:0;">⏳ Pending Approvals</h3>
+                        <span style="background:var(--orange);color:white;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:600;">${totalPending}</span>
+                    </div>
+                    ${pendingItems.length === 0 ? `
+                        <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px 0;">All caught up! 🎉</p>
+                    ` : `
+                        ${pendingItems.slice(0, 5).map(item => `
+                            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f5f0f8;">
+                                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${item.color};flex-shrink:0;"></span>
+                                <span style="font-size:13px;font-weight:500;color:var(--text-dark);">${item.reqName}</span>
+                                <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">${item.scout.fullName || item.scout.username}</span>
+                            </div>
+                        `).join('')}
+                        ${pendingItems.length > 5 ? `<div style="text-align:center;margin-top:8px;"><a href="#" data-view="pending" style="color:var(--green-primary);font-size:13px;font-weight:500;text-decoration:none;">View all ${pendingItems.length} →</a></div>` : ''}
+                    `}
+                </div>
+
+                <!-- STAGNATION ALERTS -->
+                <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <h3 style="color:var(--text-dark);font-size:17px;margin:0;">⚠️ Stagnation Alerts</h3>
+                        <span style="background:#ffc107;color:#856404;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:600;">${stagnantScouts.length}</span>
+                    </div>
+                    ${stagnantScouts.length === 0 ? `
+                        <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px 0;">No stagnant scouts! ✅</p>
+                    ` : `
+                        ${stagnantScouts.map(item => {
+                            const name = item.scout.fullName || item.scout.username;
+                            const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
+                            const emoji = item.daysSince >= 30 ? '🔴' : '🟠';
+                            return `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f0f8;">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span>${emoji}</span>
+                                        <span style="font-size:13px;font-weight:500;color:var(--text-dark);">${name}</span>
+                                        <span style="font-size:12px;color:var(--text-muted);">${item.daysSince} days</span>
+                                    </div>
+                                    <span style="font-size:11px;color:${color};font-weight:600;">${item.daysSince >= 30 ? 'Critical' : 'Inactive'}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    `}
+                </div>
+            </div>
+
+            <!-- ─── RIGHT COLUMN ─── -->
+            <div style="display:flex;flex-direction:column;gap:20px;">
+
+                <!-- PATROL OVERVIEW -->
+                <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                    <h3 style="color:var(--text-dark);font-size:17px;margin-bottom:16px;">🦅 Patrol Overview</h3>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:16px;">
+                        ${patrolData.map(p => {
+                            const circumference = 2 * Math.PI * 22;
+                            const offset = circumference * (1 - p.pct / 100);
+                            return `
+                                <div style="text-align:center;">
+                                    <div style="position:relative;width:70px;height:70px;margin:0 auto;">
+                                        <svg viewBox="0 0 60 60" style="width:100%;height:100%;transform:rotate(-90deg);">
+                                            <circle cx="30" cy="30" r="22" fill="none" stroke="#e8e0f0" stroke-width="5"/>
+                                            <circle cx="30" cy="30" r="22" fill="none" stroke="${p.color}" stroke-width="5"
+                                                stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"
+                                                stroke-linecap="round"/>
+                                        </svg>
+                                        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                                            <div style="font-size:16px;font-weight:700;color:var(--text-dark);">${p.pct}%</div>
+                                        </div>
+                                    </div>
+                                    <div style="font-size:12px;font-weight:600;color:var(--text-dark);margin-top:4px;">${p.name}</div>
+                                    <div style="font-size:10px;color:var(--text-muted);">${p.completed}/${p.total} completed</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+
+                <!-- ATTENDANCE OVERVIEW -->
+                <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+                    <h3 style="color:var(--text-dark);font-size:17px;margin-bottom:16px;">📊 Attendance Overview</h3>
+                    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
+                        <div style="position:relative;width:100px;height:100px;flex-shrink:0;">
+                            <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg);">
+                                <circle cx="60" cy="60" r="45" fill="none" stroke="#e8e0f0" stroke-width="10"/>
+                                <circle cx="60" cy="60" r="45" fill="none" stroke="#4caf50" stroke-width="10"
+                                    stroke-dasharray="282.74" stroke-dashoffset="${282.74 * (1 - attendancePct / 100)}"
+                                    stroke-linecap="round"/>
+                            </svg>
+                            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+                                <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${attendancePct}%</div>
+                                <div style="font-size:10px;color:var(--text-muted);">Overall</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                                <span style="font-weight:600;color:var(--text-dark);">${allSessions.length}</span>
+                                <span style="color:var(--text-muted);font-size:14px;">total sessions</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-weight:600;color:var(--text-dark);">${allScouts.length}</span>
+                                <span style="color:var(--text-muted);font-size:14px;">scouts</span>
+                            </div>
+                            <div style="margin-top:8px;font-size:13px;color:var(--text-muted);">
+                                ${attendancePct >= 70 ? '✅ Good attendance rate' : '⚠️ Attendance needs improvement'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
 
     pageContent.innerHTML = html;
-    
-    window.selectScout = function(username) {
-        selectedScout = username;
-        renderView();
-    };
+
+    // ─── Event listeners ──────────────────────────────────────
+    document.querySelectorAll('a[data-view]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentView = this.dataset.view;
+            selectedScout = null;
+            renderView();
+        });
+    });
 }
 
 function renderAllScouts() {
