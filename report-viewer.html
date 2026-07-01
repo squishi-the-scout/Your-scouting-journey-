@@ -275,6 +275,7 @@
             border: 1px solid #e0d6ec;
             font-size: 14px;
             min-width: 150px;
+            background: white;
         }
 
         .comment-input-area input:focus {
@@ -282,8 +283,9 @@
             outline: none;
         }
 
+        /* ─── BUTTONS ─── */
         .btn-primary {
-            background: var(--purple);
+            background: #28a745;
             color: white;
             border: none;
             padding: 10px 24px;
@@ -291,11 +293,34 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 12px rgba(40, 167, 69, 0.35);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.45);
         }
 
-        .btn-primary:hover {
-            background: var(--purple-dark);
+        .btn-success {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 12px rgba(40, 167, 69, 0.35);
+        }
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.45);
         }
 
         .btn-secondary {
@@ -308,39 +333,8 @@
             font-weight: 600;
             cursor: pointer;
         }
-
         .btn-secondary:hover {
             background: #d5cae0;
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
         }
 
         .action-bar {
@@ -537,7 +531,7 @@
                             <h3>✏️ Add Comment</h3>
                             <div class="comment-input-area">
                                 <input type="text" id="comment-input" placeholder="Write a comment...">
-                                <button id="submit-comment" class="btn-primary">Post Comment</button>
+                                <button id="submit-comment" class="btn-primary">💬 Post Comment</button>
                             </div>
                             <div id="comment-message" class="message"></div>
                         </div>
@@ -567,7 +561,6 @@
                         const newImages = [...images];
                         newImages.splice(index, 1);
                         
-                        // Update report data and re-render
                         const reportKey = `${tab}_${req}_report`;
                         const docRef = doc(db, 'scoutStatus', scoutUsername);
                         
