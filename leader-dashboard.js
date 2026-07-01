@@ -375,7 +375,7 @@ function updatePageHeading() {
     if (!pageHeading) return;
     
     if (currentView === 'dashboard') {
-        pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋`;
+        pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${displayName}</span>! `;
         if (pageSubtitle) pageSubtitle.textContent = 'Welcome to your Home';
     } else if (currentView === 'scouts') {
         pageHeading.textContent = 'All Scouts';
