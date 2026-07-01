@@ -6,17 +6,24 @@
     <title>Report Viewer — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body {
-            background: var(--lavender-bg);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 32px 20px;
-            color: var(--text-dark);
+            padding: 0;
         }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f3f0;
+            color: #2d2a3a;
+            padding: 32px 20px;
+        }
+
         .container {
             max-width: 800px;
             margin: 0 auto;
         }
+
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
@@ -28,52 +35,76 @@
         .back-link:hover {
             color: var(--purple-dark);
         }
+
         .report-card {
             background: white;
             border-radius: 24px;
             padding: 32px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
+
         .report-header {
             border-bottom: 1px solid #e8e0f0;
             padding-bottom: 16px;
             margin-bottom: 20px;
         }
+
         .report-header h1 {
             color: var(--purple-dark);
             margin: 0 0 4px 0;
             font-size: 24px;
         }
+
         .report-header .subtitle {
-            color: var(--text-muted);
+            color: #6b5f7a;
             font-size: 14px;
         }
+
         .report-section {
             margin-bottom: 24px;
         }
+
         .report-section h3 {
-            color: var(--text-dark);
+            color: #2d2a3a;
             margin-bottom: 8px;
             font-size: 16px;
         }
+
         .report-section .note-text {
             background: #f8f5fa;
             padding: 16px;
             border-radius: 12px;
             font-size: 15px;
             line-height: 1.6;
-            color: var(--text-dark);
+            color: #2d2a3a;
             white-space: pre-wrap;
+            min-height: 80px;
         }
+
+        .report-section .note-text.editable {
+            background: white;
+            border: 2px solid #e0d6ec;
+            resize: vertical;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .report-section .note-text.editable:focus {
+            border-color: var(--purple);
+            outline: none;
+        }
+
         .report-section .empty-note {
-            color: var(--text-muted);
+            color: #6b5f7a;
             font-style: italic;
         }
+
         .image-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
         }
+
         .image-grid img {
             width: 100%;
             aspect-ratio: 1;
@@ -83,24 +114,29 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
+
         .image-grid img:hover {
             transform: scale(1.03);
         }
+
         .no-images {
-            color: var(--text-muted);
+            color: #6b5f7a;
             font-style: italic;
         }
+
         .timestamp {
-            color: var(--text-muted);
+            color: #6b5f7a;
             font-size: 13px;
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid #e8e0f0;
         }
+
         .loading-spinner {
             text-align: center;
             padding: 60px 20px;
         }
+
         .loading-spinner .spinner {
             display: inline-block;
             width: 40px;
@@ -110,24 +146,28 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
         .loading-spinner p {
-            color: var(--text-muted);
+            color: #6b5f7a;
             margin-top: 12px;
         }
+
         .error-message {
             text-align: center;
             padding: 60px 20px;
             color: #e74c3c;
         }
+
         .error-message .icon {
             font-size: 48px;
             margin-bottom: 16px;
         }
 
-        /* Lightbox for full-size image */
+        /* ─── Lightbox ─── */
         .lightbox {
             position: fixed;
             top: 0;
@@ -142,15 +182,18 @@
             padding: 20px;
             cursor: pointer;
         }
+
         .lightbox.active {
             display: flex;
         }
+
         .lightbox img {
             max-width: 90%;
             max-height: 90%;
             border-radius: 8px;
             object-fit: contain;
         }
+
         .lightbox .close-btn {
             position: absolute;
             top: 20px;
@@ -162,10 +205,156 @@
             border: none;
         }
 
+        /* ─── Comments ─── */
+        .comment-item {
+            background: #f8f5fa;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+
+        .comment-item .comment-author {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--purple-dark);
+        }
+
+        .comment-item .comment-time {
+            font-size: 12px;
+            color: #6b5f7a;
+            margin-left: 8px;
+        }
+
+        .comment-item .comment-text {
+            font-size: 14px;
+            color: #2d2a3a;
+            margin-top: 4px;
+        }
+
+        .comment-input-area {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .comment-input-area input {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid #e0d6ec;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .comment-input-area input:focus {
+            border-color: var(--purple);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--purple);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: var(--purple-dark);
+        }
+
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e0f0;
+        }
+
+        .message {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #6b5f7a;
+        }
+
+        .message.success {
+            color: #28a745;
+        }
+
+        .message.error {
+            color: #dc3545;
+        }
+
         @media (max-width: 768px) {
-            body { padding: 16px; }
-            .report-card { padding: 20px; }
-            .image-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            body {
+                padding: 16px;
+            }
+            .report-card {
+                padding: 20px;
+            }
+            .image-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+            .comment-input-area {
+                flex-direction: column;
+            }
+            .action-bar {
+                flex-direction: column;
+            }
+            .action-bar button {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -188,37 +377,44 @@
     </div>
 
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { db } from './firebase-config.js';
+        import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { resizeImage } from './resize-image.js';
 
+        // ─── USER ─────────────────────────────────────────────
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser) {
             window.location.href = 'index.html';
         }
 
+        const isLeader = currentUser.role === 'leader' || 
+                         ['Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'].includes(currentUser.role);
+
+        // ─── URL PARAMS ──────────────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
-        const email = urlParams.get('email');
+        const scoutUsername = urlParams.get('email');
         const tab = urlParams.get('tab');
         const req = urlParams.get('req');
 
         const container = document.getElementById('report-content');
 
-        // ─── Back button ──────────────────────────────────────
+        // ─── BACK BUTTON ──────────────────────────────────────
         document.getElementById('back-link').addEventListener('click', function() {
-            if (currentUser.role === 'leader') {
+            if (isLeader) {
                 window.location.href = 'leader-dashboard.html';
             } else {
                 window.location.href = 'scout-dashboard.html';
             }
         });
 
-        // ─── Lightbox ─────────────────────────────────────────
+        // ─── LIGHTBOX ─────────────────────────────────────────
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightbox-img');
 
         document.getElementById('lightbox-close').addEventListener('click', () => {
             lightbox.classList.remove('active');
         });
+
         lightbox.addEventListener('click', (e) => {
             if (e.target === lightbox) {
                 lightbox.classList.remove('active');
@@ -230,9 +426,167 @@
             lightbox.classList.add('active');
         }
 
-        // ─── Load report ──────────────────────────────────────
+        // ─── RENDER REPORT ────────────────────────────────────
+        function renderReport(report, scoutName) {
+            const isScoutOwner = !isLeader && currentUser.username === scoutUsername;
+            const images = report.images || [];
+            const note = report.note || '';
+            const updatedAt = report.updatedAt ? new Date(report.updatedAt).toLocaleString() : 'Unknown';
+            const comments = report.comments || [];
+
+            let html = `
+                <div class="report-card">
+                    <div class="report-header">
+                        <h1>📄 Report: ${req}</h1>
+                        <div class="subtitle">${scoutName} · ${tab.charAt(0).toUpperCase() + tab.slice(1)} Badge</div>
+                    </div>
+
+                    <div class="report-section">
+                        <h3>📝 Note</h3>
+                        ${isScoutOwner ? `
+                            <textarea id="report-note" class="note-text editable">${note}</textarea>
+                        ` : `
+                            ${note ? `<div class="note-text">${note}</div>` : `<div class="empty-note">No note provided.</div>`}
+                        `}
+                    </div>
+
+                    <div class="report-section">
+                        <h3>📸 Images (${images.length})</h3>
+                        ${images.length > 0 ? `
+                            <div class="image-grid">
+                                ${images.map(img => `
+                                    <img src="${img}" alt="Report image" loading="lazy" onclick="openLightbox('${img}')">
+                                `).join('')}
+                            </div>
+                        ` : `<div class="no-images">No images uploaded.</div>`}
+                    </div>
+
+                    <div class="report-section">
+                        <h3>💬 Comments</h3>
+                        ${comments.length === 0 ? '<p style="color:var(--text-muted);">No comments yet.</p>' : ''}
+                        ${comments.map(c => `
+                            <div class="comment-item">
+                                <span class="comment-author">${c.authorName || c.author}</span>
+                                <span class="comment-time">· ${new Date(c.timestamp).toLocaleString()}</span>
+                                <div class="comment-text">${c.text}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    ${isLeader ? `
+                        <div class="report-section">
+                            <h3>✏️ Add Comment</h3>
+                            <div class="comment-input-area">
+                                <input type="text" id="comment-input" placeholder="Write a comment...">
+                                <button id="submit-comment" class="btn-primary">Post Comment</button>
+                            </div>
+                            <div id="comment-message" class="message"></div>
+                        </div>
+                    ` : ''}
+
+                    ${isScoutOwner ? `
+                        <div class="action-bar">
+                            <button id="save-report" class="btn-success">💾 Save Changes</button>
+                        </div>
+                        <div id="save-message" class="message"></div>
+                    ` : ''}
+
+                    <div class="timestamp">📅 Last saved: ${updatedAt}</div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // ─── Expose lightbox ──────────────────────────────
+            window.openLightbox = openLightbox;
+
+            // ─── Scout: Save Report ────────────────────────────
+            if (isScoutOwner) {
+                document.getElementById('save-report').addEventListener('click', async function() {
+                    const note = document.getElementById('report-note').value.trim();
+                    const reportKey = `${tab}_${req}_report`;
+                    const message = document.getElementById('save-message');
+
+                    try {
+                        const docRef = doc(db, 'scoutStatus', scoutUsername);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data() || {};
+                        const reportData = data[reportKey] || {};
+
+                        reportData.note = note;
+                        reportData.updatedAt = new Date().toISOString();
+
+                        data[reportKey] = reportData;
+                        await setDoc(docRef, data);
+
+                        message.textContent = '✅ Report saved successfully!';
+                        message.className = 'message success';
+                    } catch (error) {
+                        message.textContent = '❌ Error: ' + error.message;
+                        message.className = 'message error';
+                        console.error(error);
+                    }
+                });
+            }
+
+            // ─── Leader: Add Comment ────────────────────────────
+            if (isLeader) {
+                document.getElementById('submit-comment').addEventListener('click', async function() {
+                    const input = document.getElementById('comment-input');
+                    const text = input.value.trim();
+                    const message = document.getElementById('comment-message');
+
+                    if (!text) {
+                        message.textContent = '⚠️ Please write a comment.';
+                        message.className = 'message error';
+                        return;
+                    }
+
+                    const reportKey = `${tab}_${req}_report`;
+
+                    try {
+                        const docRef = doc(db, 'scoutStatus', scoutUsername);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data() || {};
+                        const reportData = data[reportKey] || {};
+
+                        const comments = reportData.comments || [];
+                        comments.push({
+                            author: currentUser.username,
+                            authorName: currentUser.fullName || currentUser.username,
+                            text: text,
+                            timestamp: new Date().toISOString()
+                        });
+
+                        reportData.comments = comments;
+                        data[reportKey] = reportData;
+                        await setDoc(docRef, data);
+
+                        input.value = '';
+                        message.textContent = '✅ Comment added!';
+                        message.className = 'message success';
+
+                        // Reload report
+                        loadReport();
+                    } catch (error) {
+                        message.textContent = '❌ Error: ' + error.message;
+                        message.className = 'message error';
+                        console.error(error);
+                    }
+                });
+
+                // ─── Enter key for comment ──────────────────────
+                document.getElementById('comment-input').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('submit-comment').click();
+                    }
+                });
+            }
+        }
+
+        // ─── LOAD REPORT ──────────────────────────────────────
         async function loadReport() {
-            if (!email || !tab || !req) {
+            if (!scoutUsername || !tab || !req) {
                 container.innerHTML = `
                     <div class="error-message">
                         <div class="icon">⚠️</div>
@@ -245,18 +599,18 @@
 
             try {
                 // ─── Get scout name ──────────────────────────────
-                const userDoc = await getDoc(doc(db, 'users', email));
+                const userDoc = await getDoc(doc(db, 'users', scoutUsername));
                 const scoutData = userDoc.exists() ? userDoc.data() : null;
-                const scoutName = scoutData ? (scoutData.fullName || scoutData.username) : email;
+                const scoutName = scoutData ? (scoutData.fullName || scoutData.username) : scoutUsername;
 
                 // ─── Get report data ─────────────────────────────
-                const statusDoc = await getDoc(doc(db, 'scoutStatus', email));
+                const statusDoc = await getDoc(doc(db, 'scoutStatus', scoutUsername));
                 const statusData = statusDoc.exists() ? statusDoc.data() : {};
                 
                 const reportKey = `${tab}_${req}_report`;
                 const report = statusData[reportKey] || null;
 
-                if (!report) {
+                if (!report || (!report.note && (!report.images || report.images.length === 0))) {
                     container.innerHTML = `
                         <div class="error-message">
                             <div class="icon">📄</div>
@@ -267,42 +621,7 @@
                     return;
                 }
 
-                // ─── Build report view ────────────────────────────
-                const images = report.images || [];
-                const note = report.note || '';
-                const updatedAt = report.updatedAt ? new Date(report.updatedAt).toLocaleString() : 'Unknown';
-
-                let html = `
-                    <div class="report-card">
-                        <div class="report-header">
-                            <h1>📄 Report: ${req}</h1>
-                            <div class="subtitle">${scoutName} · ${tab.charAt(0).toUpperCase() + tab.slice(1)} Badge</div>
-                        </div>
-
-                        <div class="report-section">
-                            <h3>📝 Note</h3>
-                            ${note ? `<div class="note-text">${note}</div>` : `<div class="empty-note">No note provided.</div>`}
-                        </div>
-
-                        <div class="report-section">
-                            <h3>📸 Images (${images.length})</h3>
-                            ${images.length > 0 ? `
-                                <div class="image-grid">
-                                    ${images.map(img => `
-                                        <img src="${img}" alt="Report image" loading="lazy" onclick="window.openLightbox('${img}')">
-                                    `).join('')}
-                                </div>
-                            ` : `<div class="no-images">No images uploaded.</div>`}
-                        </div>
-
-                        <div class="timestamp">📅 Last saved: ${updatedAt}</div>
-                    </div>
-                `;
-
-                container.innerHTML = html;
-
-                // ─── Expose lightbox to inline onclick ───────────
-                window.openLightbox = openLightbox;
+                renderReport(report, scoutName);
 
             } catch (error) {
                 console.error('Error loading report:', error);
@@ -316,6 +635,7 @@
             }
         }
 
+        // ─── INIT ─────────────────────────────────────────────
         loadReport();
     </script>
 </body>
