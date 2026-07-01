@@ -261,6 +261,38 @@ function checkStagnation() {
     return stagnantScouts;
 }
 
+// ─── Check health alerts ──────────────────────────────────
+function checkHealthAlerts() {
+    const healthAlerts = [];
+    const now = new Date();
+    
+    for (const scout of allScouts) {
+        const health = scout.health || {};
+        if (!health.lastUpdated) {
+            healthAlerts.push({
+                scout: scout,
+                daysSince: 999,
+                message: 'Never updated'
+            });
+            continue;
+        }
+        
+        const lastUpdated = new Date(health.lastUpdated);
+        const daysSince = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
+        
+        if (daysSince > 90) {
+            healthAlerts.push({
+                scout: scout,
+                daysSince: daysSince,
+                message: `${daysSince} days since last update`
+            });
+        }
+    }
+    
+    healthAlerts.sort((a, b) => b.daysSince - a.daysSince);
+    return healthAlerts;
+}
+
 function updatePendingBadge() {
     if (!pendingBadge) return;
     let count = 0;
@@ -381,7 +413,7 @@ function renderView() {
     else if (currentView === 'profile') renderLeaderProfile();
 }
 
-// ─── DASHBOARD ──────────────────────────────────────────
+// ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
     // ─── Calculate stats ──────────────────────────────────────
     const totalScouts = allScouts.length;
@@ -524,9 +556,20 @@ function renderDashboard() {
     // ─── Stagnation ──────────────────────────────────────────
     const stagnantScouts = checkStagnation();
 
+    // ─── Health alerts ──────────────────────────────────────
+    const healthAlerts = checkHealthAlerts();
+    const totalAlerts = stagnantScouts.length + healthAlerts.length;
+
     // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        
+        <!-- ===== WELCOME ===== -->
+        <div style="margin-bottom:24px;">
+            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
+                Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋
+            </h1>
+            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Home</p>
+        </div>
+
         <!-- ===== STATS GRID ===== -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
             <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -546,8 +589,53 @@ function renderDashboard() {
                 <div style="font-size:14px;color:var(--text-muted);">Service Hours</div>
             </div>
         </div>
+    `;
 
-        <!-- ===== TWO COLUMN LAYOUT ===== -->
+    // ─── ALERT CARD (Health + Stagnation) ────────────────────
+    if (totalAlerts > 0) {
+        html += `
+            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
+                <div style="font-weight:600;color:#856404;margin-bottom:8px;">⚠️ Alerts (${totalAlerts})</div>
+                
+                ${healthAlerts.length > 0 ? `
+                    <div style="margin-bottom:8px;">
+                        <div style="font-weight:500;color:#856404;font-size:13px;">🏥 Health Update Needed</div>
+                        ${healthAlerts.map(item => `
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:white;border-radius:6px;margin-top:4px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
+                                <span style="font-size:13px;">${item.scout.fullName || item.scout.username}</span>
+                                <span style="font-size:12px;color:#856404;">${item.message}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                ${stagnantScouts.length > 0 ? `
+                    <div>
+                        <div style="font-weight:500;color:#856404;font-size:13px;">📉 Stagnation Alerts</div>
+                        ${stagnantScouts.map(item => {
+                            const name = item.scout.fullName || item.scout.username;
+                            const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
+                            return `
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:white;border-radius:6px;margin-top:4px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
+                                    <span style="font-size:13px;">${name}</span>
+                                    <span style="font-size:12px;color:${color};">${item.daysSince} days inactive</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        html += `
+            <div style="background:#d4edda;border-radius:16px;padding:12px 16px;margin-bottom:24px;border-left:4px solid #28a745;">
+                <span style="color:#155724;">✅ All scouts are active and health records are up to date.</span>
+            </div>
+        `;
+    }
+
+    // ─── TWO COLUMN LAYOUT ──────────────────────────────────
+    html += `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
             <!-- ─── LEFT COLUMN ─── -->
             <div style="display:flex;flex-direction:column;gap:20px;">
@@ -569,33 +657,6 @@ function renderDashboard() {
                             </div>
                         `).join('')}
                         ${pendingItems.length > 5 ? `<div style="text-align:center;margin-top:8px;"><a href="#" data-view="pending" style="color:var(--green-primary);font-size:13px;font-weight:500;text-decoration:none;">View all ${pendingItems.length} →</a></div>` : ''}
-                    `}
-                </div>
-
-                <!-- STAGNATION ALERTS -->
-                <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                        <h3 style="color:var(--text-dark);font-size:17px;margin:0;">⚠️ Stagnation Alerts</h3>
-                        <span style="background:#ffc107;color:#856404;padding:2px 12px;border-radius:20px;font-size:12px;font-weight:600;">${stagnantScouts.length}</span>
-                    </div>
-                    ${stagnantScouts.length === 0 ? `
-                        <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:12px 0;">No stagnant scouts! ✅</p>
-                    ` : `
-                        ${stagnantScouts.map(item => {
-                            const name = item.scout.fullName || item.scout.username;
-                            const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
-                            const emoji = item.daysSince >= 30 ? '🔴' : '🟠';
-                            return `
-                                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f0f8;">
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <span>${emoji}</span>
-                                        <span style="font-size:13px;font-weight:500;color:var(--text-dark);">${name}</span>
-                                        <span style="font-size:12px;color:var(--text-muted);">${item.daysSince} days</span>
-                                    </div>
-                                    <span style="font-size:11px;color:${color};font-weight:600;">${item.daysSince >= 30 ? 'Critical' : 'Inactive'}</span>
-                                </div>
-                            `;
-                        }).join('')}
                     `}
                 </div>
             </div>
@@ -677,6 +738,11 @@ function renderDashboard() {
             renderView();
         });
     });
+
+    window.selectScout = function(username) {
+        selectedScout = username;
+        renderView();
+    };
 }
 
 function renderAllScouts() {
@@ -1228,17 +1294,17 @@ function renderSessions() {
         }
 
         html += `
-            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
+            <div class="session-card" data-id="${session.id}" style="border-left-color: ${statusColor};">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div style="flex:1;min-width:200px;">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            <span style="font-size:18px;font-weight:600;color:var(--text-dark);">${session.name}</span>
-                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
+                            <span class="session-name">${session.name}</span>
+                            <span class="session-status ${statusBadge === 'Today' ? 'today' : statusBadge === 'Upcoming' ? 'upcoming' : 'completed'}">${statusBadge}</span>
                         </div>
-                        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">
-                            📅 ${session.date} · ${session.time} · 📍 ${session.location || 'TBD'}
+                        <div class="session-meta">
+                            ${session.date} · ${session.time} · ${session.location || 'TBD'}
                         </div>
-                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">📝 ${session.purpose}</div>` : ''}
+                        ${session.purpose ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">${session.purpose}</div>` : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                         <div style="text-align:center;">
@@ -1450,65 +1516,57 @@ async function init() {
     listenToStatus();
     listenToSessions();
     renderView();
+
+    // ─── Mobile Sidebar ──────────────────────────────────────
+    const hamburger = document.getElementById('hamburger-btn');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const mobileClose = document.getElementById('mobile-close-btn');
+
+    function openMobileSidebar() {
+        mobileSidebar.classList.add('open');
+        mobileOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileSidebar() {
+        mobileSidebar.classList.remove('open');
+        mobileOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (hamburger) hamburger.addEventListener('click', openMobileSidebar);
+    if (mobileClose) mobileClose.addEventListener('click', closeMobileSidebar);
+    if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileSidebar);
+
+    document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const view = this.dataset.view;
+            closeMobileSidebar();
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
+            currentView = view;
+            selectedScout = null;
+            renderView();
+        });
+    });
+
+    document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
+        closeMobileSidebar();
+        currentView = 'profile';
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        renderView();
+    });
+
+    document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+        closeMobileSidebar();
+        if (usersUnsubscribe) usersUnsubscribe();
+        if (statusUnsubscribe) statusUnsubscribe();
+        if (sessionsUnsubscribe) sessionsUnsubscribe();
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    });
 }
 
 init();
-// ─── Mobile Sidebar ──────────────────────────────────────
-const hamburger = document.getElementById('hamburger-btn');
-const mobileSidebar = document.getElementById('mobile-sidebar');
-const mobileOverlay = document.getElementById('mobile-overlay');
-const mobileClose = document.getElementById('mobile-close-btn');
-
-function openMobileSidebar() {
-    mobileSidebar.classList.add('open');
-    mobileOverlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeMobileSidebar() {
-    mobileSidebar.classList.remove('open');
-    mobileOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-if (hamburger) {
-    hamburger.addEventListener('click', openMobileSidebar);
-}
-if (mobileClose) {
-    mobileClose.addEventListener('click', closeMobileSidebar);
-}
-if (mobileOverlay) {
-    mobileOverlay.addEventListener('click', closeMobileSidebar);
-}
-
-// ─── Mobile sidebar navigation ──────────────────────────
-document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        const view = this.dataset.view;
-        closeMobileSidebar();
-        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-        document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
-        currentView = view;
-        selectedScout = null;
-        renderView();
-    });
-});
-
-// ─── Mobile sidebar profile click ────────────────────────
-document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
-    closeMobileSidebar();
-    currentView = 'profile';
-    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-    renderView();
-});
-
-// ─── Mobile logout ────────────────────────────────────────
-document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
-    closeMobileSidebar();
-    if (usersUnsubscribe) usersUnsubscribe();
-    if (statusUnsubscribe) statusUnsubscribe();
-    if (sessionsUnsubscribe) sessionsUnsubscribe();
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
-});
