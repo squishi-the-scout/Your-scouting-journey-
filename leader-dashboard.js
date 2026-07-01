@@ -375,7 +375,7 @@ function updatePageHeading() {
     if (!pageHeading) return;
     
     if (currentView === 'dashboard') {
-        pageHeading.innerHTML = `Good morning, <span id="leader-name">${displayName}</span>!`;
+        pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋`;
         if (pageSubtitle) pageSubtitle.textContent = 'Welcome to your Home';
     } else if (currentView === 'scouts') {
         pageHeading.textContent = 'All Scouts';
@@ -562,14 +562,6 @@ function renderDashboard() {
 
     // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        <!-- ===== WELCOME ===== -->
-        <div style="margin-bottom:24px;">
-            <h1 style="font-size:32px;font-weight:700;color:var(--text-dark);margin:0;">
-                Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋
-            </h1>
-            <p style="color:var(--text-muted);font-size:16px;margin-top:4px;">Welcome to your Home</p>
-        </div>
-
         <!-- ===== STATS GRID ===== -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
             <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -594,15 +586,15 @@ function renderDashboard() {
     // ─── ALERT CARD (Health + Stagnation) ────────────────────
     if (totalAlerts > 0) {
         html += `
-            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #ffc107;">
-                <div style="font-weight:600;color:#856404;margin-bottom:8px;">⚠️ Alerts (${totalAlerts})</div>
+            <div style="background:#fff8e1;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #f9a825;">
+                <div style="font-weight:600;color:#795548;margin-bottom:8px;font-size:15px;">⚠️ Alerts (${totalAlerts})</div>
                 
                 ${healthAlerts.length > 0 ? `
                     <div style="margin-bottom:8px;">
                         <div style="font-weight:500;color:#856404;font-size:13px;">🏥 Health Update Needed</div>
                         ${healthAlerts.map(item => `
                             <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:white;border-radius:6px;margin-top:4px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
-                                <span style="font-size:13px;">${item.scout.fullName || item.scout.username}</span>
+                                <span style="font-size:13px;font-weight:500;color:var(--text-dark);">${item.scout.fullName || item.scout.username}</span>
                                 <span style="font-size:12px;color:#856404;">${item.message}</span>
                             </div>
                         `).join('')}
@@ -610,14 +602,14 @@ function renderDashboard() {
                 ` : ''}
                 
                 ${stagnantScouts.length > 0 ? `
-                    <div>
+                    <div style="${healthAlerts.length > 0 ? 'margin-top:8px;' : ''}">
                         <div style="font-weight:500;color:#856404;font-size:13px;">📉 Stagnation Alerts</div>
                         ${stagnantScouts.map(item => {
                             const name = item.scout.fullName || item.scout.username;
                             const color = item.daysSince >= 30 ? '#e74c3c' : '#f39c12';
                             return `
                                 <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:white;border-radius:6px;margin-top:4px;cursor:pointer;" onclick="window.selectScout('${item.scout.username}')">
-                                    <span style="font-size:13px;">${name}</span>
+                                    <span style="font-size:13px;font-weight:500;color:var(--text-dark);">${name}</span>
                                     <span style="font-size:12px;color:${color};">${item.daysSince} days inactive</span>
                                 </div>
                             `;
@@ -1294,12 +1286,12 @@ function renderSessions() {
         }
 
         html += `
-            <div class="session-card" data-id="${session.id}" style="border-left-color: ${statusColor};">
+            <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid ${statusColor};">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div style="flex:1;min-width:200px;">
                         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                             <span class="session-name">${session.name}</span>
-                            <span class="session-status ${statusBadge === 'Today' ? 'today' : statusBadge === 'Upcoming' ? 'upcoming' : 'completed'}">${statusBadge}</span>
+                            <span style="font-size:11px;background:${statusColor};color:white;padding:2px 12px;border-radius:12px;font-weight:500;">${statusBadge}</span>
                         </div>
                         <div class="session-meta">
                             ${session.date} · ${session.time} · ${session.location || 'TBD'}
@@ -1356,6 +1348,12 @@ async function renderLeaderProfile() {
     const dob = data.dob || '';
     const role = data.role || 'Leader';
     const emergency = data.emergencyContact || {};
+    const health = data.health || {};
+    
+    const healthLastUpdated = health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : 'Never';
+    const healthDaysSince = health.lastUpdated ? Math.floor((new Date() - new Date(health.lastUpdated)) / (1000 * 60 * 60 * 24)) : 999;
+    const healthStatus = healthDaysSince > 90 ? '⚠️ Needs update' : '✅ Up to date';
+    const healthStatusColor = healthDaysSince > 90 ? '#d45a7a' : '#4caf50';
 
     let html = `
         <div style="max-width:600px;margin:0 auto;">
@@ -1402,8 +1400,42 @@ async function renderLeaderProfile() {
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-bottom:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;">Emergency Contact</div>
+                    <!-- ─── HEALTH SECTION ─── -->
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div style="font-weight:600;font-size:16px;">🏥 Health Information</div>
+                            <span style="font-size:12px;color:${healthStatusColor};">${healthStatus}</span>
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Allergies</label>
+                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Medical Conditions</label>
+                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Medications</label>
+                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Additional Notes</label>
+                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
+                            Last updated: ${healthLastUpdated}
+                            ${healthDaysSince > 90 ? ` ⚠️ Update needed (${healthDaysSince} days ago)` : ''}
+                        </div>
+                    </div>
+
+                    <!-- ─── EMERGENCY CONTACT ─── -->
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
                                 <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Name</label>
@@ -1420,10 +1452,14 @@ async function renderLeaderProfile() {
                         </div>
                     </div>
 
-                    <button type="submit" style="background:var(--green-primary);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">Save Profile</button>
+                    <button type="submit" style="background:var(--green-primary);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;">Save Profile</button>
                 </form>
 
                 <div id="profile-message" style="margin-top:16px;color:var(--text-muted);text-align:center;"></div>
+
+                <div style="margin-top:16px;padding:12px;background:#e8f5e9;border-radius:12px;font-size:13px;color:var(--text-muted);text-align:center;">
+                    Health information should be updated every 3 months.
+                </div>
             </div>
         </div>
     `;
@@ -1446,6 +1482,12 @@ async function renderLeaderProfile() {
         const emergencyName = document.getElementById('profile-emergency-name').value.trim();
         const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
         const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
+        
+        // Health fields
+        const allergies = document.getElementById('health-allergies').value.trim();
+        const conditions = document.getElementById('health-conditions').value.trim();
+        const medications = document.getElementById('health-medications').value.trim();
+        const healthNotes = document.getElementById('health-notes').value.trim();
 
         const updateData = {
             fullName: fullName || currentUser.username,
@@ -1455,6 +1497,13 @@ async function renderLeaderProfile() {
                 name: emergencyName || null,
                 phone: emergencyPhone || null,
                 relation: emergencyRelation || null
+            },
+            health: {
+                allergies: allergies || null,
+                conditions: conditions || null,
+                medications: medications || null,
+                notes: healthNotes || null,
+                lastUpdated: new Date().toISOString()
             }
         };
 
@@ -1466,7 +1515,7 @@ async function renderLeaderProfile() {
                 if (sidebarName) sidebarName.textContent = fullName;
                 if (sidebarRole) sidebarRole.textContent = role;
                 if (pageHeading) {
-                    pageHeading.innerHTML = `Good morning, <span id="leader-name">${fullName}</span>!`;
+                    pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${fullName}</span>! 👋`;
                 }
                 const user = JSON.parse(localStorage.getItem('currentUser'));
                 user.fullName = fullName;
