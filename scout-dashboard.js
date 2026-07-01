@@ -186,8 +186,8 @@ function renderView() {
             pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = 'Proficiency Badges';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Start earning badges for your skills!';
+            pageHeading.textContent = '🏅 Badge Pouch';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Collect and track your scouting badges';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
@@ -219,7 +219,7 @@ function renderView() {
             pageContent.innerHTML = renderLockedMessage('firstClass');
         }
     }
-    else if (currentView === 'badges') renderPlaceholder('Proficiency Badges', 'Start earning badges for your skills!');
+    else if (currentView === 'badges') renderBadges();
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
     else if (currentView === 'reportModal') renderReportModal();
@@ -951,6 +951,335 @@ async function renderProfile() {
             document.getElementById('profile-message').textContent = '❌ Error saving profile: ' + error.message;
             document.getElementById('profile-message').style.color = '#c47a7a';
         }
+    });
+}
+
+// ─── 🎒 BADGE POUCH ──────────────────────────────────────────
+function renderBadges() {
+    // ─── BADGE DATA ───────────────────────────────────────────
+    const badges = [
+        { id: 0, name: 'Campfire', type: 'camp', icon: '🌲', unlocked: false },
+        { id: 1, name: 'Tent Pitcher', type: 'camp', icon: '⛺', unlocked: false },
+        { id: 2, name: 'Stitcher', type: 'proficiency', icon: '🧵', unlocked: false },
+        { id: 3, name: 'Firestarter', type: 'proficiency', icon: '🔥', unlocked: false },
+        { id: 4, name: 'Navigator', type: 'proficiency', icon: '🗺️', unlocked: false },
+        { id: 5, name: 'Knot Master', type: 'proficiency', icon: '🪢', unlocked: false },
+        { id: 6, name: 'Chef', type: 'proficiency', icon: '🍳', unlocked: false },
+        { id: 7, name: 'National', type: 'national', icon: '🇿🇦', unlocked: false },
+        { id: 8, name: 'World Scout', type: 'international', icon: '🌍', unlocked: false },
+        { id: 9, name: 'Global Friend', type: 'international', icon: '🤝', unlocked: false },
+    ];
+
+    // Load from localStorage
+    let badgeState = JSON.parse(localStorage.getItem('badgePouch')) || badges;
+
+    // ─── Type labels ──────────────────────────────────────────
+    const typeLabels = {
+        camp: '🏕️ Camp',
+        proficiency: '🎯 Skill',
+        national: '🇿🇦 National',
+        international: '🌍 World'
+    };
+
+    const earned = badgeState.filter(b => b.unlocked).length;
+    const total = badgeState.length;
+    const progress = Math.round((earned / total) * 100);
+
+    let html = `
+        <style>
+            .pouch-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 12px;
+                background: white;
+                padding: 20px;
+                border-radius: 24px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                border: 3px solid #e8e0f0;
+                margin-bottom: 20px;
+            }
+            .pouch-slot {
+                aspect-ratio: 1 / 1;
+                background: #f5f0f8;
+                border: 3px solid #e0d6ec;
+                border-radius: 16px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-size: 32px;
+                cursor: pointer;
+                transition: all 0.2s;
+                position: relative;
+                padding: 8px;
+            }
+            .pouch-slot:hover {
+                border-color: var(--purple);
+                transform: translateY(-4px);
+                box-shadow: 0 6px 20px rgba(108,59,140,0.2);
+            }
+            .pouch-slot.locked {
+                opacity: 0.5;
+                filter: grayscale(0.7);
+            }
+            .pouch-slot.unlocked {
+                border-color: var(--purple);
+                background: var(--lavender-bg);
+                box-shadow: 0 0 20px rgba(108,59,140,0.15);
+            }
+            .pouch-slot .slot-name {
+                font-size: 9px;
+                color: var(--text-muted);
+                margin-top: 4px;
+                text-align: center;
+                line-height: 1.2;
+                font-weight: 600;
+            }
+            .pouch-slot.unlocked .slot-name {
+                color: var(--purple);
+            }
+            .pouch-slot .slot-type {
+                font-size: 7px;
+                text-transform: uppercase;
+                color: #b0a8c0;
+                letter-spacing: 0.5px;
+                margin-top: 1px;
+            }
+            .pouch-slot .lock-badge {
+                position: absolute;
+                top: 4px;
+                right: 6px;
+                font-size: 12px;
+            }
+            .pouch-slot .tooltip-text {
+                display: none;
+                position: absolute;
+                bottom: calc(100% + 10px);
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--purple-dark);
+                color: white;
+                padding: 4px 14px;
+                border-radius: 8px;
+                font-size: 11px;
+                white-space: nowrap;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10;
+                font-weight: 500;
+            }
+            .pouch-slot:hover .tooltip-text {
+                display: block;
+            }
+            .pouch-actions {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 8px;
+            }
+            .pouch-actions button {
+                background: var(--lavender-bg);
+                border: none;
+                border-bottom: 3px solid #d5cae0;
+                color: var(--text-dark);
+                padding: 10px 28px;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.15s;
+            }
+            .pouch-actions button:hover {
+                transform: translateY(-2px);
+                border-bottom-width: 5px;
+                background: #e8e0f0;
+            }
+            .pouch-actions button.primary {
+                background: var(--purple);
+                color: white;
+                border-bottom-color: var(--purple-dark);
+            }
+            .pouch-actions button.primary:hover {
+                background: var(--purple-light);
+            }
+            .pouch-progress {
+                background: white;
+                border-radius: 24px;
+                padding: 16px 24px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                margin-bottom: 20px;
+            }
+            .pouch-progress .pouch-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .pouch-progress .pouch-header span:first-child {
+                font-weight: 600;
+                color: var(--text-dark);
+            }
+            .pouch-progress .pouch-header span:last-child {
+                color: var(--purple);
+                font-weight: 700;
+            }
+            .pouch-progress .pouch-bar-bg {
+                background: #e8e0f0;
+                border-radius: 20px;
+                height: 8px;
+                overflow: hidden;
+            }
+            .pouch-progress .pouch-bar-fill {
+                background: linear-gradient(90deg, var(--purple), var(--orange));
+                height: 100%;
+                border-radius: 20px;
+                width: ${progress}%;
+                transition: width 0.6s ease;
+            }
+            .pouch-scout {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 16px;
+            }
+            .pouch-scout .scout-figure {
+                background: var(--purple-dark);
+                border-radius: 20px;
+                padding: 12px 24px;
+                border: 3px solid var(--purple);
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+                cursor: pointer;
+                transition: transform 0.2s;
+            }
+            .pouch-scout .scout-figure:hover {
+                transform: scale(1.03);
+            }
+            .pouch-scout .scout-figure .scout-emoji {
+                font-size: 48px;
+                line-height: 1;
+            }
+            .pouch-scout .scout-figure .scout-info {
+                color: white;
+            }
+            .pouch-scout .scout-figure .scout-info .name {
+                font-weight: 700;
+                font-size: 16px;
+            }
+            .pouch-scout .scout-figure .scout-info .rank {
+                font-size: 12px;
+                color: var(--orange-light);
+            }
+            .pouch-scout .scout-figure .scout-info .hint {
+                font-size: 11px;
+                color: #b0a8c0;
+                margin-top: 2px;
+            }
+
+            @media (max-width: 600px) {
+                .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
+                .pouch-slot { font-size: 24px; }
+                .pouch-slot .slot-name { font-size: 7px; }
+                .pouch-actions button { padding: 8px 16px; font-size: 12px; }
+            }
+            @media (max-width: 400px) {
+                .pouch-grid { grid-template-columns: repeat(3, 1fr); }
+            }
+        </style>
+
+        <!-- SCOUT FIGURE -->
+        <div class="pouch-scout">
+            <div class="scout-figure" id="scoutClicker">
+                <span class="scout-emoji">🧭</span>
+                <div class="scout-info">
+                    <div class="name">${displayName}</div>
+                    <div class="rank">${scoutData.rank || 'Membership'}</div>
+                    <div class="hint">👆 Click me for a surprise!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="pouch-progress">
+            <div class="pouch-header">
+                <span>🎒 Badge Pouch</span>
+                <span>${earned} / ${total}</span>
+            </div>
+            <div class="pouch-bar-bg">
+                <div class="pouch-bar-fill" style="width:${progress}%;"></div>
+            </div>
+        </div>
+
+        <!-- GRID -->
+        <div class="pouch-grid" id="pouchGrid">
+    `;
+
+    badgeState.forEach((badge, index) => {
+        const isUnlocked = badge.unlocked;
+        html += `
+            <div class="pouch-slot ${isUnlocked ? 'unlocked' : 'locked'}" data-index="${index}">
+                <span>${badge.icon}</span>
+                <span class="slot-name">${badge.name}</span>
+                <span class="slot-type">${typeLabels[badge.type] || ''}</span>
+                ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
+                <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Locked — Click to request'}</span>
+            </div>
+        `;
+    });
+
+    html += `
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="pouch-actions">
+            <button id="pouchResetBtn">🔄 Reset</button>
+            <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
+        </div>
+    `;
+
+    pageContent.innerHTML = html;
+
+    // ─── CLICK SLOT → TICKET ─────────────────────────────────
+    document.querySelectorAll('.pouch-slot').forEach(slot => {
+        slot.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            const badge = badgeState[index];
+            if (badge.unlocked) {
+                alert(`🎉 You already earned "${badge.name}"!`);
+            } else {
+                // TODO: Connect to real ticketing system
+                alert(`🎫 Request ticket for "${badge.name}"?\n(Your leader will assign requirements.)`);
+                // window.location.href = `ticket.html?badge=${badge.id}`;
+            }
+        });
+    });
+
+    // ─── CLICK SCOUT → UNLOCK RANDOM ────────────────────────
+    document.getElementById('scoutClicker')?.addEventListener('click', function() {
+        const locked = badgeState.filter(b => !b.unlocked);
+        if (locked.length === 0) {
+            alert('🎉 All badges unlocked! You\'re a legend!');
+            return;
+        }
+        const random = locked[Math.floor(Math.random() * locked.length)];
+        random.unlocked = true;
+        localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+        renderBadges(); // re-render
+    });
+
+    // ─── RESET ──────────────────────────────────────────────────
+    document.getElementById('pouchResetBtn')?.addEventListener('click', function() {
+        if (confirm('Reset all badges? This will lock everything.')) {
+            badgeState.forEach(b => b.unlocked = false);
+            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+            renderBadges();
+        }
+    });
+
+    // ─── TICKET BUTTON ────────────────────────────────────────
+    document.getElementById('pouchTicketBtn')?.addEventListener('click', function() {
+        alert('🎫 Select a locked badge from the grid to request it.');
     });
 }
 
