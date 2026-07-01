@@ -375,7 +375,7 @@ function updatePageHeading() {
     if (!pageHeading) return;
     
     if (currentView === 'dashboard') {
-        pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${displayName}</span>! `;
+        pageHeading.innerHTML = `Good morning, <span style="color:var(--green-primary);">${displayName}</span>! 👋`;
         if (pageSubtitle) pageSubtitle.textContent = 'Welcome to your Home';
     } else if (currentView === 'scouts') {
         pageHeading.textContent = 'All Scouts';
@@ -1325,13 +1325,151 @@ function renderSessions() {
     });
 }
 
+// ─── EXPORT FUNCTION ──────────────────────────────────────────
 function renderExport() {
-    pageContent.innerHTML = `
-        <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div style="font-size:48px;margin-bottom:16px;">📊</div>
-            <p style="color:var(--text-muted);font-size:16px;">Export feature coming soon.</p>
+    let html = `
+        <div style="max-width:700px;margin:0 auto;">
+            <div style="background:white;border-radius:24px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                <h2 style="color:var(--text-dark);margin:0 0 8px 0;">📤 Export Data</h2>
+                <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px;">Export all scout data as a CSV file.</p>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+                    <div style="background:#f8f5fa;border-radius:16px;padding:16px;text-align:center;">
+                        <div style="font-size:28px;font-weight:700;color:var(--green-primary);">${allScouts.length}</div>
+                        <div style="font-size:13px;color:var(--text-muted);">Scouts to Export</div>
+                    </div>
+                    <div style="background:#f8f5fa;border-radius:16px;padding:16px;text-align:center;">
+                        <div style="font-size:28px;font-weight:700;color:var(--gold);">${allSessions.length}</div>
+                        <div style="font-size:13px;color:var(--text-muted);">Sessions</div>
+                    </div>
+                </div>
+
+                <button id="export-btn" style="background:var(--green-primary);color:white;border:none;padding:14px 32px;border-radius:40px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:background 0.2s;">
+                    📥 Download CSV
+                </button>
+                <div id="export-message" style="margin-top:12px;font-size:14px;color:var(--text-muted);text-align:center;"></div>
+            </div>
         </div>
     `;
+
+    pageContent.innerHTML = html;
+
+    document.getElementById('export-btn').addEventListener('click', async function() {
+        const message = document.getElementById('export-message');
+        message.textContent = '⏳ Generating export...';
+        message.style.color = '#8a9e96';
+
+        try {
+            const csv = await generateCSV();
+            downloadCSV(csv);
+            message.textContent = '✅ Export complete! File downloaded.';
+            message.style.color = '#4caf50';
+        } catch (error) {
+            message.textContent = '❌ Error: ' + error.message;
+            message.style.color = '#e74c3c';
+            console.error(error);
+        }
+    });
+}
+
+// ─── Generate CSV ──────────────────────────────────────────
+async function generateCSV() {
+    const rows = [];
+    
+    // ─── Headers ─────────────────────────────────────────────
+    const headers = [
+        'Scout Name', 'Username', 'Patrol', 'Rank', 'Role', 'DOB', 'Join Date',
+        'Membership Requirements', 'Second Class Requirements', 'First Class Requirements',
+        'Badges Earned', 'Total Service Hours', 'Sessions Attended',
+        'Allergies', 'Medical Conditions', 'Medications', 'Health Last Updated'
+    ];
+    rows.push(headers.join(','));
+
+    // ─── Process each scout ──────────────────────────────────
+    for (const scout of allScouts) {
+        const status = allStatus[scout.username] || {};
+        const health = scout.health || {};
+
+        // Count completed requirements per badge
+        let membershipDone = 0;
+        for (const req of membershipRequirements) {
+            const key = `membership_${req}`;
+            if (status[key]?.status === 'approved') membershipDone++;
+        }
+
+        let secondDone = 0;
+        for (const req of secondClassRequirements) {
+            const key = `secondClass_${req}`;
+            if (status[key]?.status === 'approved') secondDone++;
+        }
+
+        let firstDone = 0;
+        for (const req of firstClassRequirements) {
+            const key = `firstClass_${req}`;
+            if (status[key]?.status === 'approved') firstDone++;
+        }
+
+        // Count badges (total completed requirements across all badges)
+        const badgesEarned = membershipDone + secondDone + firstDone;
+
+        // Service hours
+        let serviceHours = 0;
+        let sessionsAttended = 0;
+        for (const session of allSessions) {
+            if (session.attendance && session.attendance[scout.username] === true) {
+                sessionsAttended++;
+                serviceHours += session.duration || 0;
+            }
+        }
+
+        // ─── Build row ─────────────────────────────────────────
+        const row = [
+            escapeCSV(scout.fullName || scout.username),
+            scout.username,
+            escapeCSV(scout.patrol || ''),
+            scout.rank || 'Membership',
+            scout.scoutRole || 'Scout',
+            scout.dob || '',
+            scout.joinDate || '',
+            `${membershipDone}/${membershipRequirements.length}`,
+            `${secondDone}/${secondClassRequirements.length}`,
+            `${firstDone}/${firstClassRequirements.length}`,
+            badgesEarned,
+            serviceHours,
+            sessionsAttended,
+            escapeCSV(health.allergies || ''),
+            escapeCSV(health.conditions || ''),
+            escapeCSV(health.medications || ''),
+            health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : ''
+        ];
+
+        rows.push(row.join(','));
+    }
+
+    return rows.join('\n');
+}
+
+// ─── Download CSV ──────────────────────────────────────────
+function downloadCSV(csv) {
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `scouts_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ─── Escape CSV values ──────────────────────────────────────
+function escapeCSV(value) {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
 }
 
 // ─── LEADER PROFILE ──────────────────────────────────────────
