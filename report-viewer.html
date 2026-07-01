@@ -379,6 +379,7 @@
     <script type="module">
         import { db } from './firebase-config.js';
         import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { resizeImage } from './resize-image.js';
 
         // ─── USER ─────────────────────────────────────────────
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -386,8 +387,9 @@
             window.location.href = 'index.html';
         }
 
-        const isLeader = currentUser.role === 'leader' || 
-                         ['Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'].includes(currentUser.role);
+        // ─── FIXED ROLE CHECK ────────────────────────────────
+        const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
+        const isLeader = leaderRoles.includes(currentUser.role);
 
         // ─── URL PARAMS ──────────────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
