@@ -72,6 +72,22 @@ async function loadScoutData() {
     }
 }
 
+// ─── Check health status ──────────────────────────────────
+function checkHealthStatus() {
+    const health = scoutData.health || {};
+    if (!health.lastUpdated) return { needsUpdate: true, daysSince: 999 };
+    
+    const lastUpdated = new Date(health.lastUpdated);
+    const now = new Date();
+    const daysSince = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
+    
+    return {
+        needsUpdate: daysSince > 90,
+        daysSince: daysSince,
+        lastUpdated: lastUpdated
+    };
+}
+
 // ─── Real-time status listener ──────────────────────────
 function listenToStatus() {
     if (statusUnsubscribe) {
@@ -247,7 +263,6 @@ function renderView() {
 
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    // ─── Calculate stats ──────────────────────────────────────
     let completed = 0, pending = 0;
     for (const req of membershipRequirements) {
         const key = `membership_${req.name}`;
@@ -258,26 +273,21 @@ function renderDashboard() {
     const total = membershipRequirements.length;
     const progress = Math.round((completed / total) * 100);
 
-    // ─── Calculate service hours ─────────────────────────────
     let scoutServiceHours = 0;
     for (const session of allSessions) {
         scoutServiceHours += session.duration || 0;
     }
 
-    // ─── Attendance count ────────────────────────────────────
     const attendanceCount = allSessions.length;
-
-    // ─── Check if Second Class is accessible ────────────────
     const rank = scoutData.rank || 'Membership';
+    const healthStatus = checkHealthStatus();
 
-    // ─── Upcoming sessions (next 2) ──────────────────────────
     const today = new Date().toISOString().split('T')[0];
     const upcomingSessions = allSessions
         .filter(s => s.date >= today)
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 2);
 
-    // ─── Achievements ─────────────────────────────────────────
     const achievements = [
         { key: 'membership', label: 'Membership', icon: '🏅', earned: completed === total },
         { key: 'second', label: 'Second Class', icon: '⭐', earned: false },
@@ -287,7 +297,6 @@ function renderDashboard() {
         { key: 'badge3', label: 'Badge 3', icon: '🎯', earned: false },
     ];
 
-    // ─── Patrol badge ─────────────────────────────────────────
     const patrolColors = {
         'Eagle': '#f1c40f',
         'Falcon': '#3498db',
@@ -298,10 +307,29 @@ function renderDashboard() {
     const patrol = scoutData.patrol || 'No Patrol';
     const patrolColor = patrolColors[patrol] || '#6c3b8c';
 
-    // ─── Build HTML ──────────────────────────────────────────
-    let html = `
-        
-        <!-- ===== RANK + PATROL BADGES ===== -->
+    let html = '';
+
+    // ─── Health Notice ──────────────────────────────────────
+    if (healthStatus.needsUpdate) {
+        html += `
+            <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:16px;border-left:4px solid #ffc107;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:24px;">⚠️</span>
+                    <div>
+                        <div style="font-weight:600;color:#856404;">Health Information Needs Update</div>
+                        <div style="font-size:13px;color:#856404;">Last updated ${healthStatus.daysSince} days ago. Please review your health details.</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a href="#" data-view="profile" style="background:#ffc107;color:#856404;padding:6px 20px;border-radius:40px;font-weight:600;font-size:13px;text-decoration:none;">Update Health →</a>
+                </div>
+            </div>
+        `;
+    }
+
+    // ─── Main Dashboard Content ─────────────────────────────
+    html += `
+        <!-- RANK + PATROL BADGES -->
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
             <span style="background:var(--purple);color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
                 🏅 ${rank}
@@ -311,7 +339,7 @@ function renderDashboard() {
             </span>
         </div>
 
-        <!-- ===== STATS GRID (3 cards) ===== -->
+        <!-- STATS GRID -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
             <!-- Progress Ring -->
             <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;">
@@ -351,7 +379,7 @@ function renderDashboard() {
             </div>
         </div>
 
-        <!-- ===== ACHIEVEMENTS ===== -->
+        <!-- ACHIEVEMENTS -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;font-size:18px;">🏆 Achievements</h3>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
@@ -365,7 +393,7 @@ function renderDashboard() {
             </div>
         </div>
 
-        <!-- ===== UPCOMING SESSIONS ===== -->
+        <!-- UPCOMING SESSIONS -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                 <h3 style="color:var(--text-dark);font-size:18px;margin:0;">📅 Upcoming Sessions</h3>
@@ -386,7 +414,7 @@ function renderDashboard() {
             `}
         </div>
 
-        <!-- ===== CONTINUE JOURNEY ===== -->
+        <!-- CONTINUE JOURNEY -->
         <div style="background:linear-gradient(135deg,var(--purple),var(--orange));border-radius:24px;padding:20px 24px;color:white;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                 <div>
@@ -400,7 +428,6 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
 
-    // ─── Event listeners for "Continue" button ──────────────
     document.querySelectorAll('a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -410,6 +437,7 @@ function renderDashboard() {
         });
     });
 }
+
 // ─── Requirements View ──────────────────────────────────
 function renderRequirements(tab, reqs) {
     let completed = 0, pending = 0;
@@ -780,6 +808,12 @@ async function renderProfile() {
     const rank = data.rank || 'Membership';
     const role = data.scoutRole || 'Scout';
     const emergency = data.emergencyContact || {};
+    const health = data.health || {};
+    
+    const healthLastUpdated = health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : 'Never';
+    const healthDaysSince = health.lastUpdated ? Math.floor((new Date() - new Date(health.lastUpdated)) / (1000 * 60 * 60 * 24)) : 999;
+    const healthStatus = healthDaysSince > 90 ? '⚠️ Needs update' : '✅ Up to date';
+    const healthStatusColor = healthDaysSince > 90 ? '#d45a7a' : '#4caf50';
 
     let html = `
         <div style="max-width:600px;margin:0 auto;">
@@ -832,8 +866,42 @@ async function renderProfile() {
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-bottom:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;">Emergency Contact</div>
+                    <!-- ─── HEALTH SECTION ─── -->
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div style="font-weight:600;font-size:16px;">🏥 Health Information</div>
+                            <span style="font-size:12px;color:${healthStatusColor};">${healthStatus}</span>
+                        </div>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Allergies</label>
+                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Medical Conditions</label>
+                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Medications</label>
+                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;font-size:13px;">Additional Notes</label>
+                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
+                            Last updated: ${healthLastUpdated}
+                            ${healthDaysSince > 90 ? ` ⚠️ Update needed (${healthDaysSince} days ago)` : ''}
+                        </div>
+                    </div>
+
+                    <!-- ─── EMERGENCY CONTACT ─── -->
+                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
                                 <label style="font-weight:500;color:var(--text-dark);display:block;margin-bottom:4px;">Name</label>
@@ -850,13 +918,13 @@ async function renderProfile() {
                         </div>
                     </div>
 
-                    <button type="submit" style="background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;">Save Profile</button>
+                    <button type="submit" style="background:var(--purple);color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;">Save Profile</button>
                 </form>
 
                 <div id="profile-message" style="margin-top:16px;color:var(--text-muted);text-align:center;"></div>
 
                 <div style="margin-top:16px;padding:12px;background:#f5f0f8;border-radius:12px;font-size:13px;color:var(--text-muted);text-align:center;">
-                    Rank and Role can only be changed by your leader.
+                    Rank and Role can only be changed by your leader. Health information should be updated every 3 months.
                 </div>
             </div>
         </div>
@@ -880,6 +948,12 @@ async function renderProfile() {
         const emergencyName = document.getElementById('profile-emergency-name').value.trim();
         const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
         const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
+        
+        // Health fields
+        const allergies = document.getElementById('health-allergies').value.trim();
+        const conditions = document.getElementById('health-conditions').value.trim();
+        const medications = document.getElementById('health-medications').value.trim();
+        const healthNotes = document.getElementById('health-notes').value.trim();
 
         const updateData = {
             fullName: fullName || currentUser.username,
@@ -889,6 +963,13 @@ async function renderProfile() {
                 name: emergencyName || null,
                 phone: emergencyPhone || null,
                 relation: emergencyRelation || null
+            },
+            health: {
+                allergies: allergies || null,
+                conditions: conditions || null,
+                medications: medications || null,
+                notes: healthNotes || null,
+                lastUpdated: new Date().toISOString()
             }
         };
 
@@ -950,69 +1031,61 @@ document.getElementById('logout-btn').addEventListener('click', () => {
     window.location.href = 'index.html';
 });
 
+// ─── Init ────────────────────────────────────────────────
 async function init() {
     await loadScoutData();
     listenToStatus();
     listenToSessions();
     renderView();
+
+    // ─── Mobile Sidebar ──────────────────────────────────────
+    const hamburger = document.getElementById('hamburger-btn');
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const mobileClose = document.getElementById('mobile-close-btn');
+
+    function openMobileSidebar() {
+        mobileSidebar.classList.add('open');
+        mobileOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileSidebar() {
+        mobileSidebar.classList.remove('open');
+        mobileOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (hamburger) hamburger.addEventListener('click', openMobileSidebar);
+    if (mobileClose) mobileClose.addEventListener('click', closeMobileSidebar);
+    if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileSidebar);
+
+    document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const view = this.dataset.view;
+            closeMobileSidebar();
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
+            currentView = view;
+            renderView();
+        });
+    });
+
+    document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
+        closeMobileSidebar();
+        currentView = 'profile';
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        renderView();
+    });
+
+    document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+        closeMobileSidebar();
+        if (statusUnsubscribe) statusUnsubscribe();
+        if (sessionsUnsubscribe) sessionsUnsubscribe();
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+    });
 }
 
 init();
-
-// ─── Mobile Sidebar ──────────────────────────────────────
-const hamburger = document.getElementById('hamburger-btn');
-const mobileSidebar = document.getElementById('mobile-sidebar');
-const mobileOverlay = document.getElementById('mobile-overlay');
-const mobileClose = document.getElementById('mobile-close-btn');
-
-function openMobileSidebar() {
-    mobileSidebar.classList.add('open');
-    mobileOverlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeMobileSidebar() {
-    mobileSidebar.classList.remove('open');
-    mobileOverlay.classList.remove('active');
-    document.body.style.overflow = '';
-}
-
-if (hamburger) {
-    hamburger.addEventListener('click', openMobileSidebar);
-}
-if (mobileClose) {
-    mobileClose.addEventListener('click', closeMobileSidebar);
-}
-if (mobileOverlay) {
-    mobileOverlay.addEventListener('click', closeMobileSidebar);
-}
-
-// ─── Mobile sidebar navigation ──────────────────────────
-document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        const view = this.dataset.view;
-        closeMobileSidebar();
-        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-        document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
-        currentView = view;
-        renderView();
-    });
-});
-
-// ─── Mobile sidebar profile click ────────────────────────
-document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
-    closeMobileSidebar();
-    currentView = 'profile';
-    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-    renderView();
-});
-
-// ─── Mobile logout ────────────────────────────────────────
-document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
-    closeMobileSidebar();
-    if (statusUnsubscribe) statusUnsubscribe();
-    if (sessionsUnsubscribe) sessionsUnsubscribe();
-    localStorage.removeItem('currentUser');
-    window.location.href = 'index.html';
-});
