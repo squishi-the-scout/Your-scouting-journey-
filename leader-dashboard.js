@@ -1377,12 +1377,29 @@ async function generateCSV() {
     const rows = [];
     
     // ─── Headers ─────────────────────────────────────────────
-    const headers = [
-        'Scout Name', 'Username', 'Patrol', 'Rank', 'Role', 'DOB', 'Join Date',
-        'Membership Requirements', 'Second Class Requirements', 'First Class Requirements',
-        'Badges Earned', 'Total Service Hours', 'Sessions Attended',
-        'Allergies', 'Medical Conditions', 'Medications', 'Health Last Updated'
+    let headers = [
+        'Scout Name', 'Username', 'Patrol', 'Rank', 'Role', 'DOB', 'Join Date'
     ];
+    
+    // ─── Membership Requirements ────────────────────────────
+    for (const req of membershipRequirements) {
+        headers.push(`Membership: ${req}`, `Approved By: ${req}`);
+    }
+    
+    // ─── Second Class Requirements ──────────────────────────
+    for (const req of secondClassRequirements) {
+        headers.push(`Second Class: ${req}`, `Approved By: ${req}`);
+    }
+    
+    // ─── First Class Requirements ──────────────────────────
+    for (const req of firstClassRequirements) {
+        headers.push(`First Class: ${req}`, `Approved By: ${req}`);
+    }
+    
+    // ─── Badges & Stats ──────────────────────────────────────
+    headers.push('Badges Earned', 'Badge Names', 'Total Service Hours', 'Sessions Attended');
+    headers.push('Allergies', 'Medical Conditions', 'Medications', 'Health Last Updated');
+    
     rows.push(headers.join(','));
 
     // ─── Process each scout ──────────────────────────────────
@@ -1390,29 +1407,69 @@ async function generateCSV() {
         const status = allStatus[scout.username] || {};
         const health = scout.health || {};
 
-        // Count completed requirements per badge
-        let membershipDone = 0;
+        let row = [
+            escapeCSV(scout.fullName || scout.username),
+            scout.username,
+            escapeCSV(scout.patrol || ''),
+            scout.rank || 'Membership',
+            scout.scoutRole || 'Scout',
+            scout.dob || '',
+            scout.joinDate || ''
+        ];
+
+        // ─── Membership Requirements ──────────────────────────
         for (const req of membershipRequirements) {
             const key = `membership_${req}`;
-            if (status[key]?.status === 'approved') membershipDone++;
+            const data = status[key];
+            if (data?.status === 'approved') {
+                const date = data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'Approved';
+                const approvedBy = data.approvedBy || 'Unknown';
+                row.push(`✅ ${date}`, escapeCSV(approvedBy));
+            } else {
+                row.push('❌ Not Done', '');
+            }
         }
 
-        let secondDone = 0;
+        // ─── Second Class Requirements ──────────────────────────
         for (const req of secondClassRequirements) {
             const key = `secondClass_${req}`;
-            if (status[key]?.status === 'approved') secondDone++;
+            const data = status[key];
+            if (data?.status === 'approved') {
+                const date = data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'Approved';
+                const approvedBy = data.approvedBy || 'Unknown';
+                row.push(`✅ ${date}`, escapeCSV(approvedBy));
+            } else {
+                row.push('❌ Not Done', '');
+            }
         }
 
-        let firstDone = 0;
+        // ─── First Class Requirements ──────────────────────────
         for (const req of firstClassRequirements) {
             const key = `firstClass_${req}`;
-            if (status[key]?.status === 'approved') firstDone++;
+            const data = status[key];
+            if (data?.status === 'approved') {
+                const date = data.approvedAt ? new Date(data.approvedAt).toLocaleDateString() : 'Approved';
+                const approvedBy = data.approvedBy || 'Unknown';
+                row.push(`✅ ${date}`, escapeCSV(approvedBy));
+            } else {
+                row.push('❌ Not Done', '');
+            }
         }
 
-        // Count badges (total completed requirements across all badges)
-        const badgesEarned = membershipDone + secondDone + firstDone;
-
-        // Service hours
+        // ─── Badges ──────────────────────────────────────────────
+        let totalBadges = 0;
+        const allReqs = [...membershipRequirements, ...secondClassRequirements, ...firstClassRequirements];
+        for (const req of allReqs) {
+            const membershipKey = `membership_${req}`;
+            const secondKey = `secondClass_${req}`;
+            const firstKey = `firstClass_${req}`;
+            if (status[membershipKey]?.status === 'approved') totalBadges++;
+            if (status[secondKey]?.status === 'approved') totalBadges++;
+            if (status[firstKey]?.status === 'approved') totalBadges++;
+        }
+        
+        const badgeNames = 'Coming Soon';
+        
         let serviceHours = 0;
         let sessionsAttended = 0;
         for (const session of allSessions) {
@@ -1422,33 +1479,22 @@ async function generateCSV() {
             }
         }
 
-        // ─── Build row ─────────────────────────────────────────
-        const row = [
-            escapeCSV(scout.fullName || scout.username),
-            scout.username,
-            escapeCSV(scout.patrol || ''),
-            scout.rank || 'Membership',
-            scout.scoutRole || 'Scout',
-            scout.dob || '',
-            scout.joinDate || '',
-            `${membershipDone}/${membershipRequirements.length}`,
-            `${secondDone}/${secondClassRequirements.length}`,
-            `${firstDone}/${firstClassRequirements.length}`,
-            badgesEarned,
+        row.push(
+            totalBadges,
+            badgeNames,
             serviceHours,
             sessionsAttended,
             escapeCSV(health.allergies || ''),
             escapeCSV(health.conditions || ''),
             escapeCSV(health.medications || ''),
             health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : ''
-        ];
+        );
 
         rows.push(row.join(','));
     }
 
     return rows.join('\n');
 }
-
 // ─── Download CSV ──────────────────────────────────────────
 function downloadCSV(csv) {
     const blob = new Blob([csv], { type: 'text/csv' });
