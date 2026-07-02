@@ -993,12 +993,10 @@ function renderBadges() {
 
     let html = `
         <style>
-            /* ─── LEATHER POUCH ─── */
             .pouch-container {
                 max-width: 100%;
                 padding: 10px;
             }
-
             .pouch-header-text {
                 text-align: center;
                 margin-bottom: 20px;
@@ -1014,18 +1012,13 @@ function renderBadges() {
                 margin: 4px 0 0 0;
                 font-style: italic;
             }
-
-            /* ─── SCOUT + COUNT CARD ─── */
             .pouch-scout-card {
                 background: #8B6B4D;
-                background-image: 
-                    repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
+                background-image: repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
                 border-radius: 16px;
                 padding: 14px 20px;
                 border: 3px solid #6B4F3A;
-                box-shadow: 
-                    inset 0 2px 8px rgba(0,0,0,0.2),
-                    0 4px 12px rgba(0,0,0,0.15);
+                box-shadow: inset 0 2px 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -1066,28 +1059,22 @@ function renderBadges() {
             .pouch-scout-card .badge-count span {
                 color: #FFD700;
             }
-
-            /* ─── GRID ─── */
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
                 gap: 10px;
                 background: #8B6B4D;
-                background-image: 
-                    repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
+                background-image: repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
                 padding: 16px;
                 border-radius: 16px;
                 border: 3px solid #6B4F3A;
-                box-shadow: 
-                    inset 0 2px 8px rgba(0,0,0,0.2),
-                    0 4px 12px rgba(0,0,0,0.15);
+                box-shadow: inset 0 2px 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
                 margin-bottom: 16px;
             }
             .pouch-slot {
                 aspect-ratio: 1 / 1;
                 background: #6B4F3A;
-                background-image: 
-                    repeating-linear-gradient(45deg, rgba(90, 65, 45, 0.3) 0px, rgba(90, 65, 45, 0.3) 2px, transparent 2px, transparent 4px);
+                background-image: repeating-linear-gradient(45deg, rgba(90, 65, 45, 0.3) 0px, rgba(90, 65, 45, 0.3) 2px, transparent 2px, transparent 4px);
                 border: 2px solid #5A3F2B;
                 border-radius: 10px;
                 display: flex;
@@ -1159,8 +1146,6 @@ function renderBadges() {
             .pouch-slot:hover .tooltip-text {
                 display: block;
             }
-
-            /* ─── ACTIONS ─── */
             .pouch-actions {
                 display: flex;
                 gap: 10px;
@@ -1192,8 +1177,6 @@ function renderBadges() {
             .pouch-actions button.primary:hover {
                 background: #FFE44D;
             }
-
-            /* ─── RESPONSIVE ─── */
             @media (max-width: 768px) {
                 .pouch-grid {
                     grid-template-columns: repeat(4, 1fr);
@@ -1223,13 +1206,11 @@ function renderBadges() {
 
         <div class="pouch-container">
 
-            <!-- HEADER -->
             <div class="pouch-header-text">
                 <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
                 <p>"Every badge tells a story"</p>
             </div>
 
-            <!-- SCOUT + COUNT CARD -->
             <div class="pouch-scout-card">
                 <div class="scout-info">
                     <img id="scoutSprite" src="${spriteFolder}${sprites.idle}" alt="Pixel Scout" class="pixel-scout-img" />
@@ -1243,7 +1224,6 @@ function renderBadges() {
                 </div>
             </div>
 
-            <!-- GRID -->
             <div class="pouch-grid" id="pouchGrid">
     `;
 
@@ -1263,7 +1243,6 @@ function renderBadges() {
     html += `
             </div>
 
-            <!-- ACTIONS -->
             <div class="pouch-actions">
                 <button id="pouchResetBtn">🔄 Reset</button>
                 <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
@@ -1274,7 +1253,7 @@ function renderBadges() {
 
     pageContent.innerHTML = html;
 
-    // ─── SPRITE ANIMATION LOOP ──────────────────────────────────
+    // ─── SPRITE ANIMATION ──────────────────────────────────────
     function animateScout() {
         const img = document.getElementById('scoutSprite');
         if (!img) return;
@@ -1310,7 +1289,6 @@ function renderBadges() {
             if (badge.unlocked) {
                 alert(`🎉 You already earned "${badge.name}"!`);
             } else {
-                // TODO: Connect to real ticketing page
                 window.location.href = `ticket.html?badge=${encodeURIComponent(badge.name)}`;
             }
         });
