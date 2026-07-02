@@ -186,8 +186,8 @@ function renderView() {
             pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = 'WELCOME TO YOUR BADGE POUCH';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Every badge tells a story';
+            pageHeading.textContent = '🏅 Badge Pouch';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Collect and track your scouting badges';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
