@@ -1188,17 +1188,34 @@ function renderBadges() {
             }
         </style>
 
-        <!-- SCOUT FIGURE -->
-        <div class="pouch-scout">
-            <div class="scout-figure" id="scoutClicker">
-                <span class="scout-emoji">🧭</span>
-                <div class="scout-info">
-                    <div class="name">${displayName}</div>
-                    <div class="rank">${scoutData.rank || 'Membership'}</div>
-                    <div class="hint">👆 Click me for a surprise!</div>
+       <!-- SCOUT FIGURE -->
+<div class="pouch-scout">
+    <div class="scout-figure" id="scoutClicker">
+        <div class="pixel-scout-wrapper">
+            <div class="pixel-scout">
+                <div class="scout-hat"></div>
+                <div class="scout-head">
+                    <div class="scout-hair"></div>
+                    <div class="scout-eyes">
+                        <div class="scout-eye"></div>
+                        <div class="scout-eye"></div>
+                    </div>
+                    <div class="scout-mouth"></div>
                 </div>
+                <div class="scout-scarf"></div>
+                <div class="scout-arm"></div>
+                <div class="scout-body"></div>
+                <div class="scout-pants"></div>
+                <div class="scout-boots"></div>
             </div>
         </div>
+        <div class="scout-info">
+            <div class="name">${displayName}</div>
+            <div class="rank">${scoutData.rank || 'Membership'}</div>
+            <div class="hint">👆 Click me for a surprise!</div>
+        </div>
+    </div>
+</div>
 
         <!-- PROGRESS BAR -->
         <div class="pouch-progress">
