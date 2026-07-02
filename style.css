@@ -658,35 +658,65 @@ a {
 .bottom-nav a.active .icon {
     color: white;
 }
-
 /* ─── PIXEL SCOUT ─── */
-.pixel-scout-img {
-    width: 64px;
-    height: 64px;
-    image-rendering: pixelated;
+.pixel-scout-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.pouch-scout-box {
+.pixel-scout-img {
+    width: 80px;
+    height: 80px;
+    image-rendering: pixelated;
+    animation: scoutBob 1.2s ease-in-out infinite;
+}
+
+@keyframes scoutBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* ─── SCOUT FIGURE (in pouch) ─── */
+.pouch-scout {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.pouch-scout .scout-figure {
     background: var(--purple-dark);
-    border-radius: 16px;
-    padding: 10px 20px;
+    border-radius: 20px;
+    padding: 12px 24px;
     border: 3px solid var(--purple);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s;
 }
 
-.pouch-scout-box .scout-info {
+.pouch-scout .scout-figure:hover {
+    transform: scale(1.03);
+}
+
+.pouch-scout .scout-figure .scout-info {
     color: white;
 }
 
-.pouch-scout-box .scout-info .name {
+.pouch-scout .scout-figure .scout-info .name {
     font-weight: 700;
-    font-size: 15px;
+    font-size: 16px;
 }
 
-.pouch-scout-box .scout-info .rank {
+.pouch-scout .scout-figure .scout-info .rank {
     font-size: 12px;
     color: var(--orange-light);
+}
+
+.pouch-scout .scout-figure .scout-info .hint {
+    font-size: 11px;
+    color: #b0a8c0;
+    margin-top: 2px;
 }
