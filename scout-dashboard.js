@@ -983,39 +983,51 @@ function renderBadges() {
 
     const earned = badgeState.filter(b => b.unlocked).length;
     const total = badgeState.length;
-    const progress = Math.round((earned / total) * 100);
+
+    // ─── SPRITE SETUP ──────────────────────────────────────────
+    const spriteFolder = './';
+    const sprites = {
+        idle: 'idle.png',
+        wave: 'wave.png',
+        map: 'map.png',
+        left: 'left.png',
+        right: 'right.png'
+    };
 
     let html = `
         <style>
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
-                gap: 12px;
+                gap: 10px;
                 background: white;
-                padding: 20px;
-                border-radius: 24px;
+                padding: 16px;
+                border-radius: 20px;
                 box-shadow: 0 2px 12px rgba(0,0,0,0.06);
                 border: 3px solid #e8e0f0;
-                margin-bottom: 20px;
+                margin-bottom: 16px;
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
             }
             .pouch-slot {
                 aspect-ratio: 1 / 1;
                 background: #f5f0f8;
                 border: 3px solid #e0d6ec;
-                border-radius: 16px;
+                border-radius: 14px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                font-size: 32px;
+                font-size: 28px;
                 cursor: pointer;
                 transition: all 0.2s;
                 position: relative;
-                padding: 8px;
+                padding: 4px;
             }
             .pouch-slot:hover {
                 border-color: var(--purple);
-                transform: translateY(-4px);
+                transform: translateY(-3px);
                 box-shadow: 0 6px 20px rgba(108,59,140,0.2);
             }
             .pouch-slot.locked {
@@ -1028,9 +1040,9 @@ function renderBadges() {
                 box-shadow: 0 0 20px rgba(108,59,140,0.15);
             }
             .pouch-slot .slot-name {
-                font-size: 9px;
+                font-size: 8px;
                 color: var(--text-muted);
-                margin-top: 4px;
+                margin-top: 2px;
                 text-align: center;
                 line-height: 1.2;
                 font-weight: 600;
@@ -1039,7 +1051,7 @@ function renderBadges() {
                 color: var(--purple);
             }
             .pouch-slot .slot-type {
-                font-size: 7px;
+                font-size: 6px;
                 text-transform: uppercase;
                 color: #b0a8c0;
                 letter-spacing: 0.5px;
@@ -1047,21 +1059,21 @@ function renderBadges() {
             }
             .pouch-slot .lock-badge {
                 position: absolute;
-                top: 4px;
-                right: 6px;
-                font-size: 12px;
+                top: 3px;
+                right: 4px;
+                font-size: 10px;
             }
             .pouch-slot .tooltip-text {
                 display: none;
                 position: absolute;
-                bottom: calc(100% + 10px);
+                bottom: calc(100% + 8px);
                 left: 50%;
                 transform: translateX(-50%);
                 background: var(--purple-dark);
                 color: white;
-                padding: 4px 14px;
-                border-radius: 8px;
-                font-size: 11px;
+                padding: 3px 12px;
+                border-radius: 6px;
+                font-size: 10px;
                 white-space: nowrap;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 z-index: 10;
@@ -1072,20 +1084,20 @@ function renderBadges() {
             }
             .pouch-actions {
                 display: flex;
-                gap: 12px;
+                gap: 10px;
                 justify-content: center;
                 flex-wrap: wrap;
-                margin-top: 8px;
+                margin-top: 6px;
             }
             .pouch-actions button {
                 background: var(--lavender-bg);
                 border: none;
                 border-bottom: 3px solid #d5cae0;
                 color: var(--text-dark);
-                padding: 10px 28px;
+                padding: 8px 20px;
                 border-radius: 40px;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: 12px;
                 cursor: pointer;
                 transition: all 0.15s;
             }
@@ -1102,130 +1114,77 @@ function renderBadges() {
             .pouch-actions button.primary:hover {
                 background: var(--purple-light);
             }
-            .pouch-progress {
-                background: white;
-                border-radius: 24px;
-                padding: 16px 24px;
-                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-                margin-bottom: 20px;
+            .pouch-count {
+                text-align: center;
+                font-size: 13px;
+                color: var(--text-muted);
+                margin-bottom: 12px;
+                font-weight: 500;
             }
-            .pouch-progress .pouch-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-            }
-            .pouch-progress .pouch-header span:first-child {
-                font-weight: 600;
-                color: var(--text-dark);
-            }
-            .pouch-progress .pouch-header span:last-child {
+            .pouch-count span {
                 color: var(--purple);
                 font-weight: 700;
             }
-            .pouch-progress .pouch-bar-bg {
-                background: #e8e0f0;
-                border-radius: 20px;
-                height: 8px;
-                overflow: hidden;
-            }
-            .pouch-progress .pouch-bar-fill {
-                background: linear-gradient(90deg, var(--purple), var(--orange));
-                height: 100%;
-                border-radius: 20px;
-                width: ${progress}%;
-                transition: width 0.6s ease;
-            }
-            .pouch-scout {
-                display: flex;
-                justify-content: center;
+            .pouch-header-text {
+                text-align: center;
                 margin-bottom: 16px;
             }
-            .pouch-scout .scout-figure {
-                background: var(--purple-dark);
-                border-radius: 20px;
-                padding: 12px 24px;
-                border: 3px solid var(--purple);
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-                cursor: pointer;
-                transition: transform 0.2s;
+            .pouch-header-text h2 {
+                font-size: 22px;
+                color: var(--purple-dark);
+                margin: 0;
             }
-            .pouch-scout .scout-figure:hover {
-                transform: scale(1.03);
-            }
-            .pouch-scout .scout-figure .scout-emoji {
-                font-size: 48px;
-                line-height: 1;
-            }
-            .pouch-scout .scout-figure .scout-info {
-                color: white;
-            }
-            .pouch-scout .scout-figure .scout-info .name {
-                font-weight: 700;
-                font-size: 16px;
-            }
-            .pouch-scout .scout-figure .scout-info .rank {
-                font-size: 12px;
-                color: var(--orange-light);
-            }
-            .pouch-scout .scout-figure .scout-info .hint {
-                font-size: 11px;
-                color: #b0a8c0;
-                margin-top: 2px;
+            .pouch-header-text p {
+                font-size: 13px;
+                color: var(--text-muted);
+                margin: 4px 0 0 0;
+                font-style: italic;
             }
 
             @media (max-width: 600px) {
-                .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
-                .pouch-slot { font-size: 24px; }
+                .pouch-grid { 
+                    grid-template-columns: repeat(4, 1fr); 
+                    gap: 8px; 
+                    padding: 12px;
+                    max-width: 100%;
+                }
+                .pouch-slot { font-size: 22px; }
                 .pouch-slot .slot-name { font-size: 7px; }
-                .pouch-actions button { padding: 8px 16px; font-size: 12px; }
+                .pouch-actions button { padding: 6px 14px; font-size: 11px; }
+                .pouch-scout .scout-figure { padding: 8px 16px; gap: 12px; }
+                .pixel-scout-img { width: 60px; height: 60px; }
+                .pouch-header-text h2 { font-size: 18px; }
             }
             @media (max-width: 400px) {
                 .pouch-grid { grid-template-columns: repeat(3, 1fr); }
             }
         </style>
 
-       <!-- SCOUT FIGURE -->
-<div class="pouch-scout">
-    <div class="scout-figure" id="scoutClicker">
-        <div class="pixel-scout-wrapper">
-            <div class="pixel-scout">
-                <div class="scout-hat"></div>
-                <div class="scout-head">
-                    <div class="scout-hair"></div>
-                    <div class="scout-eyes">
-                        <div class="scout-eye"></div>
-                        <div class="scout-eye"></div>
-                    </div>
-                    <div class="scout-mouth"></div>
-                </div>
-                <div class="scout-scarf"></div>
-                <div class="scout-arm"></div>
-                <div class="scout-body"></div>
-                <div class="scout-pants"></div>
-                <div class="scout-boots"></div>
-            </div>
+        <!-- HEADER -->
+        <div class="pouch-header-text">
+            <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
+            <p>"Every badge tells a story"</p>
         </div>
-        <div class="scout-info">
-            <div class="name">${displayName}</div>
-            <div class="rank">${scoutData.rank || 'Membership'}</div>
-            <div class="hint">👆 Click me for a surprise!</div>
-        </div>
-    </div>
-</div>
 
-        <!-- PROGRESS BAR -->
-        <div class="pouch-progress">
-            <div class="pouch-header">
-                <span>🎒 Badge Pouch</span>
-                <span>${earned} / ${total}</span>
+        <!-- SCOUT FIGURE -->
+        <div class="pouch-scout">
+            <div class="scout-figure" id="scoutClicker">
+                <div class="pixel-scout-wrapper">
+                    <img id="scoutSprite" src="${spriteFolder}${sprites.idle}" 
+                         alt="Pixel Scout" 
+                         class="pixel-scout-img" />
+                </div>
+                <div class="scout-info">
+                    <div class="name">${displayName}</div>
+                    <div class="rank">${scoutData.rank || 'Membership'}</div>
+                    <div class="hint">👆 Click me for a surprise!</div>
+                </div>
             </div>
-            <div class="pouch-bar-bg">
-                <div class="pouch-bar-fill" style="width:${progress}%;"></div>
-            </div>
+        </div>
+
+        <!-- COUNT -->
+        <div class="pouch-count">
+            <span>${earned}</span> / ${total} badges earned
         </div>
 
         <!-- GRID -->
@@ -1257,6 +1216,34 @@ function renderBadges() {
 
     pageContent.innerHTML = html;
 
+    // ─── SPRITE ANIMATION LOOP ──────────────────────────────────
+    function animateScout() {
+        const img = document.getElementById('scoutSprite');
+        if (!img) return;
+
+        const frames = [
+            { src: sprites.idle, duration: 2500 },
+            { src: sprites.wave, duration: 600 },
+            { src: sprites.idle, duration: 2500 },
+            { src: sprites.map, duration: 2000 },
+            { src: sprites.left, duration: 500 },
+            { src: sprites.right, duration: 500 },
+            { src: sprites.map, duration: 2000 },
+            { src: sprites.idle, duration: 2500 },
+        ];
+
+        let currentFrame = 0;
+
+        function nextFrame() {
+            const frame = frames[currentFrame];
+            img.src = `${spriteFolder}${frame.src}`;
+            currentFrame = (currentFrame + 1) % frames.length;
+            setTimeout(nextFrame, frame.duration);
+        }
+
+        nextFrame();
+    }
+
     // ─── CLICK SLOT → TICKET ─────────────────────────────────
     document.querySelectorAll('.pouch-slot').forEach(slot => {
         slot.addEventListener('click', function() {
@@ -1265,9 +1252,7 @@ function renderBadges() {
             if (badge.unlocked) {
                 alert(`🎉 You already earned "${badge.name}"!`);
             } else {
-                // TODO: Connect to real ticketing system
                 alert(`🎫 Request ticket for "${badge.name}"?\n(Your leader will assign requirements.)`);
-                // window.location.href = `ticket.html?badge=${badge.id}`;
             }
         });
     });
@@ -1282,7 +1267,7 @@ function renderBadges() {
         const random = locked[Math.floor(Math.random() * locked.length)];
         random.unlocked = true;
         localStorage.setItem('badgePouch', JSON.stringify(badgeState));
-        renderBadges(); // re-render
+        renderBadges();
     });
 
     // ─── RESET ──────────────────────────────────────────────────
@@ -1298,6 +1283,9 @@ function renderBadges() {
     document.getElementById('pouchTicketBtn')?.addEventListener('click', function() {
         alert('🎫 Select a locked badge from the grid to request it.');
     });
+
+    // ─── START ANIMATION ──────────────────────────────────────
+    setTimeout(animateScout, 200);
 }
 
 // ─── Placeholder ─────────────────────────────────────────
