@@ -658,3 +658,223 @@ a {
 .bottom-nav a.active .icon {
     color: white;
 }
+/* ─── PIXEL SCOUT ─── */
+.pixel-scout-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.pixel-scout {
+    image-rendering: pixelated;
+    width: 80px;
+    height: 100px;
+    position: relative;
+    animation: scoutBob 1.2s ease-in-out infinite;
+    cursor: pointer;
+}
+
+/* ─── BODY ─── */
+.scout-body {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 32px;
+    background: #d4b896;
+    border-radius: 2px;
+    box-shadow: 
+        inset -4px 0 0 #c4a886,
+        inset 4px 0 0 #e4c8a6;
+}
+
+/* ─── PANTS ─── */
+.scout-pants {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 14px;
+    background: #5a4a3a;
+    border-radius: 0 0 2px 2px;
+    box-shadow: inset -4px 0 0 #4a3a2a;
+}
+
+/* ─── BOOTS ─── */
+.scout-boots {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 8px;
+    background: #4a3a2a;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 
+        -6px 0 0 #4a3a2a,
+        6px 0 0 #4a3a2a;
+}
+
+/* ─── HEAD ─── */
+.scout-head {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 22px;
+    height: 24px;
+    background: #f5dbb8;
+    border-radius: 2px;
+    box-shadow: inset -2px 0 0 #e8c8a8;
+}
+
+/* ─── HAIR ─── */
+.scout-hair {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 8px;
+    background: #6a4a2a;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 
+        -2px 4px 0 #6a4a2a,
+        2px 4px 0 #6a4a2a;
+}
+
+/* ─── EYES ─── */
+.scout-eyes {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 4px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.scout-eye {
+    width: 4px;
+    height: 4px;
+    background: #2a1a0a;
+    border-radius: 50%;
+    animation: blink 3.5s ease-in-out infinite;
+}
+
+/* ─── MOUTH ─── */
+.scout-mouth {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 3px;
+    border-bottom: 2px solid #8a6a4a;
+    border-radius: 0 0 4px 4px;
+}
+
+/* ─── SCARF (ORANGE + PURPLE) ─── */
+.scout-scarf {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 8px;
+    background: #e67e22;
+    border-radius: 2px;
+    box-shadow: 
+        inset 0 -2px 0 #d35400,
+        inset 0 2px 0 #f39c12;
+    z-index: 2;
+}
+
+.scout-scarf::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 4px;
+    height: 4px;
+    background: #8a5aa8;
+    border-radius: 1px;
+    box-shadow: 
+        6px 0 0 #8a5aa8,
+        12px 0 0 #8a5aa8;
+}
+
+.scout-scarf::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 10px;
+    background: #e67e22;
+    border-radius: 0 0 2px 2px;
+    box-shadow: 
+        -8px 0 0 #8a5aa8,
+        8px 0 0 #8a5aa8;
+}
+
+/* ─── HAT ─── */
+.scout-hat {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 10px;
+    background: #4a6a3a;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 
+        -6px 2px 0 #3a5a2a,
+        6px 2px 0 #3a5a2a;
+}
+
+.scout-hat::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 14px;
+    height: 4px;
+    background: #5a7a4a;
+    border-radius: 4px 4px 0 0;
+}
+
+/* ─── WAVING ARM ─── */
+.scout-arm {
+    position: absolute;
+    top: 34px;
+    right: -6px;
+    width: 6px;
+    height: 14px;
+    background: #f5dbb8;
+    border-radius: 2px;
+    transform-origin: top center;
+    animation: wave 2.8s ease-in-out infinite;
+    box-shadow: inset -2px 0 0 #e8c8a8;
+}
+
+/* ─── ANIMATIONS ─── */
+@keyframes scoutBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+@keyframes blink {
+    0%, 45%, 55%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.1); }
+}
+
+@keyframes wave {
+    0%, 90%, 100% { transform: rotate(0deg); }
+    95% { transform: rotate(-30deg); }
+}
