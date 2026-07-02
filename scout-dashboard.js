@@ -186,8 +186,8 @@ function renderView() {
             pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = '';
-            if (scoutSubtitle) scoutSubtitle.textContent = '';
+            pageHeading.textContent = '🏅 Badge Pouch';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Collect and track your scouting badges';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
@@ -970,18 +970,21 @@ function renderBadges() {
         { id: 9, name: 'Global Friend', type: 'international', icon: '🤝', unlocked: false },
     ];
 
+    // Load from localStorage
     let badgeState = JSON.parse(localStorage.getItem('badgePouch')) || badges;
 
+    // ─── Type labels ──────────────────────────────────────────
     const typeLabels = {
-        camp: '🏕️',
-        proficiency: '🎯',
-        national: '🇿🇦',
-        international: '🌍'
+        camp: '🏕️ Camp',
+        proficiency: '🎯 Skill',
+        national: '🇿🇦 National',
+        international: '🌍 World'
     };
 
     const earned = badgeState.filter(b => b.unlocked).length;
     const total = badgeState.length;
 
+    // ─── SPRITE SETUP ──────────────────────────────────────────
     const spriteFolder = 'assets/scout/';
     const sprites = {
         idle: 'idle.png',
@@ -993,93 +996,30 @@ function renderBadges() {
 
     let html = `
         <style>
-            .pouch-container {
-                max-width: 480px;
-                margin: 0 auto;
-                padding: 10px;
-            }
-
-            .pouch-header-text {
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            .pouch-header-text h2 {
-                font-size: 22px;
-                color: var(--purple-dark);
-                margin: 0;
-            }
-            .pouch-header-text p {
-                font-size: 14px;
-                color: var(--text-muted);
-                margin: 4px 0 0 0;
-                font-style: italic;
-            }
-
-            .pouch-scout-wrap {
-                display: flex;
-                justify-content: center;
-                margin-bottom: 16px;
-            }
-            .pouch-scout-box {
-                background: var(--purple-dark);
-                border-radius: 16px;
-                padding: 10px 20px;
-                border: 3px solid var(--purple);
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-            }
-            .pixel-scout-img {
-                width: 64px;
-                height: 64px;
-                image-rendering: pixelated;
-            }
-            .pouch-scout-box .scout-info {
-                color: white;
-            }
-            .pouch-scout-box .scout-info .name {
-                font-weight: 700;
-                font-size: 15px;
-            }
-            .pouch-scout-box .scout-info .rank {
-                font-size: 12px;
-                color: var(--orange-light);
-            }
-
-            .pouch-count {
-                text-align: center;
-                font-size: 13px;
-                color: var(--text-muted);
-                margin-bottom: 12px;
-                font-weight: 500;
-            }
-            .pouch-count span {
-                color: var(--purple);
-                font-weight: 700;
-            }
-
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
-                gap: 8px;
+                gap: 10px;
                 background: white;
-                padding: 14px;
-                border-radius: 16px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-                border: 2px solid #e8e0f0;
-                margin-bottom: 14px;
+                padding: 16px;
+                border-radius: 20px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                border: 3px solid #e8e0f0;
+                margin-bottom: 16px;
+                max-width: 400px;
+                margin-left: auto;
+                margin-right: auto;
             }
             .pouch-slot {
                 aspect-ratio: 1 / 1;
                 background: #f5f0f8;
-                border: 2px solid #e0d6ec;
-                border-radius: 12px;
+                border: 3px solid #e0d6ec;
+                border-radius: 14px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px;
+                font-size: 28px;
                 cursor: pointer;
                 transition: all 0.2s;
                 position: relative;
@@ -1087,8 +1027,8 @@ function renderBadges() {
             }
             .pouch-slot:hover {
                 border-color: var(--purple);
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(108,59,140,0.15);
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(108,59,140,0.2);
             }
             .pouch-slot.locked {
                 opacity: 0.5;
@@ -1097,7 +1037,7 @@ function renderBadges() {
             .pouch-slot.unlocked {
                 border-color: var(--purple);
                 background: var(--lavender-bg);
-                box-shadow: 0 0 12px rgba(108,59,140,0.1);
+                box-shadow: 0 0 20px rgba(108,59,140,0.15);
             }
             .pouch-slot .slot-name {
                 font-size: 8px;
@@ -1142,12 +1082,12 @@ function renderBadges() {
             .pouch-slot:hover .tooltip-text {
                 display: block;
             }
-
             .pouch-actions {
                 display: flex;
                 gap: 10px;
                 justify-content: center;
                 flex-wrap: wrap;
+                margin-top: 6px;
             }
             .pouch-actions button {
                 background: var(--lavender-bg);
@@ -1174,18 +1114,45 @@ function renderBadges() {
             .pouch-actions button.primary:hover {
                 background: var(--purple-light);
             }
+            .pouch-count {
+                text-align: center;
+                font-size: 13px;
+                color: var(--text-muted);
+                margin-bottom: 12px;
+                font-weight: 500;
+            }
+            .pouch-count span {
+                color: var(--purple);
+                font-weight: 700;
+            }
+            .pouch-header-text {
+                text-align: center;
+                margin-bottom: 16px;
+            }
+            .pouch-header-text h2 {
+                font-size: 22px;
+                color: var(--purple-dark);
+                margin: 0;
+            }
+            .pouch-header-text p {
+                font-size: 13px;
+                color: var(--text-muted);
+                margin: 4px 0 0 0;
+                font-style: italic;
+            }
 
             @media (max-width: 600px) {
-                .pouch-grid {
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 6px;
-                    padding: 10px;
+                .pouch-grid { 
+                    grid-template-columns: repeat(4, 1fr); 
+                    gap: 8px; 
+                    padding: 12px;
+                    max-width: 100%;
                 }
-                .pouch-slot { font-size: 20px; }
+                .pouch-slot { font-size: 22px; }
                 .pouch-slot .slot-name { font-size: 7px; }
                 .pouch-actions button { padding: 6px 14px; font-size: 11px; }
-                .pouch-scout-box { padding: 8px 14px; gap: 12px; }
-                .pixel-scout-img { width: 50px; height: 50px; }
+                .pouch-scout .scout-figure { padding: 8px 16px; gap: 12px; }
+                .pixel-scout-img { width: 60px; height: 60px; }
                 .pouch-header-text h2 { font-size: 18px; }
             }
             @media (max-width: 400px) {
@@ -1193,32 +1160,35 @@ function renderBadges() {
             }
         </style>
 
-        <div class="pouch-container">
+        <!-- HEADER -->
+        <div class="pouch-header-text">
+            <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
+            <p>"Every badge tells a story"</p>
+        </div>
 
-            <!-- HEADER -->
-            <div class="pouch-header-text">
-                <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
-                <p>"Every badge tells a story"</p>
-            </div>
-
-            <!-- SCOUT -->
-            <div class="pouch-scout-wrap">
-                <div class="pouch-scout-box">
-                    <img id="scoutSprite" src="${spriteFolder}${sprites.idle}" alt="Pixel Scout" class="pixel-scout-img" />
-                    <div class="scout-info">
-                        <div class="name">${displayName}</div>
-                        <div class="rank">${scoutData.rank || 'Membership'}</div>
-                    </div>
+        <!-- SCOUT FIGURE -->
+        <div class="pouch-scout">
+            <div class="scout-figure" id="scoutClicker">
+                <div class="pixel-scout-wrapper">
+                    <img id="scoutSprite" src="${spriteFolder}${sprites.idle}" 
+                         alt="Pixel Scout" 
+                         class="pixel-scout-img" />
+                </div>
+                <div class="scout-info">
+                    <div class="name">${displayName}</div>
+                    <div class="rank">${scoutData.rank || 'Membership'}</div>
+                    <div class="hint">👆 Click me for a surprise!</div>
                 </div>
             </div>
+        </div>
 
-            <!-- COUNT -->
-            <div class="pouch-count">
-                <span>${earned}</span> / ${total} badges earned
-            </div>
+        <!-- COUNT -->
+        <div class="pouch-count">
+            <span>${earned}</span> / ${total} badges earned
+        </div>
 
-            <!-- GRID -->
-            <div class="pouch-grid" id="pouchGrid">
+        <!-- GRID -->
+        <div class="pouch-grid" id="pouchGrid">
     `;
 
     badgeState.forEach((badge, index) => {
@@ -1229,20 +1199,18 @@ function renderBadges() {
                 <span class="slot-name">${badge.name}</span>
                 <span class="slot-type">${typeLabels[badge.type] || ''}</span>
                 ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
-                <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
+                <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Locked — Click to request'}</span>
             </div>
         `;
     });
 
     html += `
-            </div>
+        </div>
 
-            <!-- ACTIONS -->
-            <div class="pouch-actions">
-                <button id="pouchResetBtn">🔄 Reset</button>
-                <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
-            </div>
-
+        <!-- ACTIONS -->
+        <div class="pouch-actions">
+            <button id="pouchResetBtn">🔄 Reset</button>
+            <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
         </div>
     `;
 
@@ -1284,10 +1252,22 @@ function renderBadges() {
             if (badge.unlocked) {
                 alert(`🎉 You already earned "${badge.name}"!`);
             } else {
-                // TODO: Connect to real ticketing page
-                window.location.href = `ticket.html?badge=${encodeURIComponent(badge.name)}`;
+                alert(`🎫 Request ticket for "${badge.name}"?\n(Your leader will assign requirements.)`);
             }
         });
+    });
+
+    // ─── CLICK SCOUT → UNLOCK RANDOM ────────────────────────
+    document.getElementById('scoutClicker')?.addEventListener('click', function() {
+        const locked = badgeState.filter(b => !b.unlocked);
+        if (locked.length === 0) {
+            alert('🎉 All badges unlocked! You\'re a legend!');
+            return;
+        }
+        const random = locked[Math.floor(Math.random() * locked.length)];
+        random.unlocked = true;
+        localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+        renderBadges();
     });
 
     // ─── RESET ──────────────────────────────────────────────────
@@ -1305,7 +1285,7 @@ function renderBadges() {
     });
 
     // ─── START ANIMATION ──────────────────────────────────────
-    setTimeout(animateScout, 300);
+    setTimeout(animateScout, 200);
 }
 
 // ─── Placeholder ─────────────────────────────────────────
