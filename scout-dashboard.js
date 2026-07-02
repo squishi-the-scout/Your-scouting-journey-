@@ -982,7 +982,7 @@ function renderBadges() {
     const earned = badgeState.filter(b => b.unlocked).length;
     const total = badgeState.length;
 
-    const spriteFolder = 'assets/scout/';
+    const spriteFolder = '';
     const sprites = {
         idle: 'idle.png',
         wave: 'wave.png',
