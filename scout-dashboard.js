@@ -985,7 +985,7 @@ function renderBadges() {
     const total = badgeState.length;
 
     // ─── SPRITE SETUP ──────────────────────────────────────────
-    const spriteFolder = './';
+    const spriteFolder = 'assets/scout/';
     const sprites = {
         idle: 'idle.png',
         wave: 'wave.png',
