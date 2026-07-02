@@ -956,7 +956,6 @@ async function renderProfile() {
 
 // ─── 🎒 BADGE POUCH ──────────────────────────────────────────
 function renderBadges() {
-    // ─── BADGE DATA ───────────────────────────────────────────
     const badges = [
         { id: 0, name: 'Campfire', type: 'camp', icon: '🌲', unlocked: false },
         { id: 1, name: 'Tent Pitcher', type: 'camp', icon: '⛺', unlocked: false },
@@ -981,15 +980,6 @@ function renderBadges() {
 
     const earned = badgeState.filter(b => b.unlocked).length;
     const total = badgeState.length;
-
-    const spriteFolder = '';
-    const sprites = {
-        idle: 'idle.png',
-        wave: 'wave.png',
-        map: 'map.png',
-        left: 'left.png',
-        right: 'right.png'
-    };
 
     let html = `
         <style>
@@ -1031,11 +1021,37 @@ function renderBadges() {
                 align-items: center;
                 gap: 16px;
             }
-            .pouch-scout-card .scout-info .pixel-scout-img {
+            .pouch-scout-card .scout-info .pixel-scout-wrapper {
+                position: relative;
+                width: 56px;
+                height: 56px;
+                flex-shrink: 0;
+            }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
+                position: absolute;
+                top: 0;
+                left: 0;
                 width: 56px;
                 height: 56px;
                 image-rendering: pixelated;
+                opacity: 0;
+                animation: scoutAnimation 12s infinite;
             }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave { animation-delay: 2.5s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2 { animation-delay: 3.1s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map { animation-delay: 5.6s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left { animation-delay: 7.6s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right { animation-delay: 8.1s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2 { animation-delay: 8.6s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3 { animation-delay: 10.6s; }
+
+            @keyframes scoutAnimation {
+                0%, 100% { opacity: 0; }
+                2%, 12% { opacity: 1; }
+                15%, 100% { opacity: 0; }
+            }
+
             .pouch-scout-card .scout-info .name {
                 font-weight: 700;
                 font-size: 16px;
@@ -1187,7 +1203,8 @@ function renderBadges() {
                 .pouch-slot .slot-name { font-size: 7px; }
                 .pouch-actions button { padding: 6px 14px; font-size: 11px; }
                 .pouch-scout-card { padding: 10px 14px; }
-                .pouch-scout-card .scout-info .pixel-scout-img { width: 44px; height: 44px; }
+                .pouch-scout-card .scout-info .pixel-scout-wrapper { width: 44px; height: 44px; }
+                .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img { width: 44px; height: 44px; }
                 .pouch-scout-card .scout-info .name { font-size: 14px; }
                 .pouch-header-text h2 { font-size: 18px; }
             }
@@ -1213,7 +1230,16 @@ function renderBadges() {
 
             <div class="pouch-scout-card">
                 <div class="scout-info">
-                    <img id="scoutSprite" src="${spriteFolder}${sprites.idle}" alt="Pixel Scout" class="pixel-scout-img" />
+                    <div class="pixel-scout-wrapper">
+                        <img src="idle.png" class="pixel-scout-img frame-idle" />
+                        <img src="wave.png" class="pixel-scout-img frame-wave" />
+                        <img src="idle.png" class="pixel-scout-img frame-idle2" />
+                        <img src="map.png" class="pixel-scout-img frame-map" />
+                        <img src="left.png" class="pixel-scout-img frame-left" />
+                        <img src="right.png" class="pixel-scout-img frame-right" />
+                        <img src="map.png" class="pixel-scout-img frame-map2" />
+                        <img src="idle.png" class="pixel-scout-img frame-idle3" />
+                    </div>
                     <div>
                         <div class="name">${displayName}</div>
                         <div class="rank">${scoutData.rank || 'Membership'}</div>
@@ -1253,34 +1279,6 @@ function renderBadges() {
 
     pageContent.innerHTML = html;
 
-    // ─── SPRITE ANIMATION ──────────────────────────────────────
-    function animateScout() {
-        const img = document.getElementById('scoutSprite');
-        if (!img) return;
-
-        const frames = [
-            { src: sprites.idle, duration: 2500 },
-            { src: sprites.wave, duration: 600 },
-            { src: sprites.idle, duration: 2500 },
-            { src: sprites.map, duration: 2000 },
-            { src: sprites.left, duration: 500 },
-            { src: sprites.right, duration: 500 },
-            { src: sprites.map, duration: 2000 },
-            { src: sprites.idle, duration: 2500 },
-        ];
-
-        let currentFrame = 0;
-
-        function nextFrame() {
-            const frame = frames[currentFrame];
-            img.src = `${spriteFolder}${frame.src}`;
-            currentFrame = (currentFrame + 1) % frames.length;
-            setTimeout(nextFrame, frame.duration);
-        }
-
-        nextFrame();
-    }
-
     // ─── CLICK SLOT → TICKET ─────────────────────────────────
     document.querySelectorAll('.pouch-slot').forEach(slot => {
         slot.addEventListener('click', function() {
@@ -1307,9 +1305,6 @@ function renderBadges() {
     document.getElementById('pouchTicketBtn')?.addEventListener('click', function() {
         alert('🎫 Select a locked badge from the grid to request it.');
     });
-
-    // ─── START ANIMATION ──────────────────────────────────────
-    setTimeout(animateScout, 300);
 }
 
 // ─── Placeholder ─────────────────────────────────────────
@@ -1360,7 +1355,6 @@ async function init() {
     listenToSessions();
     renderView();
 
-    // ─── Mobile Sidebar ──────────────────────────────────────
     const hamburger = document.getElementById('hamburger-btn');
     const mobileSidebar = document.getElementById('mobile-sidebar');
     const mobileOverlay = document.getElementById('mobile-overlay');
