@@ -1,55 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Badge Pouch 🎒</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <style>
+        /* ─── PAGE SETUP ─── */
+        body {
+            background: var(--lavender-bg);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
         .badge-page {
             max-width: 600px;
-            margin: 40px auto;
-            padding: 30px;
-            background: #fff;
-            border-radius: 24px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            padding: 30px 24px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
+
         .back-link {
-            color: #6c3b8c;
+            display: inline-block;
+            color: var(--purple);
             text-decoration: none;
             font-weight: 600;
+            margin-bottom: 16px;
             font-size: 14px;
         }
-        .back-link:hover { text-decoration: underline; }
+        .back-link:hover {
+            text-decoration: underline;
+        }
 
         .pouch-header-text {
             text-align: center;
-            margin: 16px 0 20px;
+            margin-bottom: 20px;
         }
         .pouch-header-text h2 {
-            font-size: 24px;
-            color: #4a2a5e;
+            font-size: 22px;
+            color: var(--purple-dark);
             margin: 0;
         }
         .pouch-header-text p {
             font-size: 14px;
-            color: #6b5f7a;
+            color: var(--text-muted);
+            margin: 4px 0 0 0;
             font-style: italic;
-            margin: 4px 0 0;
         }
 
         .pouch-scout-card {
             background: #8B6B4D;
+            background-image: repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
             border-radius: 16px;
             padding: 14px 20px;
             border: 3px solid #6B4F3A;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 12px;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.2);
             cursor: pointer;
         }
         .pouch-scout-card .scout-info {
@@ -105,6 +123,7 @@
             font-weight: 600;
             font-size: 14px;
             border: 2px solid #6B4F3A;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
             white-space: nowrap;
         }
         .pouch-scout-card .badge-count span {
@@ -116,14 +135,17 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             background: #8B6B4D;
+            background-image: repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.1) 0px, rgba(120, 90, 60, 0.1) 2px, transparent 2px, transparent 6px);
             padding: 16px;
             border-radius: 16px;
             border: 3px solid #6B4F3A;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.15);
             margin-bottom: 16px;
         }
         .pouch-slot {
             aspect-ratio: 1 / 1;
             background: #6B4F3A;
+            background-image: repeating-linear-gradient(45deg, rgba(90, 65, 45, 0.3) 0px, rgba(90, 65, 45, 0.3) 2px, transparent 2px, transparent 4px);
             border: 2px solid #5A3F2B;
             border-radius: 10px;
             display: flex;
@@ -140,6 +162,7 @@
         .pouch-slot:hover {
             transform: translateY(-3px);
             border-color: #FFD700;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3), inset 0 -3px 0 #4A2F1B;
         }
         .pouch-slot.locked {
             opacity: 0.5;
@@ -148,12 +171,15 @@
         .pouch-slot.unlocked {
             border-color: #FFD700;
             background: #7A5A3A;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.15), inset 0 -3px 0 #4A2F1B;
         }
         .pouch-slot .slot-name {
             font-size: 8px;
             color: #D4B896;
             margin-top: 2px;
             text-align: center;
+            line-height: 1.2;
+            font-weight: 600;
         }
         .pouch-slot.unlocked .slot-name {
             color: #F5E6D3;
@@ -183,6 +209,7 @@
             border-radius: 6px;
             font-size: 10px;
             white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             z-index: 10;
             font-weight: 500;
             border: 1px solid #6B4F3A;
@@ -224,11 +251,15 @@
         }
 
         @media (max-width: 600px) {
-            .badge-page { padding: 16px; margin: 16px; }
+            .badge-page { padding: 16px; }
             .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
             .pouch-slot { font-size: 22px; }
+            .pouch-slot .slot-name { font-size: 7px; }
+            .pouch-actions button { padding: 6px 14px; font-size: 11px; }
+            .pouch-scout-card { padding: 10px 14px; }
             .pouch-scout-card .scout-info .pixel-scout-wrapper { width: 44px; height: 44px; }
             .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img { width: 44px; height: 44px; }
+            .pouch-scout-card .scout-info .name { font-size: 14px; }
             .pouch-header-text h2 { font-size: 18px; }
         }
         @media (max-width: 400px) {
@@ -245,50 +276,57 @@
 <div class="badge-page">
     <a href="scout-dashboard.html" class="back-link">← Back to Dashboard</a>
 
-    <div class="pouch-header-text">
-        <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
-        <p>"Every badge tells a story"</p>
-    </div>
+    <div class="pouch-container">
 
-    <div class="pouch-scout-card" id="scoutCard">
-        <div class="scout-info">
-            <div class="pixel-scout-wrapper">
-                <img src="idle.png" class="pixel-scout-img frame-idle" />
-                <img src="wave.png" class="pixel-scout-img frame-wave" />
-                <img src="idle.png" class="pixel-scout-img frame-idle2" />
-                <img src="map.png" class="pixel-scout-img frame-map" />
-                <img src="left.png" class="pixel-scout-img frame-left" />
-                <img src="right.png" class="pixel-scout-img frame-right" />
-                <img src="map.png" class="pixel-scout-img frame-map2" />
-                <img src="idle.png" class="pixel-scout-img frame-idle3" />
+        <div class="pouch-header-text">
+            <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
+            <p>"Every badge tells a story"</p>
+        </div>
+
+        <div class="pouch-scout-card" id="scoutCard">
+            <div class="scout-info">
+                <div class="pixel-scout-wrapper">
+                    <img src="idle.png" class="pixel-scout-img frame-idle" />
+                    <img src="wave.png" class="pixel-scout-img frame-wave" />
+                    <img src="idle.png" class="pixel-scout-img frame-idle2" />
+                    <img src="map.png" class="pixel-scout-img frame-map" />
+                    <img src="left.png" class="pixel-scout-img frame-left" />
+                    <img src="right.png" class="pixel-scout-img frame-right" />
+                    <img src="map.png" class="pixel-scout-img frame-map2" />
+                    <img src="idle.png" class="pixel-scout-img frame-idle3" />
+                </div>
+                <div>
+                    <div class="name" id="scoutName">Scout</div>
+                    <div class="rank" id="scoutRank">Membership</div>
+                </div>
             </div>
-            <div>
-                <div class="name" id="scoutName">Scout</div>
-                <div class="rank" id="scoutRank">Membership</div>
+            <div class="badge-count">
+                <span id="earnedCount">0</span> / <span id="totalCount">10</span> badges earned
             </div>
         </div>
-        <div class="badge-count">
-            <span id="earnedCount">0</span> / <span id="totalCount">10</span> badges earned
+
+        <div class="pouch-grid" id="pouchGrid"></div>
+
+        <div class="pouch-actions">
+            <button id="pouchResetBtn">🔄 Reset</button>
+            <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
         </div>
-    </div>
 
-    <div class="pouch-grid" id="pouchGrid"></div>
-
-    <div class="pouch-actions">
-        <button id="pouchResetBtn">🔄 Reset</button>
-        <button class="primary" id="pouchTicketBtn">🎫 Request Badge</button>
     </div>
 </div>
 
 <script type="module">
+    // ─── Get user ──────────────────────────────────────────────
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (!currentUser) {
         window.location.href = 'index.html';
     }
 
+    // ─── Display name ──────────────────────────────────────────
     const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
     document.getElementById('scoutName').textContent = displayName;
 
+    // ─── Load rank from Firestore ─────────────────────────────
     import { db } from './firebase-config.js';
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -298,6 +336,7 @@
     const scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
     document.getElementById('scoutRank').textContent = scoutData.rank || 'Membership';
 
+    // ─── Badge data ────────────────────────────────────────────
     const badges = [
         { id: 0, name: 'Campfire', type: 'camp', icon: '🌲', unlocked: false },
         { id: 1, name: 'Tent Pitcher', type: 'camp', icon: '⛺', unlocked: false },
@@ -356,6 +395,7 @@
         localStorage.setItem('badgePouch', JSON.stringify(badgeState));
     }
 
+    // ─── Reset ──────────────────────────────────────────────────
     document.getElementById('pouchResetBtn').addEventListener('click', () => {
         if (confirm('Reset all badges? This will lock everything.')) {
             badgeState.forEach(b => b.unlocked = false);
@@ -363,12 +403,14 @@
         }
     });
 
+    // ─── Ticket button ─────────────────────────────────────────
     document.getElementById('pouchTicketBtn').addEventListener('click', () => {
         alert('🎫 Select a locked badge from the grid to request it.');
     });
 
     renderGrid();
 
+    // ─── Click scout for surprise (demo) ──────────────────────
     document.getElementById('scoutCard').addEventListener('click', () => {
         const locked = badgeState.filter(b => !b.unlocked);
         if (locked.length === 0) {
