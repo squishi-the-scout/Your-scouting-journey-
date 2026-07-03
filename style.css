@@ -659,7 +659,7 @@ a {
     color: white;
 }
 
-/* ─── PIXEL SCOUT ─── */
+/* ─── PIXEL SCOUT ANIMATION ─── */
 .pixel-scout-wrapper {
     position: relative;
     width: 56px;
@@ -678,39 +678,14 @@ a {
     animation: scoutAnimation 12s infinite;
 }
 
-/* ─── FRAME TIMING ─── */
-.pixel-scout-wrapper .frame-idle {
-    animation-delay: 0s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-wave {
-    animation-delay: 2.5s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-idle2 {
-    animation-delay: 3.1s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-map {
-    animation-delay: 5.6s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-left {
-    animation-delay: 7.6s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-right {
-    animation-delay: 8.1s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-map2 {
-    animation-delay: 8.6s;
-    animation-duration: 12s;
-}
-.pixel-scout-wrapper .frame-idle3 {
-    animation-delay: 10.6s;
-    animation-duration: 12s;
-}
+.pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
+.pixel-scout-wrapper .frame-wave { animation-delay: 2.5s; }
+.pixel-scout-wrapper .frame-idle2 { animation-delay: 3.1s; }
+.pixel-scout-wrapper .frame-map { animation-delay: 5.6s; }
+.pixel-scout-wrapper .frame-left { animation-delay: 7.6s; }
+.pixel-scout-wrapper .frame-right { animation-delay: 8.1s; }
+.pixel-scout-wrapper .frame-map2 { animation-delay: 8.6s; }
+.pixel-scout-wrapper .frame-idle3 { animation-delay: 10.6s; }
 
 @keyframes scoutAnimation {
     0%, 100% { opacity: 0; }
