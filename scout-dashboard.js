@@ -186,8 +186,8 @@ function renderView() {
             pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = '';
-            if (scoutSubtitle) scoutSubtitle.textContent = '';
+            pageHeading.textContent = 'My Badges';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Track your badge progress';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
@@ -220,11 +220,56 @@ function renderView() {
         }
     }
     else if (currentView === 'badges') {
-        window.location.href = 'badges.html';
+        loadBadgesContent();
     }
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
     else if (currentView === 'reportModal') renderReportModal();
+}
+
+// ─── Load Badges Content ──────────────────────────────────────
+async function loadBadgesContent() {
+    try {
+        const response = await fetch('badges.html');
+        if (!response.ok) {
+            throw new Error('Failed to load badges page');
+        }
+        const html = await response.text();
+        
+        // Extract only the content inside badge-page
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Find the badge page content
+        let content = tempDiv.querySelector('.badge-page');
+        
+        if (content) {
+            pageContent.innerHTML = content.outerHTML;
+        } else {
+            // Fallback: try to get body content
+            pageContent.innerHTML = tempDiv.innerHTML;
+        }
+        
+        // Re-run the badge script
+        const scripts = tempDiv.querySelectorAll('script[type="module"]');
+        scripts.forEach(script => {
+            const newScript = document.createElement('script');
+            newScript.type = 'module';
+            newScript.textContent = script.textContent;
+            document.body.appendChild(newScript);
+        });
+        
+    } catch (error) {
+        console.error('Error loading badges:', error);
+        pageContent.innerHTML = `
+            <div style="text-align:center;padding:60px 20px;background:white;border-radius:24px;">
+                <div style="font-size:48px;margin-bottom:16px;">❌</div>
+                <h3 style="color:var(--text-dark);">Could not load Badges</h3>
+                <p style="color:var(--text-muted);">Please try again later.</p>
+                <button onclick="location.reload()" style="margin-top:16px;background:var(--purple);color:white;border:none;padding:10px 24px;border-radius:40px;cursor:pointer;">Retry</button>
+            </div>
+        `;
+    }
 }
 
 // ─── Dashboard ──────────────────────────────────────────
