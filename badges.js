@@ -121,29 +121,31 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 flex-shrink: 0;
             }
             .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 56px;
-                height: 56px;
-                image-rendering: pixelated;
-                opacity: 0;
-                animation: scoutAnimation 12s infinite;
-            }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave { animation-delay: 2.5s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2 { animation-delay: 3.1s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map { animation-delay: 5.6s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left { animation-delay: 7.6s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right { animation-delay: 8.1s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2 { animation-delay: 8.6s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3 { animation-delay: 10.6s; }
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 56px;
+    height: 56px;
+    image-rendering: pixelated;
+    opacity: 0;
+    animation: scoutAnimation 13.8s steps(1) infinite;
+}
 
-            @keyframes scoutAnimation {
-                0%, 100% { opacity: 0; }
-                2%, 12% { opacity: 1; }
-                15%, 100% { opacity: 0; }
-            }
+/* ─── Frame timing ─── */
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle   { animation-delay: 0s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave   { animation-delay: 3s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2  { animation-delay: 3.8s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map    { animation-delay: 5.8s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left   { animation-delay: 8.3s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right  { animation-delay: 8.8s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2   { animation-delay: 9.3s; }
+.pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3  { animation-delay: 10.8s; }
+
+@keyframes scoutAnimation {
+    0%, 100% { opacity: 0; }
+    1%, 10% { opacity: 1; }
+    11%, 100% { opacity: 0; }
+}
 
             .pouch-scout-card .scout-info .name {
                 font-weight: 700;
