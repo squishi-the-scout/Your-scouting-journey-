@@ -220,7 +220,6 @@ function renderView() {
         }
     }
     else if (currentView === 'badges') {
-        // Redirect to standalone badges page
         window.location.href = 'badges.html';
     }
     else if (currentView === 'sessions') renderSessions();
@@ -975,7 +974,8 @@ function renderPlaceholder(title, unlockCondition = null) {
 }
 
 // ─── Navigation ──────────────────────────────────────────
-document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(link => {
+// ─── Only attach click listeners to links with data-view ───
+document.querySelectorAll('.sidebar-nav a[data-view], .bottom-nav a[data-view]').forEach(link => {
     link.addEventListener('click', function(e) {
         e.preventDefault();
         document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
@@ -1027,7 +1027,7 @@ async function init() {
     if (mobileClose) mobileClose.addEventListener('click', closeMobileSidebar);
     if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileSidebar);
 
-    document.querySelectorAll('#mobile-sidebar .sidebar-nav a').forEach(link => {
+    document.querySelectorAll('#mobile-sidebar .sidebar-nav a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             const view = this.dataset.view;
