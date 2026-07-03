@@ -236,11 +236,9 @@ async function loadBadgesContent() {
         }
         const html = await response.text();
         
-        // Extract only the content inside badge-page
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Find the badge page content
         let content = tempDiv.querySelector('.badge-page');
         
         if (content) {
@@ -249,7 +247,6 @@ async function loadBadgesContent() {
             pageContent.innerHTML = tempDiv.innerHTML;
         }
         
-        // ─── RE-INITIALIZE BADGE POUCH ──────────────────────────
         setTimeout(() => {
             initializeBadgePouch();
         }, 50);
@@ -269,200 +266,205 @@ async function loadBadgesContent() {
 
 // ─── Initialize Badge Pouch ──────────────────────────────────
 function initializeBadgePouch() {
-    // Import badge data
-    import('./data/badges-data.js').then(module => {
-        const { allBadges, typeLabels } = module;
-        
-        // Get user
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        if (!currentUser) {
-            window.location.href = 'index.html';
-            return;
-        }
-
-        const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
-        const scoutNameEl = document.getElementById('scoutName');
-        if (scoutNameEl) scoutNameEl.textContent = displayName;
-
-        // Load rank from Firestore
-        import { db } from './firebase-config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const userDocId = currentUser.username;
-        const docRef = doc(db, 'users', userDocId);
-        
-        getDoc(docRef).then((docSnap) => {
-            const scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
-            const scoutRankEl = document.getElementById('scoutRank');
-            if (scoutRankEl) scoutRankEl.textContent = scoutData.rank || 'Membership';
-        }).catch((error) => {
-            console.error('Error loading rank:', error);
-        });
-
-        // ─── Badge state ────────────────────────────────────────────
-        let badgeState = JSON.parse(localStorage.getItem('badgePouch'));
-        
-        // If no saved state or new badges added, merge with allBadges
-        if (!badgeState || badgeState.length !== allBadges.length) {
-            // Merge: keep existing unlocked status, add new badges as locked
-            const savedMap = {};
-            if (badgeState) {
-                badgeState.forEach(b => { savedMap[b.id] = b.unlocked; });
-            }
-            badgeState = allBadges.map(b => ({
-                ...b,
-                unlocked: savedMap[b.id] || false
-            }));
-            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
-        }
-
-        let currentFilter = 'all';
-
-        function renderGrid(filter = 'all') {
-            const grid = document.getElementById('pouchGrid');
-            if (!grid) {
-                console.warn('pouchGrid not found');
-                return;
-            }
+    import('./data/badges-data.js')
+        .then(function(module) {
+            var allBadges = module.allBadges;
+            var typeLabels = module.typeLabels;
             
-            grid.innerHTML = '';
-
-            // Filter badges
-            let filtered = badgeState;
-            if (filter !== 'all') {
-                filtered = badgeState.filter(b => b.type === filter);
-            }
-
-            const earned = badgeState.filter(b => b.unlocked).length;
-            const total = badgeState.length;
-            const earnedCountEl = document.getElementById('earnedCount');
-            const totalCountEl = document.getElementById('totalCount');
-            if (earnedCountEl) earnedCountEl.textContent = earned;
-            if (totalCountEl) totalCountEl.textContent = total;
-
-            if (filtered.length === 0) {
-                grid.innerHTML = `
-                    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#D4B896;font-size:14px;">
-                        No badges in this category yet! 🏕️
-                    </div>
-                `;
+            var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser) {
+                window.location.href = 'index.html';
                 return;
             }
 
-            filtered.forEach((badge, index) => {
-                const isUnlocked = badge.unlocked;
-                const slot = document.createElement('div');
-                slot.className = `pouch-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
-                slot.dataset.index = index;
-                slot.innerHTML = `
-                    <span>${badge.icon}</span>
-                    <span class="slot-name">${badge.name}</span>
-                    <span class="slot-type">${typeLabels[badge.type] || badge.type}</span>
-                    ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
-                    <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
-                `;
+            var displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+            var scoutNameEl = document.getElementById('scoutName');
+            if (scoutNameEl) scoutNameEl.textContent = displayName;
 
-                slot.addEventListener('click', () => {
-                    if (badge.unlocked) {
-                        alert(`🎉 You already earned "${badge.name}"!`);
-                    } else {
-                        window.location.href = `ticket.html?badge=${encodeURIComponent(badge.name)}`;
-                    }
+            import('./firebase-config.js').then(function(fb) {
+                var db = fb.db;
+                import('https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js').then(function(firestore) {
+                    var doc = firestore.doc;
+                    var getDoc = firestore.getDoc;
+
+                    var userDocId = currentUser.username;
+                    var docRef = doc(db, 'users', userDocId);
+                    
+                    getDoc(docRef).then(function(docSnap) {
+                        var scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
+                        var scoutRankEl = document.getElementById('scoutRank');
+                        if (scoutRankEl) scoutRankEl.textContent = scoutData.rank || 'Membership';
+                    }).catch(function(error) {
+                        console.error('Error loading rank:', error);
+                    });
                 });
-
-                grid.appendChild(slot);
             });
 
-            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
-        }
-
-        // ─── Filter Buttons ──────────────────────────────────────
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentFilter = this.dataset.filter;
-                renderGrid(currentFilter);
-            });
-        });
-
-        // ─── Event Listeners ──────────────────────────────────────
-        const resetBtn = document.getElementById('pouchResetBtn');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                if (confirm('Reset all badges? This will lock everything.')) {
-                    badgeState.forEach(b => b.unlocked = false);
-                    renderGrid(currentFilter);
+            var badgeState = JSON.parse(localStorage.getItem('badgePouch'));
+            
+            if (!badgeState || badgeState.length !== allBadges.length) {
+                var savedMap = {};
+                if (badgeState) {
+                    badgeState.forEach(function(b) { savedMap[b.id] = b.unlocked; });
                 }
-            });
-        }
+                badgeState = allBadges.map(function(b) {
+                    return {
+                        id: b.id,
+                        name: b.name,
+                        type: b.type,
+                        icon: b.icon,
+                        unlocked: savedMap[b.id] || false
+                    };
+                });
+                localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+            }
 
-        const ticketBtn = document.getElementById('pouchTicketBtn');
-        if (ticketBtn) {
-            ticketBtn.addEventListener('click', () => {
-                alert('🎫 Select a locked badge from the grid to request it.');
-            });
-        }
+            var currentFilter = 'all';
 
-        // ─── Click scout for surprise ──────────────────────────────
-        const scoutCard = document.getElementById('scoutCard');
-        if (scoutCard) {
-            scoutCard.addEventListener('click', () => {
-                const locked = badgeState.filter(b => !b.unlocked);
-                if (locked.length === 0) {
-                    alert('🎉 All badges unlocked! You\'re a legend!');
+            function renderGrid(filter) {
+                if (filter === undefined) filter = 'all';
+                var grid = document.getElementById('pouchGrid');
+                if (!grid) {
+                    console.warn('pouchGrid not found');
                     return;
                 }
-                const random = locked[Math.floor(Math.random() * locked.length)];
-                random.unlocked = true;
-                renderGrid(currentFilter);
-            });
-        }
+                
+                grid.innerHTML = '';
 
-        // ─── Render the grid ──────────────────────────────────────
-        renderGrid('all');
-        
-    }).catch(error => {
-        console.error('Error loading badge data:', error);
-        const grid = document.getElementById('pouchGrid');
-        if (grid) {
-            grid.innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e74c3c;font-size:14px;">
-                    ❌ Error loading badge data. Please try again.
-                </div>
-            `;
-        }
-    });
+                var filtered = badgeState;
+                if (filter !== 'all') {
+                    filtered = badgeState.filter(function(b) { return b.type === filter; });
+                }
+
+                var earned = badgeState.filter(function(b) { return b.unlocked; }).length;
+                var total = badgeState.length;
+                var earnedCountEl = document.getElementById('earnedCount');
+                var totalCountEl = document.getElementById('totalCount');
+                if (earnedCountEl) earnedCountEl.textContent = earned;
+                if (totalCountEl) totalCountEl.textContent = total;
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = `
+                        <div style="grid-column:1/-1;text-align:center;padding:40px;color:#D4B896;font-size:14px;">
+                            No badges in this category yet! 🏕️
+                        </div>
+                    `;
+                    return;
+                }
+
+                filtered.forEach(function(badge) {
+                    var isUnlocked = badge.unlocked;
+                    var slot = document.createElement('div');
+                    slot.className = 'pouch-slot ' + (isUnlocked ? 'unlocked' : 'locked');
+                    slot.innerHTML = `
+                        <span>${badge.icon}</span>
+                        <span class="slot-name">${badge.name}</span>
+                        <span class="slot-type">${typeLabels[badge.type] || badge.type}</span>
+                        ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
+                        <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
+                    `;
+
+                    slot.addEventListener('click', function() {
+                        if (badge.unlocked) {
+                            alert('🎉 You already earned "' + badge.name + '"!');
+                        } else {
+                            window.location.href = 'ticket.html?badge=' + encodeURIComponent(badge.name);
+                        }
+                    });
+
+                    grid.appendChild(slot);
+                });
+
+                localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+            }
+
+            var filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var allBtns = document.querySelectorAll('.filter-btn');
+                    allBtns.forEach(function(b) { b.classList.remove('active'); });
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    renderGrid(currentFilter);
+                });
+            });
+
+            var resetBtn = document.getElementById('pouchResetBtn');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    if (confirm('Reset all badges? This will lock everything.')) {
+                        badgeState.forEach(function(b) { b.unlocked = false; });
+                        renderGrid(currentFilter);
+                    }
+                });
+            }
+
+            var ticketBtn = document.getElementById('pouchTicketBtn');
+            if (ticketBtn) {
+                ticketBtn.addEventListener('click', function() {
+                    alert('🎫 Select a locked badge from the grid to request it.');
+                });
+            }
+
+            var scoutCard = document.getElementById('scoutCard');
+            if (scoutCard) {
+                scoutCard.addEventListener('click', function() {
+                    var locked = badgeState.filter(function(b) { return !b.unlocked; });
+                    if (locked.length === 0) {
+                        alert('🎉 All badges unlocked! You\'re a legend!');
+                        return;
+                    }
+                    var random = locked[Math.floor(Math.random() * locked.length)];
+                    random.unlocked = true;
+                    renderGrid(currentFilter);
+                });
+            }
+
+            renderGrid('all');
+            
+        })
+        .catch(function(error) {
+            console.error('Error loading badge data:', error);
+            var grid = document.getElementById('pouchGrid');
+            if (grid) {
+                grid.innerHTML = `
+                    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e74c3c;font-size:14px;">
+                        ❌ Error loading badge data: ${error.message}
+                    </div>
+                `;
+            }
+        });
 }
 
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    let completed = 0, pending = 0;
-    for (const req of membershipRequirements) {
-        const key = `membership_${req.name}`;
-        const status = scoutStatus[key];
+    var completed = 0, pending = 0;
+    for (var i = 0; i < membershipRequirements.length; i++) {
+        var req = membershipRequirements[i];
+        var key = 'membership_' + req.name;
+        var status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
         else if (status && status.status === 'pending') pending++;
     }
-    const total = membershipRequirements.length;
-    const progress = Math.round((completed / total) * 100);
+    var total = membershipRequirements.length;
+    var progress = Math.round((completed / total) * 100);
 
-    let scoutServiceHours = 0;
-    for (const session of allSessions) {
-        scoutServiceHours += session.duration || 0;
+    var scoutServiceHours = 0;
+    for (var j = 0; j < allSessions.length; j++) {
+        scoutServiceHours += allSessions[j].duration || 0;
     }
 
-    const attendanceCount = allSessions.length;
-    const rank = scoutData.rank || 'Membership';
-    const healthStatus = checkHealthStatus();
+    var attendanceCount = allSessions.length;
+    var rank = scoutData.rank || 'Membership';
+    var healthStatus = checkHealthStatus();
 
-    const today = new Date().toISOString().split('T')[0];
-    const upcomingSessions = allSessions
-        .filter(s => s.date >= today)
-        .sort((a, b) => a.date.localeCompare(b.date))
+    var today = new Date().toISOString().split('T')[0];
+    var upcomingSessions = allSessions
+        .filter(function(s) { return s.date >= today; })
+        .sort(function(a, b) { return a.date.localeCompare(b.date); })
         .slice(0, 2);
 
-    const achievements = [
+    var achievements = [
         { key: 'membership', label: 'Membership', icon: '🏅', earned: completed === total },
         { key: 'second', label: 'Second Class', icon: '⭐', earned: false },
         { key: 'first', label: 'First Class', icon: '🌟', earned: false },
@@ -471,19 +473,18 @@ function renderDashboard() {
         { key: 'badge3', label: 'Badge 3', icon: '🎯', earned: false },
     ];
 
-    const patrolColors = {
+    var patrolColors = {
         'Eagle': '#f1c40f',
         'Falcon': '#3498db',
         'Wolf': '#95a5a6',
         'Bear': '#8d6e63',
         'Lion': '#e67e22'
     };
-    const patrol = scoutData.patrol || 'No Patrol';
-    const patrolColor = patrolColors[patrol] || '#6c3b8c';
+    var patrol = scoutData.patrol || 'No Patrol';
+    var patrolColor = patrolColors[patrol] || '#6c3b8c';
 
-    let html = '';
+    var html = '';
 
-    // ─── Health Notice ──────────────────────────────────────
     if (healthStatus.needsUpdate) {
         html += `
             <div style="background:#fff3cd;border-radius:16px;padding:16px 20px;margin-bottom:16px;border-left:4px solid #ffc107;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
@@ -501,9 +502,7 @@ function renderDashboard() {
         `;
     }
 
-    // ─── Main Dashboard Content ─────────────────────────────
     html += `
-        <!-- RANK + PATROL BADGES -->
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
             <span style="background:var(--purple);color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
                 🏅 ${rank}
@@ -513,9 +512,7 @@ function renderDashboard() {
             </span>
         </div>
 
-        <!-- STATS GRID -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
-            <!-- Progress Ring -->
             <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;">
                 <div style="position:relative;width:100px;height:100px;margin:0 auto;">
                     <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg);">
@@ -538,14 +535,12 @@ function renderDashboard() {
                 <div style="font-size:13px;color:var(--text-muted);margin-top:8px;">Membership Progress</div>
             </div>
 
-            <!-- Sessions Attended -->
             <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
                 <div style="font-size:36px;margin-bottom:4px;">📋</div>
                 <div style="font-size:28px;font-weight:700;color:var(--purple);">${attendanceCount}</div>
                 <div style="font-size:13px;color:var(--text-muted);">Sessions Attended</div>
             </div>
 
-            <!-- Scouting Hours -->
             <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
                 <div style="font-size:36px;margin-bottom:4px;">⏱️</div>
                 <div style="font-size:28px;font-weight:700;color:#4caf50;">${scoutServiceHours}</div>
@@ -553,21 +548,21 @@ function renderDashboard() {
             </div>
         </div>
 
-        <!-- ACHIEVEMENTS -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;font-size:18px;">🏆 Achievements</h3>
             <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
-                ${achievements.map(a => `
-                    <div style="text-align:center;padding:12px;border-radius:16px;background:${a.earned ? 'var(--lavender-bg)' : '#f5f5f5'};border:2px solid ${a.earned ? 'var(--purple)' : 'transparent'};">
-                        <div style="font-size:32px;${a.earned ? '' : 'opacity:0.3;'}">${a.earned ? a.icon : '🔒'}</div>
-                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${a.label}</div>
-                        <div style="font-size:10px;color:${a.earned ? 'var(--purple)' : 'var(--text-muted)'};font-weight:600;margin-top:2px;">${a.earned ? '✅ Earned' : 'Locked'}</div>
-                    </div>
-                `).join('')}
+                ${achievements.map(function(a) {
+                    return `
+                        <div style="text-align:center;padding:12px;border-radius:16px;background:${a.earned ? 'var(--lavender-bg)' : '#f5f5f5'};border:2px solid ${a.earned ? 'var(--purple)' : 'transparent'};">
+                            <div style="font-size:32px;${a.earned ? '' : 'opacity:0.3;'}">${a.earned ? a.icon : '🔒'}</div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${a.label}</div>
+                            <div style="font-size:10px;color:${a.earned ? 'var(--purple)' : 'var(--text-muted)'};font-weight:600;margin-top:2px;">${a.earned ? '✅ Earned' : 'Locked'}</div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
 
-        <!-- UPCOMING SESSIONS -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                 <h3 style="color:var(--text-dark);font-size:18px;margin:0;">📅 Upcoming Sessions</h3>
@@ -576,24 +571,25 @@ function renderDashboard() {
             ${upcomingSessions.length === 0 ? `
                 <p style="color:var(--text-muted);font-size:14px;">No upcoming sessions. Check back later!</p>
             ` : `
-                ${upcomingSessions.map(s => `
-                    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f5f0f8;">
-                        <div>
-                            <div style="font-weight:500;color:var(--text-dark);">${s.name}</div>
-                            <div style="font-size:13px;color:var(--text-muted);">${s.date} · ${s.time} · ${s.location || 'TBD'}</div>
+                ${upcomingSessions.map(function(s) {
+                    return `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #f5f0f8;">
+                            <div>
+                                <div style="font-weight:500;color:var(--text-dark);">${s.name}</div>
+                                <div style="font-size:13px;color:var(--text-muted);">${s.date} · ${s.time} · ${s.location || 'TBD'}</div>
+                            </div>
+                            <span style="background:#d4edda;color:#155724;padding:2px 12px;border-radius:20px;font-size:11px;font-weight:500;">Invited</span>
                         </div>
-                        <span style="background:#d4edda;color:#155724;padding:2px 12px;border-radius:20px;font-size:11px;font-weight:500;">Invited</span>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             `}
         </div>
 
-        <!-- CONTINUE JOURNEY -->
         <div style="background:linear-gradient(135deg,var(--purple),var(--orange));border-radius:24px;padding:20px 24px;color:white;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                 <div>
                     <div style="font-weight:600;font-size:16px;">💡 Continue Your Journey</div>
-                    <div style="font-size:13px;opacity:0.9;">${completed === total ? 'You completed Membership! 🎉 Start Second Class' : `${completed}/${total} Membership requirements done`}</div>
+                    <div style="font-size:13px;opacity:0.9;">${completed === total ? 'You completed Membership! 🎉 Start Second Class' : completed + '/' + total + ' Membership requirements done'}</div>
                 </div>
                 <a href="#" data-view="${completed === total ? 'second' : 'membership'}" style="background:white;color:var(--purple);padding:8px 24px;border-radius:40px;font-weight:600;font-size:14px;text-decoration:none;">Continue →</a>
             </div>
@@ -602,11 +598,11 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
 
-    document.querySelectorAll('a[data-view]').forEach(link => {
+    document.querySelectorAll('a[data-view]').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             currentView = this.dataset.view;
-            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
             renderView();
         });
     });
@@ -614,51 +610,52 @@ function renderDashboard() {
 
 // ─── Requirements View ──────────────────────────────────
 function renderRequirements(tab, reqs) {
-    let completed = 0, pending = 0;
-    for (const req of reqs) {
-        const key = `${tab}_${req.name}`;
-        const status = scoutStatus[key];
+    var completed = 0, pending = 0;
+    for (var i = 0; i < reqs.length; i++) {
+        var req = reqs[i];
+        var key = tab + '_' + req.name;
+        var status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
         else if (status && status.status === 'pending') pending++;
     }
-    const total = reqs.length;
-    const progress = Math.round((completed / total) * 100);
+    var total = reqs.length;
+    var progress = Math.round((completed / total) * 100);
 
-    let html = `
+    var html = `
         <div class="progress-section" style="margin-bottom:20px;">
             <div class="progress-header"><span>Progress</span><span>${completed}/${total}</span></div>
             <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${progress}%;"></div></div>
         </div>
         <div class="requirements-grid">
-            ${reqs.map(req => {
-                const key = `${tab}_${req.name}`;
-                const data = scoutStatus[key];
-                const status = data ? data.status : 'todo';
+            ${reqs.map(function(req) {
+                var key = tab + '_' + req.name;
+                var data = scoutStatus[key];
+                var status = data ? data.status : 'todo';
                 
-                let statusPill = '';
+                var statusPill = '';
                 if (status === 'approved') {
-                    statusPill = `<span class="approved-badge" style="background:#d4edda;color:#155724;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;">Complete</span>`;
+                    statusPill = '<span class="approved-badge" style="background:#d4edda;color:#155724;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;">Complete</span>';
                 } else if (status === 'pending') {
-                    statusPill = `<span class="pending-badge" data-req="${req.name}" data-tab="${tab}" style="background:#fde8d0;color:#d35400;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Pending</span>`;
+                    statusPill = '<span class="pending-badge" data-req="' + req.name + '" data-tab="' + tab + '" style="background:#fde8d0;color:#d35400;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Pending</span>';
                 } else {
-                    statusPill = `<button class="ready-btn" data-req="${req.name}" data-tab="${tab}" style="background:var(--orange);color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Mark Ready</button>`;
+                    statusPill = '<button class="ready-btn" data-req="' + req.name + '" data-tab="' + tab + '" style="background:var(--orange);color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;">Mark Ready</button>';
                 }
                 
-                let approvedInfo = '';
+                var approvedInfo = '';
                 if (status === 'approved' && data) {
-                    const approvedBy = data.approvedBy || 'Unknown';
-                    const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
-                    approvedInfo = `<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Approved by ${approvedBy} · ${approvedAt}</div>`;
+                    var approvedBy = data.approvedBy || 'Unknown';
+                    var approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
+                    approvedInfo = '<div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Approved by ' + approvedBy + ' · ' + approvedAt + '</div>';
                 }
                 
-                const reportKey = `${tab}_${req.name}_report`;
-                const hasReport = scoutStatus[reportKey] && (scoutStatus[reportKey].note || (scoutStatus[reportKey].images && scoutStatus[reportKey].images.length > 0));
+                var reportKey = tab + '_' + req.name + '_report';
+                var hasReport = scoutStatus[reportKey] && (scoutStatus[reportKey].note || (scoutStatus[reportKey].images && scoutStatus[reportKey].images.length > 0));
                 
-                let reportBtn = '';
+                var reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">View Report</a>`;
+                    reportBtn = '<a href="report-viewer.html?email=' + userDocId + '&tab=' + tab + '&req=' + encodeURIComponent(req.name) + '" class="report-btn has-report" style="background:#4caf50;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;">View Report</a>';
                 } else {
-                    reportBtn = `<button class="report-btn no-report" data-req="${req.name}" data-tab="${tab}" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">Add Report</button>`;
+                    reportBtn = '<button class="report-btn no-report" data-req="' + req.name + '" data-tab="' + tab + '" style="background:#e8e0f0;color:var(--text-dark);border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;">Add Report</button>';
                 }
                 
                 return `
@@ -682,11 +679,11 @@ function renderRequirements(tab, reqs) {
 
     pageContent.innerHTML = html;
 
-    document.querySelectorAll('.ready-btn').forEach(btn => {
+    document.querySelectorAll('.ready-btn').forEach(function(btn) {
         btn.addEventListener('click', async function() {
-            const reqName = this.dataset.req;
-            const tabName = this.dataset.tab;
-            const key = `${tabName}_${reqName}`;
+            var reqName = this.dataset.req;
+            var tabName = this.dataset.tab;
+            var key = tabName + '_' + reqName;
             if (scoutStatus[key] && scoutStatus[key].status === 'approved') return;
             scoutStatus[key] = { 
                 status: 'pending',
@@ -696,17 +693,17 @@ function renderRequirements(tab, reqs) {
         });
     });
 
-    document.querySelectorAll('.pending-badge').forEach(badge => {
+    document.querySelectorAll('.pending-badge').forEach(function(badge) {
         badge.addEventListener('click', async function() {
-            const reqName = this.dataset.req;
-            const tabName = this.dataset.tab;
-            const key = `${tabName}_${reqName}`;
+            var reqName = this.dataset.req;
+            var tabName = this.dataset.tab;
+            var key = tabName + '_' + reqName;
             delete scoutStatus[key];
             await saveStatus();
         });
     });
 
-    document.querySelectorAll('.report-btn.no-report').forEach(btn => {
+    document.querySelectorAll('.report-btn.no-report').forEach(function(btn) {
         btn.addEventListener('click', function() {
             currentReportTab = this.dataset.tab;
             currentReportReq = this.dataset.req;
@@ -719,11 +716,11 @@ function renderRequirements(tab, reqs) {
 
 // ─── Report Modal ──────────────────────────────────────
 function renderReportModal() {
-    const key = `${currentReportTab}_${currentReportReq}_report`;
-    const report = scoutStatus[key] || { note: '', images: [], updatedAt: null };
-    const allImages = report.images || [];
+    var key = currentReportTab + '_' + currentReportReq + '_report';
+    var report = scoutStatus[key] || { note: '', images: [], updatedAt: null };
+    var allImages = report.images || [];
 
-    let html = `
+    var html = `
         <div class="report-modal-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
             <div style="background:white;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
                 
@@ -748,12 +745,14 @@ function renderReportModal() {
                 </div>
                 
                 <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-                    ${allImages.map((base64, index) => `
-                        <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
-                            <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
-                            <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
-                        </div>
-                    `).join('')}
+                    ${allImages.map(function(base64, index) {
+                        return `
+                            <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                                <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                                <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
                 
                 <div style="display:flex;gap:12px;margin-top:16px;">
@@ -762,48 +761,48 @@ function renderReportModal() {
                 </div>
                 
                 <div id="report-message" style="margin-top:12px;font-size:14px;color:var(--text-muted);text-align:center;"></div>
-                ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
+                ${report.updatedAt ? '<div style="margin-top:8px;font-size:12px;color:var(--text-muted);text-align:center;">Last saved: ' + new Date(report.updatedAt).toLocaleString() + '</div>' : ''}
             </div>
         </div>
     `;
 
     pageContent.innerHTML = html;
 
-    document.getElementById('close-report-modal').addEventListener('click', () => {
+    document.getElementById('close-report-modal').addEventListener('click', function() {
         currentView = currentReportTab === 'membership' ? 'membership' : 
                      currentReportTab === 'secondClass' ? 'second' : 'first';
         renderView();
     });
-    document.getElementById('cancel-report').addEventListener('click', () => {
+    document.getElementById('cancel-report').addEventListener('click', function() {
         currentView = currentReportTab === 'membership' ? 'membership' : 
                      currentReportTab === 'secondClass' ? 'second' : 'first';
         renderView();
     });
 
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('image-upload');
+    var dropZone = document.getElementById('drop-zone');
+    var fileInput = document.getElementById('image-upload');
 
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => {
+    dropZone.addEventListener('click', function() { fileInput.click(); });
+    dropZone.addEventListener('dragover', function(e) {
         e.preventDefault();
         dropZone.style.borderColor = 'var(--purple)';
         dropZone.style.background = '#f5f0f8';
     });
-    dropZone.addEventListener('dragleave', () => {
+    dropZone.addEventListener('dragleave', function() {
         dropZone.style.borderColor = '#e0d6ec';
         dropZone.style.background = 'transparent';
     });
-    dropZone.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', function(e) {
         e.preventDefault();
         dropZone.style.borderColor = '#e0d6ec';
         dropZone.style.background = 'transparent';
         handleFiles(e.dataTransfer.files);
     });
-    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+    fileInput.addEventListener('change', function() { handleFiles(fileInput.files); });
 
     async function handleFiles(files) {
-        const container = document.getElementById('image-preview-container');
-        const message = document.getElementById('report-message');
+        var container = document.getElementById('image-preview-container');
+        var message = document.getElementById('report-message');
         
         if (allImages.length + files.length > 5) {
             message.textContent = '⚠️ Maximum 5 images allowed. You have ' + allImages.length + ' already.';
@@ -811,7 +810,8 @@ function renderReportModal() {
             return;
         }
         
-        for (const file of files) {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
             if (!file.type.startsWith('image/')) {
                 message.textContent = '⚠️ Please select image files only.';
                 message.style.color = '#e67e22';
@@ -819,10 +819,10 @@ function renderReportModal() {
             }
             
             try {
-                const base64 = await resizeImage(file, 600, 0.7);
+                var base64 = await resizeImage(file, 600, 0.7);
                 allImages.push(base64);
                 
-                const imgDiv = document.createElement('div');
+                var imgDiv = document.createElement('div');
                 imgDiv.className = 'image-preview-item';
                 imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;';
                 imgDiv.innerHTML = `
@@ -831,11 +831,11 @@ function renderReportModal() {
                 `;
                 container.appendChild(imgDiv);
                 
-                message.textContent = `✅ ${file.name} uploaded (${Math.round(base64.length / 1024)}KB)`;
+                message.textContent = '✅ ' + file.name + ' uploaded (' + Math.round(base64.length / 1024) + 'KB)';
                 message.style.color = '#4caf50';
                 
                 imgDiv.querySelector('.remove-image').addEventListener('click', function() {
-                    const idx = parseInt(this.dataset.index);
+                    var idx = parseInt(this.dataset.index);
                     removeImage(idx);
                 });
                 
@@ -849,26 +849,28 @@ function renderReportModal() {
 
     function removeImage(index) {
         allImages.splice(index, 1);
-        const container = document.getElementById('image-preview-container');
-        container.innerHTML = allImages.map((base64, i) => `
-            <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
-                <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
-                <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
-            </div>
-        `).join('');
+        var container = document.getElementById('image-preview-container');
+        container.innerHTML = allImages.map(function(base64, i) {
+            return `
+                <div class="image-preview-item" style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                    <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
+                    <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
+                </div>
+            `;
+        }).join('');
         
-        document.querySelectorAll('.remove-image').forEach(btn => {
+        document.querySelectorAll('.remove-image').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                const idx = parseInt(this.dataset.index);
+                var idx = parseInt(this.dataset.index);
                 removeImage(idx);
             });
         });
     }
 
     document.getElementById('save-report').addEventListener('click', async function() {
-        const note = document.getElementById('report-note').value.trim();
-        const key = `${currentReportTab}_${currentReportReq}_report`;
-        const message = document.getElementById('report-message');
+        var note = document.getElementById('report-note').value.trim();
+        var key = currentReportTab + '_' + currentReportReq + '_report';
+        var message = document.getElementById('report-message');
         
         if (!note && allImages.length === 0) {
             message.textContent = '⚠️ Please add a note or at least one image.';
@@ -877,9 +879,9 @@ function renderReportModal() {
         }
         
         try {
-            const docRef = doc(db, 'scoutStatus', userDocId);
-            const docSnap = await getDoc(docRef);
-            const data = docSnap.data() || {};
+            var docRef = doc(db, 'scoutStatus', userDocId);
+            var docSnap = await getDoc(docRef);
+            var data = docSnap.data() || {};
             
             data[key] = {
                 note: note || '',
@@ -893,7 +895,7 @@ function renderReportModal() {
             message.textContent = '✅ Report saved successfully!';
             message.style.color = '#4caf50';
             
-            setTimeout(() => {
+            setTimeout(function() {
                 currentView = currentReportTab === 'membership' ? 'membership' : 
                              currentReportTab === 'secondClass' ? 'second' : 'first';
                 renderView();
@@ -919,12 +921,12 @@ function renderSessions() {
         return;
     }
     
-    let totalHours = 0;
-    for (const session of allSessions) {
-        totalHours += session.duration || 0;
+    var totalHours = 0;
+    for (var i = 0; i < allSessions.length; i++) {
+        totalHours += allSessions[i].duration || 0;
     }
 
-    let contentHtml = `
+    var contentHtml = `
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
             <div style="background:white;border-radius:16px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:24px;font-weight:700;color:var(--purple);">${allSessions.length}</div>
@@ -939,7 +941,8 @@ function renderSessions() {
         <div style="display:flex;flex-direction:column;gap:12px;">
     `;
     
-    for (const session of allSessions) {
+    for (var j = 0; j < allSessions.length; j++) {
+        var session = allSessions[j];
         contentHtml += `
             <div class="session-card" data-id="${session.id}" style="background:white;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid var(--purple-light);">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
@@ -958,38 +961,38 @@ function renderSessions() {
     contentHtml += '</div>';
     pageContent.innerHTML = contentHtml;
 
-    document.querySelectorAll('.session-card').forEach(card => {
+    document.querySelectorAll('.session-card').forEach(function(card) {
         card.addEventListener('click', function() {
-            const id = this.dataset.id;
-            window.location.href = `session-detail-scout.html?id=${id}`;
+            var id = this.dataset.id;
+            window.location.href = 'session-detail-scout.html?id=' + id;
         });
     });
 }
 
 // ─── Profile View ──────────────────────────────────────────
 async function renderProfile() {
-    const userDoc = await getDoc(doc(db, 'users', userDocId));
-    const data = userDoc.data();
+    var userDoc = await getDoc(doc(db, 'users', userDocId));
+    var data = userDoc.data();
 
     if (!data) {
-        pageContent.innerHTML = `<p style="color:var(--text-muted);padding:40px;text-align:center;">Profile not found.</p>`;
+        pageContent.innerHTML = '<p style="color:var(--text-muted);padding:40px;text-align:center;">Profile not found.</p>';
         return;
     }
 
-    const fullName = data.fullName || currentUser.username;
-    const dob = data.dob || '';
-    const patrol = data.patrol || '';
-    const rank = data.rank || 'Membership';
-    const role = data.scoutRole || 'Scout';
-    const emergency = data.emergencyContact || {};
-    const health = data.health || {};
+    var fullName = data.fullName || currentUser.username;
+    var dob = data.dob || '';
+    var patrol = data.patrol || '';
+    var rank = data.rank || 'Membership';
+    var role = data.scoutRole || 'Scout';
+    var emergency = data.emergencyContact || {};
+    var health = data.health || {};
     
-    const healthLastUpdated = health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : 'Never';
-    const healthDaysSince = health.lastUpdated ? Math.floor((new Date() - new Date(health.lastUpdated)) / (1000 * 60 * 60 * 24)) : 999;
-    const healthStatus = healthDaysSince > 90 ? '⚠️ Needs update' : '✅ Up to date';
-    const healthStatusColor = healthDaysSince > 90 ? '#d45a7a' : '#4caf50';
+    var healthLastUpdated = health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : 'Never';
+    var healthDaysSince = health.lastUpdated ? Math.floor((new Date() - new Date(health.lastUpdated)) / (1000 * 60 * 60 * 24)) : 999;
+    var healthStatus = healthDaysSince > 90 ? '⚠️ Needs update' : '✅ Up to date';
+    var healthStatusColor = healthDaysSince > 90 ? '#d45a7a' : '#4caf50';
 
-    let html = `
+    var html = `
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
                 <span id="profile-back" style="cursor:pointer;color:var(--text-muted);font-size:18px;">←</span>
@@ -1040,7 +1043,6 @@ async function renderProfile() {
                         </div>
                     </div>
 
-                    <!-- ─── HEALTH SECTION ─── -->
                     <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                             <div style="font-weight:600;font-size:16px;">🏥 Health Information</div>
@@ -1069,11 +1071,10 @@ async function renderProfile() {
                         </div>
                         <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
                             Last updated: ${healthLastUpdated}
-                            ${healthDaysSince > 90 ? ` ⚠️ Update needed (${healthDaysSince} days ago)` : ''}
+                            ${healthDaysSince > 90 ? ' ⚠️ Update needed (' + healthDaysSince + ' days ago)' : ''}
                         </div>
                     </div>
 
-                    <!-- ─── EMERGENCY CONTACT ─── -->
                     <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
                         <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -1106,30 +1107,30 @@ async function renderProfile() {
 
     pageContent.innerHTML = html;
 
-    document.getElementById('profile-back').addEventListener('click', () => {
+    document.getElementById('profile-back').addEventListener('click', function() {
         currentView = 'dashboard';
-        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-        document.querySelector('.sidebar-nav a[data-view="dashboard"]')?.classList.add('active');
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
+        var dashboardLink = document.querySelector('.sidebar-nav a[data-view="dashboard"]');
+        if (dashboardLink) dashboardLink.classList.add('active');
         renderView();
     });
 
     document.getElementById('profile-form').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const fullName = document.getElementById('profile-fullname').value.trim();
-        const dob = document.getElementById('profile-dob').value;
-        const patrol = document.getElementById('profile-patrol').value.trim();
-        const emergencyName = document.getElementById('profile-emergency-name').value.trim();
-        const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
-        const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
+        var fullName = document.getElementById('profile-fullname').value.trim();
+        var dob = document.getElementById('profile-dob').value;
+        var patrol = document.getElementById('profile-patrol').value.trim();
+        var emergencyName = document.getElementById('profile-emergency-name').value.trim();
+        var emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
+        var emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
         
-        // Health fields
-        const allergies = document.getElementById('health-allergies').value.trim();
-        const conditions = document.getElementById('health-conditions').value.trim();
-        const medications = document.getElementById('health-medications').value.trim();
-        const healthNotes = document.getElementById('health-notes').value.trim();
+        var allergies = document.getElementById('health-allergies').value.trim();
+        var conditions = document.getElementById('health-conditions').value.trim();
+        var medications = document.getElementById('health-medications').value.trim();
+        var healthNotes = document.getElementById('health-notes').value.trim();
 
-        const updateData = {
+        var updateData = {
             fullName: fullName || currentUser.username,
             dob: dob || null,
             patrol: patrol || null,
@@ -1156,7 +1157,7 @@ async function renderProfile() {
             
             document.getElementById('profile-message').textContent = '✅ Profile saved successfully!';
             document.getElementById('profile-message').style.color = '#8fbcbb';
-            setTimeout(() => renderProfile(), 1200);
+            setTimeout(function() { renderProfile(); }, 1200);
         } catch (error) {
             document.getElementById('profile-message').textContent = '❌ Error saving profile: ' + error.message;
             document.getElementById('profile-message').style.color = '#c47a7a';
@@ -1165,8 +1166,9 @@ async function renderProfile() {
 }
 
 // ─── Placeholder ─────────────────────────────────────────
-function renderPlaceholder(title, unlockCondition = null) {
-    let html = `
+function renderPlaceholder(title, unlockCondition) {
+    if (unlockCondition === undefined) unlockCondition = null;
+    var html = `
         <div style="max-width:600px;margin:0 auto;text-align:center;padding:40px 0;">
             <div style="font-size:64px;margin-bottom:16px;">🔒</div>
             <h2 style="color:var(--purple-dark);font-size:28px;margin-bottom:8px;">${title}</h2>
@@ -1182,24 +1184,26 @@ function renderPlaceholder(title, unlockCondition = null) {
 }
 
 // ─── Navigation ──────────────────────────────────────────
-// ─── Only attach click listeners to links with data-view ───
-document.querySelectorAll('.sidebar-nav a[data-view], .bottom-nav a[data-view]').forEach(link => {
+document.querySelectorAll('.sidebar-nav a[data-view], .bottom-nav a[data-view]').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
         this.classList.add('active');
         currentView = this.dataset.view;
         renderView();
     });
 });
 
-document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
-    currentView = 'profile';
-    document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-    renderView();
-});
+var sidebarProfileBtn = document.getElementById('sidebar-profile-btn');
+if (sidebarProfileBtn) {
+    sidebarProfileBtn.addEventListener('click', function() {
+        currentView = 'profile';
+        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
+        renderView();
+    });
+}
 
-document.getElementById('logout-btn').addEventListener('click', () => {
+document.getElementById('logout-btn').addEventListener('click', function() {
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
     localStorage.removeItem('currentUser');
@@ -1213,11 +1217,10 @@ async function init() {
     listenToSessions();
     renderView();
 
-    // ─── Mobile Sidebar ──────────────────────────────────────
-    const hamburger = document.getElementById('hamburger-btn');
-    const mobileSidebar = document.getElementById('mobile-sidebar');
-    const mobileOverlay = document.getElementById('mobile-overlay');
-    const mobileClose = document.getElementById('mobile-close-btn');
+    var hamburger = document.getElementById('hamburger-btn');
+    var mobileSidebar = document.getElementById('mobile-sidebar');
+    var mobileOverlay = document.getElementById('mobile-overlay');
+    var mobileClose = document.getElementById('mobile-close-btn');
 
     function openMobileSidebar() {
         mobileSidebar.classList.add('open');
@@ -1235,26 +1238,30 @@ async function init() {
     if (mobileClose) mobileClose.addEventListener('click', closeMobileSidebar);
     if (mobileOverlay) mobileOverlay.addEventListener('click', closeMobileSidebar);
 
-    document.querySelectorAll('#mobile-sidebar .sidebar-nav a[data-view]').forEach(link => {
+    document.querySelectorAll('#mobile-sidebar .sidebar-nav a[data-view]').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            const view = this.dataset.view;
+            var view = this.dataset.view;
             closeMobileSidebar();
-            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-            document.querySelector(`.sidebar-nav a[data-view="${view}"]`)?.classList.add('active');
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
+            var targetLink = document.querySelector('.sidebar-nav a[data-view="' + view + '"]');
+            if (targetLink) targetLink.classList.add('active');
             currentView = view;
             renderView();
         });
     });
 
-    document.getElementById('mobile-profile-btn')?.addEventListener('click', () => {
-        closeMobileSidebar();
-        currentView = 'profile';
-        document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(l => l.classList.remove('active'));
-        renderView();
-    });
+    var mobileProfileBtn = document.getElementById('mobile-profile-btn');
+    if (mobileProfileBtn) {
+        mobileProfileBtn.addEventListener('click', function() {
+            closeMobileSidebar();
+            currentView = 'profile';
+            document.querySelectorAll('.sidebar-nav a, .bottom-nav a').forEach(function(l) { l.classList.remove('active'); });
+            renderView();
+        });
+    }
 
-    document.getElementById('mobile-logout-btn')?.addEventListener('click', () => {
+    document.getElementById('mobile-logout-btn').addEventListener('click', function() {
         closeMobileSidebar();
         if (statusUnsubscribe) statusUnsubscribe();
         if (sessionsUnsubscribe) sessionsUnsubscribe();
