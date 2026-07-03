@@ -246,18 +246,13 @@ async function loadBadgesContent() {
         if (content) {
             pageContent.innerHTML = content.outerHTML;
         } else {
-            // Fallback: try to get body content
             pageContent.innerHTML = tempDiv.innerHTML;
         }
         
-        // Re-run the badge script
-        const scripts = tempDiv.querySelectorAll('script[type="module"]');
-        scripts.forEach(script => {
-            const newScript = document.createElement('script');
-            newScript.type = 'module';
-            newScript.textContent = script.textContent;
-            document.body.appendChild(newScript);
-        });
+        // ─── RE-INITIALIZE BADGE POUCH ──────────────────────────
+        setTimeout(() => {
+            initializeBadgePouch();
+        }, 50);
         
     } catch (error) {
         console.error('Error loading badges:', error);
@@ -270,6 +265,174 @@ async function loadBadgesContent() {
             </div>
         `;
     }
+}
+
+// ─── Initialize Badge Pouch ──────────────────────────────────
+function initializeBadgePouch() {
+    // Import badge data
+    import('./data/badges-data.js').then(module => {
+        const { allBadges, typeLabels } = module;
+        
+        // Get user
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        const displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+        const scoutNameEl = document.getElementById('scoutName');
+        if (scoutNameEl) scoutNameEl.textContent = displayName;
+
+        // Load rank from Firestore
+        import { db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const userDocId = currentUser.username;
+        const docRef = doc(db, 'users', userDocId);
+        
+        getDoc(docRef).then((docSnap) => {
+            const scoutData = docSnap.exists() ? docSnap.data() : { rank: 'Membership' };
+            const scoutRankEl = document.getElementById('scoutRank');
+            if (scoutRankEl) scoutRankEl.textContent = scoutData.rank || 'Membership';
+        }).catch((error) => {
+            console.error('Error loading rank:', error);
+        });
+
+        // ─── Badge state ────────────────────────────────────────────
+        let badgeState = JSON.parse(localStorage.getItem('badgePouch'));
+        
+        // If no saved state or new badges added, merge with allBadges
+        if (!badgeState || badgeState.length !== allBadges.length) {
+            // Merge: keep existing unlocked status, add new badges as locked
+            const savedMap = {};
+            if (badgeState) {
+                badgeState.forEach(b => { savedMap[b.id] = b.unlocked; });
+            }
+            badgeState = allBadges.map(b => ({
+                ...b,
+                unlocked: savedMap[b.id] || false
+            }));
+            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+        }
+
+        let currentFilter = 'all';
+
+        function renderGrid(filter = 'all') {
+            const grid = document.getElementById('pouchGrid');
+            if (!grid) {
+                console.warn('pouchGrid not found');
+                return;
+            }
+            
+            grid.innerHTML = '';
+
+            // Filter badges
+            let filtered = badgeState;
+            if (filter !== 'all') {
+                filtered = badgeState.filter(b => b.type === filter);
+            }
+
+            const earned = badgeState.filter(b => b.unlocked).length;
+            const total = badgeState.length;
+            const earnedCountEl = document.getElementById('earnedCount');
+            const totalCountEl = document.getElementById('totalCount');
+            if (earnedCountEl) earnedCountEl.textContent = earned;
+            if (totalCountEl) totalCountEl.textContent = total;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#D4B896;font-size:14px;">
+                        No badges in this category yet! 🏕️
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach((badge, index) => {
+                const isUnlocked = badge.unlocked;
+                const slot = document.createElement('div');
+                slot.className = `pouch-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
+                slot.dataset.index = index;
+                slot.innerHTML = `
+                    <span>${badge.icon}</span>
+                    <span class="slot-name">${badge.name}</span>
+                    <span class="slot-type">${typeLabels[badge.type] || badge.type}</span>
+                    ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
+                    <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
+                `;
+
+                slot.addEventListener('click', () => {
+                    if (badge.unlocked) {
+                        alert(`🎉 You already earned "${badge.name}"!`);
+                    } else {
+                        window.location.href = `ticket.html?badge=${encodeURIComponent(badge.name)}`;
+                    }
+                });
+
+                grid.appendChild(slot);
+            });
+
+            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
+        }
+
+        // ─── Filter Buttons ──────────────────────────────────────
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderGrid(currentFilter);
+            });
+        });
+
+        // ─── Event Listeners ──────────────────────────────────────
+        const resetBtn = document.getElementById('pouchResetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (confirm('Reset all badges? This will lock everything.')) {
+                    badgeState.forEach(b => b.unlocked = false);
+                    renderGrid(currentFilter);
+                }
+            });
+        }
+
+        const ticketBtn = document.getElementById('pouchTicketBtn');
+        if (ticketBtn) {
+            ticketBtn.addEventListener('click', () => {
+                alert('🎫 Select a locked badge from the grid to request it.');
+            });
+        }
+
+        // ─── Click scout for surprise ──────────────────────────────
+        const scoutCard = document.getElementById('scoutCard');
+        if (scoutCard) {
+            scoutCard.addEventListener('click', () => {
+                const locked = badgeState.filter(b => !b.unlocked);
+                if (locked.length === 0) {
+                    alert('🎉 All badges unlocked! You\'re a legend!');
+                    return;
+                }
+                const random = locked[Math.floor(Math.random() * locked.length)];
+                random.unlocked = true;
+                renderGrid(currentFilter);
+            });
+        }
+
+        // ─── Render the grid ──────────────────────────────────────
+        renderGrid('all');
+        
+    }).catch(error => {
+        console.error('Error loading badge data:', error);
+        const grid = document.getElementById('pouchGrid');
+        if (grid) {
+            grid.innerHTML = `
+                <div style="grid-column:1/-1;text-align:center;padding:40px;color:#e74c3c;font-size:14px;">
+                    ❌ Error loading badge data. Please try again.
+                </div>
+            `;
+        }
+    });
 }
 
 // ─── Dashboard ──────────────────────────────────────────
