@@ -121,11 +121,30 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 flex-shrink: 0;
             }
             .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
+                position: absolute;
+                top: 0;
+                left: 0;
                 width: 56px;
                 height: 56px;
                 image-rendering: pixelated;
-                display: block;
+                opacity: 0;
+                animation: scoutAnimation 14s steps(1) infinite;
             }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave { animation-delay: 3s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2 { animation-delay: 3.8s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map { animation-delay: 5.8s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left { animation-delay: 8.3s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right { animation-delay: 8.8s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2 { animation-delay: 9.3s; }
+            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3 { animation-delay: 10.8s; }
+
+            @keyframes scoutAnimation {
+                0% { opacity: 0; }
+                1%, 10% { opacity: 1; }
+                11%, 100% { opacity: 0; }
+            }
+
             .pouch-scout-card .scout-info .name {
                 font-weight: 700;
                 font-size: 16px;
@@ -323,7 +342,14 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             <div class="pouch-scout-card" id="scoutCard">
                 <div class="scout-info">
                     <div class="pixel-scout-wrapper">
-                        <img id="scoutSprite" src="idle.png" class="pixel-scout-img" />
+                        <img src="idle.png" class="pixel-scout-img frame-idle" alt="idle" />
+                        <img src="wave.png" class="pixel-scout-img frame-wave" alt="wave" />
+                        <img src="idle.png" class="pixel-scout-img frame-idle2" alt="idle" />
+                        <img src="map.png" class="pixel-scout-img frame-map" alt="map" />
+                        <img src="left.png" class="pixel-scout-img frame-left" alt="left" />
+                        <img src="right.png" class="pixel-scout-img frame-right" alt="right" />
+                        <img src="map.png" class="pixel-scout-img frame-map2" alt="map" />
+                        <img src="idle.png" class="pixel-scout-img frame-idle3" alt="idle" />
                     </div>
                     <div>
                         <div class="name" id="scoutName">${scoutName}</div>
@@ -438,43 +464,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         document.getElementById('earnedCount').textContent = earned;
         renderGrid();
     });
-
-    // ─── SCOUT ANIMATION (simple JS loop) ──────────────────────
-    function animateScout() {
-        const img = document.getElementById('scoutSprite');
-        if (!img) return;
-
-        const frames = [
-            { src: 'idle.png', duration: 3000 },
-            { src: 'wave.png', duration: 800 },
-            { src: 'idle.png', duration: 2000 },
-            { src: 'map.png', duration: 2500 },
-            { src: 'left.png', duration: 500 },
-            { src: 'right.png', duration: 500 },
-            { src: 'map.png', duration: 1500 },
-            { src: 'idle.png', duration: 3000 },
-        ];
-
-        let currentFrame = 0;
-        let timeoutId = null;
-
-        function nextFrame() {
-            const frame = frames[currentFrame];
-            img.src = frame.src;
-            currentFrame = (currentFrame + 1) % frames.length;
-            timeoutId = setTimeout(nextFrame, frame.duration);
-        }
-
-        nextFrame();
-
-        // ─── Cleanup timeout when page changes ───────────────────
-        return () => {
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }
-
-    // ─── Start animation ──────────────────────────────────────────
-    setTimeout(animateScout, 500);
 
     // ─── Initial render ──────────────────────────────────────────
     renderGrid();
