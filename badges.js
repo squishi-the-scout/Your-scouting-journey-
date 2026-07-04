@@ -28,16 +28,6 @@ export function getBadgeStats() {
     return { total, earned };
 }
 
-// ─── Toggle badge unlock ────────────────────────────────
-export function toggleBadge(badgeId) {
-    const badge = badgeState.find(b => b.id === badgeId);
-    if (badge) {
-        badge.unlocked = !badge.unlocked;
-        saveBadgeState();
-    }
-    return badgeState;
-}
-
 // ─── Reset all badges ────────────────────────────────────
 export function resetBadges() {
     badgeState.forEach(b => b.unlocked = false);
@@ -65,7 +55,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
     loadBadgeState();
     const { total, earned } = getBadgeStats();
 
-    // ─── Build HTML ────────────────────────────────────────────
     let html = `
         <style>
             .badge-page {
@@ -121,30 +110,11 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 flex-shrink: 0;
             }
             .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
-                position: absolute;
-                top: 0;
-                left: 0;
                 width: 56px;
                 height: 56px;
                 image-rendering: pixelated;
-                opacity: 0;
-                animation: scoutAnimation 14s steps(1) infinite;
+                display: block;
             }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave { animation-delay: 3s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2 { animation-delay: 3.8s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map { animation-delay: 5.8s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left { animation-delay: 8.3s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right { animation-delay: 8.8s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2 { animation-delay: 9.3s; }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3 { animation-delay: 10.8s; }
-
-            @keyframes scoutAnimation {
-                0% { opacity: 0; }
-                1%, 10% { opacity: 1; }
-                11%, 100% { opacity: 0; }
-            }
-
             .pouch-scout-card .scout-info .name {
                 font-weight: 700;
                 font-size: 16px;
@@ -342,14 +312,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             <div class="pouch-scout-card" id="scoutCard">
                 <div class="scout-info">
                     <div class="pixel-scout-wrapper">
-                        <img src="idle.png" class="pixel-scout-img frame-idle" alt="idle" />
-                        <img src="wave.png" class="pixel-scout-img frame-wave" alt="wave" />
-                        <img src="idle.png" class="pixel-scout-img frame-idle2" alt="idle" />
-                        <img src="map.png" class="pixel-scout-img frame-map" alt="map" />
-                        <img src="left.png" class="pixel-scout-img frame-left" alt="left" />
-                        <img src="right.png" class="pixel-scout-img frame-right" alt="right" />
-                        <img src="map.png" class="pixel-scout-img frame-map2" alt="map" />
-                        <img src="idle.png" class="pixel-scout-img frame-idle3" alt="idle" />
+                        <img id="scoutSprite" src="idle.png" class="pixel-scout-img" />
                     </div>
                     <div>
                         <div class="name" id="scoutName">${scoutName}</div>
@@ -464,6 +427,49 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         document.getElementById('earnedCount').textContent = earned;
         renderGrid();
     });
+
+    // ─── SCOUT ANIMATION ──────────────────────────────────────────
+    function animateScout() {
+        const img = document.getElementById('scoutSprite');
+        if (!img) return;
+
+        const images = {
+            idle: new Image(),
+            wave: new Image(),
+            map: new Image(),
+            left: new Image(),
+            right: new Image()
+        };
+        images.idle.src = 'idle.png';
+        images.wave.src = 'wave.png';
+        images.map.src = 'map.png';
+        images.left.src = 'left.png';
+        images.right.src = 'right.png';
+
+        const sequence = [
+            { key: 'idle', duration: 3000 },
+            { key: 'wave', duration: 800 },
+            { key: 'idle', duration: 2000 },
+            { key: 'map', duration: 2500 },
+            { key: 'left', duration: 500 },
+            { key: 'right', duration: 500 },
+            { key: 'map', duration: 1500 },
+            { key: 'idle', duration: 3000 },
+        ];
+
+        let index = 0;
+
+        function nextFrame() {
+            const frame = sequence[index];
+            img.src = images[frame.key].src;
+            index = (index + 1) % sequence.length;
+            setTimeout(nextFrame, frame.duration);
+        }
+
+        setTimeout(nextFrame, 500);
+    }
+
+    setTimeout(animateScout, 300);
 
     // ─── Initial render ──────────────────────────────────────────
     renderGrid();
