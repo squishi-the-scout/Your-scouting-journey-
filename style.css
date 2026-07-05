@@ -827,3 +827,34 @@ a {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+/* ─── TICKET STATUS ON BADGES ─── */
+.pouch-slot.ticket-pending {
+    border: 2px solid #f39c12;
+    animation: pulseOrange 1.5s ease-in-out infinite;
+    background: #fef9e7;
+}
+@keyframes pulseOrange {
+    0%, 100% { box-shadow: 0 0 5px rgba(243, 156, 18, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); }
+}
+
+.pouch-slot.ticket-progress {
+    border: 2px solid #8e44ad;
+    animation: pulsePurple 1.5s ease-in-out infinite;
+    background: #f4ecf7;
+}
+@keyframes pulsePurple {
+    0%, 100% { box-shadow: 0 0 5px rgba(142, 68, 173, 0.2); }
+    50% { box-shadow: 0 0 20px rgba(142, 68, 173, 0.4); }
+}
+
+.pouch-slot.ticket-rejected {
+    border: 2px solid #e74c3c;
+    opacity: 0.6;
+    filter: grayscale(0.3);
+}
+
+/* ─── TICKET DETAIL MODAL ─── */
+.ticket-modal.ticket-detail {
+    max-width: 500px;
+}
