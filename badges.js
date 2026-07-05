@@ -98,6 +98,8 @@ function initScoutAnimation() {
             console.error('❌ Failed to load sprite sheet:', SPRITE_SHEET_URL);
             // Fallback: draw a simple pixel character
             drawFallback();
+            // Keep animating the fallback
+            animateScout();
         };
         img.src = SPRITE_SHEET_URL;
     }
