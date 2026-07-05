@@ -47,7 +47,7 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
-// ─── SCOUT ANIMATION (USING YOUR EXISTING IMAGES) ──────
+// ─── SCOUT ANIMATION (USING YOUR IMAGES) ────────────────
 function initScoutAnimation() {
     const canvas = document.getElementById('scoutCanvas');
     if (!canvas) return;
@@ -55,7 +55,10 @@ function initScoutAnimation() {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    // ─── YOUR IMAGES (on GitHub) ────────────────────────────
+    // ════════════════════════════════════════════════════════
+    // 🖼️  YOUR IMAGES - CHANGE PATHS IF NEEDED
+    // ════════════════════════════════════════════════════════
+
     const IMAGES = {
         idle: 'idle.png',
         wave: 'wave.png',
@@ -64,16 +67,19 @@ function initScoutAnimation() {
         right: 'right.png'
     };
 
-    // ─── YOUR SEQUENCE (action, duration in ms) ──────────────
+    // ════════════════════════════════════════════════════════
+    // 🎬  YOUR SEQUENCE - (action, duration in ms)
+    // ════════════════════════════════════════════════════════
+
     const SEQUENCE = [
-        { action: 'idle', duration: 3000 },   // IDLE for 3 seconds
-        { action: 'left', duration: 1500 },   // LOOK LEFT for 1.5s
-        { action: 'right', duration: 1500 },  // LOOK RIGHT for 1.5s
-        { action: 'map', duration: 2000 },    // READ MAP for 2s
-        { action: 'left', duration: 1000 },   // LOOK LEFT for 1s
-        { action: 'right', duration: 1000 },  // LOOK RIGHT for 1s
-        { action: 'idle', duration: 1000 },   // IDLE for 1s
-        { action: 'wave', duration: 2000 },   // WAVE for 2s
+        { action: 'idle', duration: 3000 },
+        { action: 'left', duration: 1500 },
+        { action: 'right', duration: 1500 },
+        { action: 'map', duration: 2000 },
+        { action: 'left', duration: 1000 },
+        { action: 'right', duration: 1000 },
+        { action: 'idle', duration: 1000 },
+        { action: 'wave', duration: 2000 },
     ];
 
     // ─── Load images ──────────────────────────────────────────
@@ -103,7 +109,7 @@ function initScoutAnimation() {
         });
     }
 
-    // ─── Draw current action ──────────────────────────────────
+    // ─── Draw action ──────────────────────────────────────────
     function drawAction(actionKey) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -111,7 +117,6 @@ function initScoutAnimation() {
         if (img) {
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         } else {
-            // Fallback: draw a simple pixel character
             drawFallback();
         }
     }
@@ -136,20 +141,16 @@ function initScoutAnimation() {
     let actionIndex = 0;
 
     function startAnimation() {
-        // Cancel any existing timer
         if (sequenceTimer) clearTimeout(sequenceTimer);
-
         let startTime = Date.now();
 
         function playNext() {
             const item = SEQUENCE[actionIndex];
             if (!item) return;
 
-            // Draw the current action
             drawAction(item.action);
             console.log(`🎬 Playing: ${item.action} for ${item.duration}ms`);
 
-            // Schedule the next action
             const elapsed = Date.now() - startTime;
             const delay = Math.max(0, item.duration - elapsed);
 
@@ -166,7 +167,6 @@ function initScoutAnimation() {
     // ─── Start ──────────────────────────────────────────────
     loadImages();
 
-    // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
         if (sequenceTimer) clearTimeout(sequenceTimer);
     });
