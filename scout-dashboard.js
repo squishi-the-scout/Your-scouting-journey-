@@ -189,9 +189,6 @@ function renderView() {
         } else if (currentView === 'badges') {
             pageHeading.textContent = 'My Badges';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Track your badge progress';
-        } else if (currentView === 'tickets') {
-            pageHeading.textContent = 'My Tickets';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Track your badge requests';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
@@ -228,7 +225,6 @@ function renderView() {
         const rank = scoutData.rank || 'Membership';
         renderBadgePouch('page-content', displayName, rank);
     }
-    else if (currentView === 'tickets') renderScoutTickets();
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
     else if (currentView === 'reportModal') renderReportModal();
@@ -963,114 +959,6 @@ async function renderProfile() {
     });
 }
 
-// ─── Scout Tickets ──────────────────────────────────────────
-async function renderScoutTickets() {
-    try {
-        const module = await import('./tickets.js');
-        const result = await module.getScoutTickets(userDocId);
-        
-        if (!result.success) {
-            pageContent.innerHTML = `<p style="color:red;">Error loading tickets: ${result.error}</p>`;
-            return;
-        }
-        
-        const tickets = result.data;
-        
-        if (tickets.length === 0) {
-            pageContent.innerHTML = `
-                <div style="text-align:center;padding:60px 20px;">
-                    <div style="font-size:48px;margin-bottom:16px;">🎫</div>
-                    <h3 style="color:var(--text-dark);">No tickets yet</h3>
-                    <p style="color:var(--text-muted);">Go to Badges and request a badge to start!</p>
-                    <a href="#" data-view="badges" style="color:var(--purple);font-weight:600;text-decoration:none;">→ View Badges</a>
-                </div>
-            `;
-            return;
-        }
-        
-        let html = `
-            <div style="max-width:800px;margin:0 auto;">
-                <h2 style="color:var(--text-dark);margin-bottom:20px;">🎫 My Tickets</h2>
-                <div style="display:flex;flex-direction:column;gap:12px;">
-        `;
-        
-        for (const ticket of tickets) {
-            const statusColors = {
-                pending: '#f39c12',
-                'in-progress': '#8e44ad',
-                approved: '#27ae60',
-                rejected: '#e74c3c',
-                cancelled: '#95a5a6'
-            };
-            const statusLabels = {
-                pending: '⏳ Pending',
-                'in-progress': '💜 In Progress',
-                approved: '✅ Approved',
-                rejected: '❌ Rejected',
-                cancelled: '🚫 Cancelled'
-            };
-            
-            html += `
-                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${statusColors[ticket.status] || '#95a5a6'};">
-                    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
-                        <div>
-                            <div style="font-weight:600;font-size:16px;">${ticket.badgeIcon} ${ticket.badgeName}</div>
-                            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
-                                ${ticket.note ? `📝 ${ticket.note}` : ''}
-                            </div>
-                            ${ticket.requirements ? `
-                                <div style="font-size:13px;color:var(--purple);margin-top:6px;padding:8px 12px;background:#f5f0f8;border-radius:8px;">
-                                    📋 Requirements: ${ticket.requirements}
-                                </div>
-                            ` : ''}
-                            ${ticket.leaderNote ? `
-                                <div style="font-size:13px;color:var(--text-muted);margin-top:4px;font-style:italic;">
-                                    💬 Leader: ${ticket.leaderNote}
-                                </div>
-                            ` : ''}
-                        </div>
-                        <div style="text-align:right;">
-                            <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:${statusColors[ticket.status]}20;color:${statusColors[ticket.status]};">
-                                ${statusLabels[ticket.status] || ticket.status}
-                            </span>
-                            ${ticket.status === 'pending' ? `
-                                <button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="display:block;margin-top:6px;background:#e74c3c;color:white;border:none;padding:4px 12px;border-radius:12px;font-size:11px;cursor:pointer;">Cancel</button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        html += `
-                </div>
-            </div>
-        `;
-        
-        pageContent.innerHTML = html;
-        
-        document.querySelectorAll('.cancel-ticket-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const ticketId = this.dataset.ticketId;
-                if (confirm('Cancel this ticket?')) {
-                    const module = await import('./tickets.js');
-                    const result = await module.cancelTicket(ticketId);
-                    if (result.success) {
-                        alert('Ticket cancelled.');
-                        renderScoutTickets();
-                    } else {
-                        alert('Error: ' + result.error);
-                    }
-                }
-            });
-        });
-        
-    } catch (error) {
-        console.error('Error loading tickets:', error);
-        pageContent.innerHTML = `<p style="color:red;">Failed to load tickets. Check console.</p>`;
-    }
-}
-
 // ─── Placeholder ─────────────────────────────────────────
 function renderPlaceholder(title, unlockCondition = null) {
     let html = `
@@ -1120,7 +1008,6 @@ async function init() {
     listenToSessions();
     renderView();
 
-    // ─── Mobile Sidebar ──────────────────────────────────────
     const hamburger = document.getElementById('hamburger-btn');
     const mobileSidebar = document.getElementById('mobile-sidebar');
     const mobileOverlay = document.getElementById('mobile-overlay');
