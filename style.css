@@ -351,6 +351,22 @@ a {
     cursor: pointer;
 }
 
+/* ─── PIXEL SCOUT ANIMATION (SPRITE SHEET) ─── */
+.pixel-scout-wrapper {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.pixel-scout-wrapper canvas {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    display: block;
+    background: transparent;
+}
+
 /* ===== MOBILE SIDEBAR ===== */
 .hamburger {
     display: none;
@@ -657,38 +673,4 @@ a {
 
 .bottom-nav a.active .icon {
     color: white;
-}
-
-/* ─── PIXEL SCOUT ANIMATION ─── */
-.pixel-scout-wrapper {
-    position: relative;
-    width: 56px;
-    height: 56px;
-    flex-shrink: 0;
-}
-
-.pixel-scout-wrapper .pixel-scout-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 56px;
-    height: 56px;
-    image-rendering: pixelated;
-    opacity: 0;
-    animation: scoutAnimation 12s infinite;
-}
-
-.pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
-.pixel-scout-wrapper .frame-wave { animation-delay: 2.5s; }
-.pixel-scout-wrapper .frame-idle2 { animation-delay: 3.1s; }
-.pixel-scout-wrapper .frame-map { animation-delay: 5.6s; }
-.pixel-scout-wrapper .frame-left { animation-delay: 7.6s; }
-.pixel-scout-wrapper .frame-right { animation-delay: 8.1s; }
-.pixel-scout-wrapper .frame-map2 { animation-delay: 8.6s; }
-.pixel-scout-wrapper .frame-idle3 { animation-delay: 10.6s; }
-
-@keyframes scoutAnimation {
-    0%, 100% { opacity: 0; }
-    2%, 12% { opacity: 1; }
-    15%, 100% { opacity: 0; }
 }
