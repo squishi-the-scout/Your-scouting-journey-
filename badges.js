@@ -47,6 +47,138 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
+// ─── SPRITE SHEET ANIMATION ─────────────────────────────
+function initScoutAnimation() {
+    const canvas = document.getElementById('scoutCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // ════════════════════════════════════════════════════════
+    // 🎨  CONFIGURE THESE TO MATCH YOUR SPRITE SHEET
+    // ════════════════════════════════════════════════════════
+    
+    const SPRITE_SHEET_URL = 'spritesheet.png';  // Your exported sprite sheet
+    const FRAME_WIDTH = 32;    // Your Piskel canvas width
+    const FRAME_HEIGHT = 32;   // Your Piskel canvas height
+    
+    // Your 5 actions - in the order you want them to loop
+    const ACTIONS = [
+        { id: 'idle', row: 0, frames: 4, speed: 6 },
+        { id: 'wave', row: 4, frames: 6, speed: 8 },
+        { id: 'idle', row: 0, frames: 4, speed: 6 },
+        { id: 'readMap', row: 3, frames: 4, speed: 5 },
+        { id: 'lookLeft', row: 1, frames: 3, speed: 5 },
+        { id: 'lookRight', row: 2, frames: 3, speed: 5 },
+        { id: 'readMap', row: 3, frames: 4, speed: 5 },
+        { id: 'idle', row: 0, frames: 4, speed: 6 },
+    ];
+    
+    // How long each action plays (in milliseconds)
+    const ACTION_DURATION = 3000; // 3 seconds per action
+
+    // ─── State ──────────────────────────────────────────────
+    let spriteImage = null;
+    let currentActionIndex = 0;
+    let frameIndex = 0;
+    let frameCounter = 0;
+    let actionStartTime = Date.now();
+    let animationId = null;
+
+    // ─── Load sprite sheet ─────────────────────────────────
+    function loadSpriteSheet() {
+        const img = new Image();
+        img.onload = () => {
+            spriteImage = img;
+            console.log('✅ Sprite sheet loaded for scout animation!');
+            animateScout();
+        };
+        img.onerror = () => {
+            console.error('❌ Failed to load sprite sheet:', SPRITE_SHEET_URL);
+            // Fallback: draw a simple pixel character
+            drawFallback();
+        };
+        img.src = SPRITE_SHEET_URL;
+    }
+
+    function getCurrentAction() {
+        return ACTIONS[currentActionIndex];
+    }
+
+    function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!spriteImage) {
+            drawFallback();
+            return;
+        }
+
+        const action = getCurrentAction();
+        const sx = frameIndex * FRAME_WIDTH;
+        const sy = action.row * FRAME_HEIGHT;
+
+        // Draw the frame scaled to fit the canvas
+        ctx.drawImage(
+            spriteImage,
+            sx, sy, FRAME_WIDTH, FRAME_HEIGHT,
+            0, 0, canvas.width, canvas.height
+        );
+    }
+
+    function drawFallback() {
+        // Draw a simple pixel character if sprite sheet fails
+        ctx.fillStyle = '#e94560';
+        ctx.fillRect(16, 20, 32, 32); // Body
+        ctx.fillRect(20, 8, 24, 16);  // Head
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(24, 12, 6, 6);   // Left eye
+        ctx.fillRect(34, 12, 6, 6);   // Right eye
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(26, 14, 3, 3);   // Left pupil
+        ctx.fillRect(36, 14, 3, 3);   // Right pupil
+        ctx.fillStyle = '#e94560';
+        ctx.fillRect(28, 44, 8, 12);  // Left leg
+        ctx.fillRect(36, 44, 8, 12);  // Right leg
+    }
+
+    function advanceAction() {
+        currentActionIndex = (currentActionIndex + 1) % ACTIONS.length;
+        frameIndex = 0;
+        frameCounter = 0;
+        actionStartTime = Date.now();
+    }
+
+    function animateScout() {
+        const action = getCurrentAction();
+
+        // Advance frame
+        frameCounter++;
+        if (frameCounter >= action.speed) {
+            frameCounter = 0;
+            frameIndex = (frameIndex + 1) % action.frames;
+        }
+
+        drawFrame();
+
+        // Check if it's time to switch actions
+        const elapsed = Date.now() - actionStartTime;
+        if (elapsed >= ACTION_DURATION) {
+            advanceAction();
+        }
+
+        animationId = requestAnimationFrame(animateScout);
+    }
+
+    // ─── Start animation ────────────────────────────────────
+    loadSpriteSheet();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (animationId) cancelAnimationFrame(animationId);
+    });
+}
+
 // ─── Render the pouch ────────────────────────────────────
 export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scout', scoutRank = 'Membership') {
     const container = document.getElementById(containerId);
@@ -105,15 +237,16 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             }
             .pouch-scout-card .scout-info .pixel-scout-wrapper {
                 position: relative;
-                width: 56px;
-                height: 56px;
+                width: 64px;
+                height: 64px;
                 flex-shrink: 0;
             }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
-                width: 56px;
-                height: 56px;
+            .pouch-scout-card .scout-info .pixel-scout-wrapper canvas {
+                width: 64px;
+                height: 64px;
                 image-rendering: pixelated;
                 display: block;
+                background: transparent;
             }
             .pouch-scout-card .scout-info .name {
                 font-weight: 700;
@@ -312,7 +445,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             <div class="pouch-scout-card" id="scoutCard">
                 <div class="scout-info">
                     <div class="pixel-scout-wrapper">
-                        <img id="scoutSprite" src="idle.png" class="pixel-scout-img" />
+                        <canvas id="scoutCanvas" width="64" height="64"></canvas>
                     </div>
                     <div>
                         <div class="name" id="scoutName">${scoutName}</div>
@@ -428,48 +561,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         renderGrid();
     });
 
-    // ─── SCOUT ANIMATION ──────────────────────────────────────────
-    function animateScout() {
-        const img = document.getElementById('scoutSprite');
-        if (!img) return;
-
-        const images = {
-            idle: new Image(),
-            wave: new Image(),
-            map: new Image(),
-            left: new Image(),
-            right: new Image()
-        };
-        images.idle.src = 'idle.png';
-        images.wave.src = 'wave.png';
-        images.map.src = 'map.png';
-        images.left.src = 'left.png';
-        images.right.src = 'right.png';
-
-        const sequence = [
-            { key: 'idle', duration: 3000 },
-            { key: 'wave', duration: 800 },
-            { key: 'idle', duration: 2000 },
-            { key: 'map', duration: 2500 },
-            { key: 'left', duration: 500 },
-            { key: 'right', duration: 500 },
-            { key: 'map', duration: 1500 },
-            { key: 'idle', duration: 3000 },
-        ];
-
-        let index = 0;
-
-        function nextFrame() {
-            const frame = sequence[index];
-            img.src = images[frame.key].src;
-            index = (index + 1) % sequence.length;
-            setTimeout(nextFrame, frame.duration);
-        }
-
-        setTimeout(nextFrame, 500);
-    }
-
-    setTimeout(animateScout, 300);
+    // ─── INIT SCOUT ANIMATION ──────────────────────────────────
+    initScoutAnimation();
 
     // ─── Initial render ──────────────────────────────────────────
     renderGrid();
