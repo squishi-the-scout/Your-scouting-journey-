@@ -55,10 +55,6 @@ function initScoutAnimation() {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    // ════════════════════════════════════════════════════════
-    // 🖼️  YOUR IMAGES - CHANGE PATHS IF NEEDED
-    // ════════════════════════════════════════════════════════
-
     const IMAGES = {
         idle: 'idle.png',
         wave: 'wave.png',
@@ -66,10 +62,6 @@ function initScoutAnimation() {
         left: 'left.png',
         right: 'right.png'
     };
-
-    // ════════════════════════════════════════════════════════
-    // 🎬  YOUR SEQUENCE - (action, duration in ms)
-    // ════════════════════════════════════════════════════════
 
     const SEQUENCE = [
         { action: 'idle', duration: 3000 },
@@ -82,7 +74,6 @@ function initScoutAnimation() {
         { action: 'wave', duration: 2000 },
     ];
 
-    // ─── Load images ──────────────────────────────────────────
     let loadedImages = {};
     let imagesLoaded = 0;
     const totalImages = Object.keys(IMAGES).length;
@@ -94,7 +85,6 @@ function initScoutAnimation() {
                 loadedImages[key] = img;
                 imagesLoaded++;
                 if (imagesLoaded === totalImages) {
-                    console.log('✅ All scout images loaded!');
                     startAnimation();
                 }
             };
@@ -109,34 +99,14 @@ function initScoutAnimation() {
         });
     }
 
-    // ─── Draw action ──────────────────────────────────────────
     function drawAction(actionKey) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         const img = loadedImages[actionKey];
         if (img) {
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        } else {
-            drawFallback();
         }
     }
 
-    function drawFallback() {
-        ctx.fillStyle = '#e94560';
-        ctx.fillRect(16, 20, 32, 32);
-        ctx.fillRect(20, 8, 24, 16);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(24, 12, 6, 6);
-        ctx.fillRect(34, 12, 6, 6);
-        ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(26, 14, 3, 3);
-        ctx.fillRect(36, 14, 3, 3);
-        ctx.fillStyle = '#e94560';
-        ctx.fillRect(28, 44, 8, 12);
-        ctx.fillRect(36, 44, 8, 12);
-    }
-
-    // ─── Animation loop ──────────────────────────────────────
     let sequenceTimer = null;
     let actionIndex = 0;
 
@@ -149,7 +119,6 @@ function initScoutAnimation() {
             if (!item) return;
 
             drawAction(item.action);
-            console.log(`🎬 Playing: ${item.action} for ${item.duration}ms`);
 
             const elapsed = Date.now() - startTime;
             const delay = Math.max(0, item.duration - elapsed);
@@ -164,11 +133,96 @@ function initScoutAnimation() {
         playNext();
     }
 
-    // ─── Start ──────────────────────────────────────────────
     loadImages();
 
     window.addEventListener('beforeunload', () => {
         if (sequenceTimer) clearTimeout(sequenceTimer);
+    });
+}
+
+// ─── TICKET MODAL ──────────────────────────────────────────
+function openTicketModal(badge) {
+    const existing = document.querySelector('.ticket-modal-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'ticket-modal-overlay';
+
+    overlay.innerHTML = `
+        <div class="ticket-modal">
+            <button class="modal-close" id="modalCloseBtn">✕</button>
+            
+            <div class="badge-preview">
+                <span class="icon">${badge.icon}</span>
+                <div class="info">
+                    <div class="name">${badge.name}</div>
+                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                </div>
+            </div>
+
+            <label for="ticketNote">📝 Message to your leader (optional)</label>
+            <textarea id="ticketNote" placeholder="Why do you want this badge? Any special request?"></textarea>
+
+            <div class="modal-message" id="modalMessage"></div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
+                <button class="btn-submit" id="modalSubmitBtn">🎫 Request Badge</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    document.getElementById('modalSubmitBtn').addEventListener('click', async function() {
+        const note = document.getElementById('ticketNote').value.trim();
+        const messageEl = document.getElementById('modalMessage');
+        const submitBtn = this;
+        const cancelBtn = document.getElementById('modalCancelBtn');
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Submitting...';
+        cancelBtn.disabled = true;
+
+        try {
+            const module = await import('./tickets.js');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            const result = await module.createTicket(
+                currentUser.username,
+                badge.id,
+                badge.name,
+                badge.icon,
+                note || ''
+            );
+
+            if (result.success) {
+                messageEl.className = 'modal-message success';
+                messageEl.textContent = `✅ Ticket created for "${badge.name}"! Your leader will review it.`;
+                submitBtn.textContent = '✅ Submitted';
+                submitBtn.disabled = true;
+                cancelBtn.textContent = 'Close';
+                cancelBtn.disabled = false;
+                cancelBtn.onclick = closeModal;
+                setTimeout(closeModal, 3500);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            messageEl.className = 'modal-message error';
+            messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong. Try again.'}`;
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🎫 Request Badge';
+            cancelBtn.disabled = false;
+        }
     });
 }
 
@@ -414,10 +468,164 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #FFE44D;
             }
 
+            /* ─── TICKET MODAL ─── */
+            .ticket-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.6);
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                animation: fadeIn 0.3s ease;
+            }
+
+            .ticket-modal {
+                background: white;
+                border-radius: 24px;
+                padding: 32px;
+                max-width: 450px;
+                width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                animation: slideUp 0.3s ease;
+                position: relative;
+            }
+
+            .ticket-modal .modal-close {
+                position: absolute;
+                top: 16px;
+                right: 20px;
+                background: none;
+                border: none;
+                font-size: 28px;
+                color: #6b5f7a;
+                cursor: pointer;
+                transition: color 0.2s;
+            }
+            .ticket-modal .modal-close:hover {
+                color: #2d2a3a;
+            }
+
+            .ticket-modal .badge-preview {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin-bottom: 20px;
+                padding-bottom: 16px;
+                border-bottom: 2px solid #f3edf7;
+            }
+
+            .ticket-modal .badge-preview .icon {
+                font-size: 48px;
+            }
+
+            .ticket-modal .badge-preview .info .name {
+                font-size: 20px;
+                font-weight: 700;
+                color: #2d2a3a;
+            }
+
+            .ticket-modal .badge-preview .info .type {
+                font-size: 14px;
+                color: #6b5f7a;
+            }
+
+            .ticket-modal label {
+                display: block;
+                font-weight: 600;
+                font-size: 14px;
+                color: #2d2a3a;
+                margin-bottom: 6px;
+            }
+
+            .ticket-modal textarea {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #e0d6ec;
+                border-radius: 12px;
+                font-family: inherit;
+                font-size: 14px;
+                resize: vertical;
+                min-height: 80px;
+                transition: border-color 0.2s;
+                box-sizing: border-box;
+            }
+            .ticket-modal textarea:focus {
+                outline: none;
+                border-color: #6c3b8c;
+            }
+
+            .ticket-modal .modal-actions {
+                display: flex;
+                gap: 12px;
+                margin-top: 20px;
+            }
+
+            .ticket-modal .modal-actions button {
+                flex: 1;
+                padding: 12px;
+                border: none;
+                border-radius: 40px;
+                font-weight: 600;
+                font-size: 15px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .ticket-modal .modal-actions .btn-cancel {
+                background: #f3edf7;
+                color: #2d2a3a;
+            }
+            .ticket-modal .modal-actions .btn-cancel:hover {
+                background: #d5cae0;
+            }
+
+            .ticket-modal .modal-actions .btn-submit {
+                background: #6c3b8c;
+                color: white;
+            }
+            .ticket-modal .modal-actions .btn-submit:hover {
+                background: #4a2a5e;
+            }
+
+            .ticket-modal .modal-message {
+                margin-top: 12px;
+                padding: 10px;
+                border-radius: 8px;
+                font-size: 14px;
+                text-align: center;
+                display: none;
+            }
+            .ticket-modal .modal-message.success {
+                display: block;
+                background: #d4edda;
+                color: #155724;
+            }
+            .ticket-modal .modal-message.error {
+                display: block;
+                background: #f8d7da;
+                color: #721c24;
+            }
+
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideUp {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+
             @media (max-width: 768px) {
                 .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
                 .pouch-slot { font-size: 20px; min-height: 70px; }
                 .pouch-slot .slot-name { font-size: 6px; }
+                .ticket-modal { padding: 24px; }
             }
             @media (max-width: 500px) {
                 .pouch-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
@@ -426,6 +634,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 .pouch-scout-card .scout-info { justify-content: center; }
                 .pouch-scout-card .badge-count { text-align: center; }
                 .pouch-filters .filter-btn { font-size: 10px; padding: 4px 12px; }
+                .ticket-modal { padding: 20px; }
+                .ticket-modal .modal-actions { flex-direction: column; }
             }
         </style>
 
@@ -500,53 +710,36 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
                 <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
             `;
-slot.addEventListener('click', async () => {
-    if (badge.unlocked) {
-        alert(`🎉 You already earned "${badge.name}"!`);
-        return;
-    }
 
-    // ─── Check if there's already a pending ticket ──────────
-    try {
-        const module = await import('./tickets.js');
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        
-        // Get scout's tickets for this badge
-        const result = await module.getScoutTickets(currentUser.username);
-        if (result.success) {
-            const existing = result.data.find(t => 
-                t.badgeId === badge.id && 
-                (t.status === 'pending' || t.status === 'in-progress')
-            );
-            if (existing) {
-                alert(`⏳ You already have a ticket for "${badge.name}" (${existing.status}). Check with your leader.`);
-                return;
-            }
-        }
+            slot.addEventListener('click', async () => {
+                if (badge.unlocked) {
+                    alert(`🎉 You already earned "${badge.name}"!`);
+                    return;
+                }
 
-        // ─── Ask for optional note ────────────────────────────
-        const note = prompt(`📝 Request "${badge.name}"?\n\nAdd a note for your leader (optional):`, '');
-        if (note === null) return; // User cancelled
+                // ─── Check if there's already a pending ticket ──────────
+                try {
+                    const module = await import('./tickets.js');
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    
+                    const result = await module.getScoutTickets(currentUser.username);
+                    if (result.success) {
+                        const existing = result.data.find(t => 
+                            t.badgeId === badge.id && 
+                            (t.status === 'pending' || t.status === 'in-progress')
+                        );
+                        if (existing) {
+                            alert(`⏳ You already have a ticket for "${badge.name}" (${existing.status}). Check with your leader.`);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Ticket check failed:', e);
+                }
 
-        // ─── Create the ticket ──────────────────────────────────
-        const createResult = await module.createTicket(
-            currentUser.username,
-            badge.id,
-            badge.name,
-            badge.icon,
-            note || ''
-        );
-
-        if (createResult.success) {
-            alert(`✅ Ticket created for "${badge.name}"!\n\nYour leader will review it.`);
-        } else {
-            alert(`❌ Failed to create ticket: ${createResult.error}`);
-        }
-    } catch (error) {
-        console.error('Error creating ticket:', error);
-        alert('❌ Failed to create ticket. Check console.');
-    }
-});
+                // ─── Open the modal ──────────────────────────────────────
+                openTicketModal(badge);
+            });
 
             grid.appendChild(slot);
         });
