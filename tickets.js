@@ -220,4 +220,3 @@ export function listenToPendingTickets(callback) {
         callback([]);
     });
 }
-
