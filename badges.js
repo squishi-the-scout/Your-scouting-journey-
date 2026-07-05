@@ -3,6 +3,7 @@ import { allBadges, typeLabels } from './data/badges-data.js';
 // ─── State ──────────────────────────────────────────────
 let badgeState = [];
 let currentFilter = 'all';
+let scoutTicketsCache = [];
 
 // ─── Load badge state from localStorage ─────────────────
 export function loadBadgeState() {
@@ -47,7 +48,7 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
-// ─── TICKET MODAL ──────────────────────────────────────────
+// ─── TICKET MODAL (Request) ──────────────────────────────
 function openTicketModal(badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
     if (existing) existing.remove();
@@ -133,6 +134,230 @@ function openTicketModal(badge) {
     });
 }
 
+// ─── SHOW TICKET DETAILS (Scout View) ──────────────────────
+function showTicketDetails(ticket, badge) {
+    const existing = document.querySelector('.ticket-modal-overlay');
+    if (existing) existing.remove();
+
+    const statusColors = {
+        pending: '#f39c12',
+        'in-progress': '#8e44ad',
+        approved: '#27ae60',
+        rejected: '#e74c3c',
+        cancelled: '#95a5a6'
+    };
+    const statusLabels = {
+        pending: '⏳ Pending',
+        'in-progress': '💜 In Progress',
+        approved: '✅ Approved',
+        rejected: '❌ Rejected',
+        cancelled: '🚫 Cancelled'
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'ticket-modal-overlay';
+
+    overlay.innerHTML = `
+        <div class="ticket-modal ticket-detail">
+            <button class="modal-close" id="modalCloseBtn">✕</button>
+            
+            <div class="badge-preview">
+                <span class="icon">${badge.icon}</span>
+                <div class="info">
+                    <div class="name">${badge.name}</div>
+                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:8px 12px;background:${statusColors[ticket.status]}20;border-radius:8px;border-left:4px solid ${statusColors[ticket.status]};">
+                <span style="font-weight:600;color:${statusColors[ticket.status]};">${statusLabels[ticket.status] || ticket.status}</span>
+                ${ticket.status === 'pending' ? `<button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:4px 14px;border-radius:12px;font-size:12px;cursor:pointer;">Cancel</button>` : ''}
+            </div>
+
+            ${ticket.note ? `<div style="margin-bottom:12px;"><strong>📝 Your Note:</strong><br><span style="color:#6b5f4a;">${ticket.note}</span></div>` : ''}
+
+            ${ticket.requirements ? `
+                <div style="margin-bottom:12px;padding:12px;background:#d4c4a8;border-radius:8px;">
+                    <strong style="color:#3d2b1f;">📋 Requirements from Leader:</strong>
+                    <div style="color:#6b5f4a;margin-top:4px;">${ticket.requirements}</div>
+                </div>
+            ` : `
+                <div style="margin-bottom:12px;padding:12px;background:#f8f0e0;border-radius:8px;border:1px dashed #b8a080;">
+                    <em style="color:#8b7a6a;">⏳ Waiting for leader to assign requirements...</em>
+                </div>
+            `}
+
+            ${ticket.leaderNote ? `<div style="margin-bottom:12px;"><strong>💬 Leader's Note:</strong><br><span style="color:#6b5f4a;">${ticket.leaderNote}</span></div>` : ''}
+
+            <div style="font-size:12px;color:#8b7a6a;margin-top:8px;border-top:1px solid #d4c4a8;padding-top:8px;">
+                Created: ${ticket.createdAt ? new Date(ticket.createdAt.seconds * 1000).toLocaleString() : 'Recently'}
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    // ─── Cancel ticket ──────────────────────────────────────────
+    const cancelBtn = overlay.querySelector('.cancel-ticket-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', async function() {
+            if (confirm('Cancel this ticket?')) {
+                const module = await import('./tickets.js');
+                const result = await module.cancelTicket(ticket.id);
+                if (result.success) {
+                    alert('Ticket cancelled.');
+                    closeModal();
+                    renderGrid();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            }
+        });
+    }
+}
+
+// ─── Render grid ─────────────────────────────────────────────
+function renderGrid() {
+    const grid = document.getElementById('pouchGrid');
+    if (!grid) return;
+
+    const filtered = getFilteredBadges();
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;color:#6b5f4a;padding:40px 0;font-size:14px;font-family:'Georgia',serif;font-style:italic;">
+                No badges of this type yet. Keep exploring! 🧭
+            </div>
+        `;
+        return;
+    }
+
+    // ─── Fetch tickets for this scout ──────────────────────────
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (currentUser) {
+        import('./tickets.js').then(module => {
+            module.getScoutTickets(currentUser.username).then(result => {
+                if (result.success) {
+                    scoutTicketsCache = result.data;
+                }
+                renderGridWithTickets(filtered);
+            }).catch(() => {
+                renderGridWithTickets(filtered);
+            });
+        });
+    } else {
+        renderGridWithTickets(filtered);
+    }
+}
+
+function renderGridWithTickets(filtered) {
+    const grid = document.getElementById('pouchGrid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    filtered.forEach((badge) => {
+        const isUnlocked = badge.unlocked;
+        const ticket = scoutTicketsCache.find(t => t.badgeId === badge.id);
+        const ticketStatus = ticket ? ticket.status : null;
+        const requirements = ticket ? ticket.requirements : null;
+        const leaderNote = ticket ? ticket.leaderNote : null;
+
+        // ─── Determine slot style ──────────────────────────────────
+        let slotClass = 'pouch-slot';
+        let statusEmoji = '';
+        let statusText = '';
+
+        if (isUnlocked) {
+            slotClass += ' unlocked';
+            statusEmoji = '✅';
+            statusText = 'Earned!';
+        } else if (ticketStatus === 'pending') {
+            slotClass += ' ticket-pending';
+            statusEmoji = '⏳';
+            statusText = 'Pending';
+        } else if (ticketStatus === 'in-progress') {
+            slotClass += ' ticket-progress';
+            statusEmoji = '💜';
+            statusText = 'In Progress';
+        } else if (ticketStatus === 'rejected') {
+            slotClass += ' ticket-rejected';
+            statusEmoji = '❌';
+            statusText = 'Rejected';
+        } else {
+            slotClass += ' locked';
+            statusEmoji = '🔒';
+            statusText = 'Click to request';
+        }
+
+        // ─── Build tooltip ──────────────────────────────────────────
+        let tooltipText = statusText;
+        if (requirements) {
+            tooltipText += ` | 📋 ${requirements}`;
+        }
+        if (leaderNote) {
+            tooltipText += ` | 💬 ${leaderNote}`;
+        }
+
+        const slot = document.createElement('div');
+        slot.className = slotClass;
+        slot.dataset.index = badge.id;
+        slot.innerHTML = `
+            <span>${badge.icon}</span>
+            <span class="slot-name">${badge.name}</span>
+            <span class="slot-type">${typeLabels[badge.type] || ''}</span>
+            ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
+            <span class="tooltip-text">${tooltipText}</span>
+        `;
+
+        // ─── Click handler ──────────────────────────────────────────
+        slot.addEventListener('click', async () => {
+            if (isUnlocked) {
+                alert(`🎉 You already earned "${badge.name}"!`);
+                return;
+            }
+
+            // If there's a ticket, show ticket details
+            if (ticket) {
+                showTicketDetails(ticket, badge);
+                return;
+            }
+
+            // ─── Check if there's already a pending ticket ──────────
+            try {
+                const module = await import('./tickets.js');
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                
+                const result = await module.getScoutTickets(currentUser.username);
+                if (result.success) {
+                    const existing = result.data.find(t => 
+                        t.badgeId === badge.id && 
+                        (t.status === 'pending' || t.status === 'in-progress')
+                    );
+                    if (existing) {
+                        showTicketDetails(existing, badge);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('Ticket check failed:', e);
+            }
+
+            // ─── Open the modal ──────────────────────────────────────
+            openTicketModal(badge);
+        });
+
+        grid.appendChild(slot);
+    });
+}
+
 // ─── Render the pouch ────────────────────────────────────
 export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scout', scoutRank = 'Membership') {
     const container = document.getElementById(containerId);
@@ -160,7 +385,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 position: relative;
             }
 
-            /* ─── CORNER BRACKETS ─── */
             .corner-bracket {
                 position: absolute;
                 width: 32px;
@@ -175,7 +399,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             .corner-bl { bottom: 16px; left: 16px; border-right: none; border-top: none; }
             .corner-br { bottom: 16px; right: 16px; border-left: none; border-top: none; }
 
-            /* ─── HEADER ─── */
             .pouch-header-text {
                 text-align: center;
                 margin-bottom: 20px;
@@ -213,7 +436,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 letter-spacing: 1px;
             }
 
-            /* ─── SCOUT CARD ─── */
             .pouch-scout-card {
                 background: #d4c4a8;
                 border: 4px solid #8b6b4d;
@@ -283,7 +505,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 color: #ffd700;
             }
 
-            /* ─── FILTER BUTTONS ─── */
             .pouch-filters {
                 display: flex;
                 gap: 8px;
@@ -314,7 +535,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 border-color: #6b4c3a;
             }
 
-            /* ─── BADGE GRID ─── */
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
@@ -415,7 +635,31 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 display: block;
             }
 
-            /* ─── ACTIONS ─── */
+            /* ─── TICKET STATUS ON BADGES ─── */
+            .pouch-slot.ticket-pending {
+                border: 2px solid #f39c12;
+                animation: pulseOrange 1.5s ease-in-out infinite;
+                background: #fef9e7;
+            }
+            @keyframes pulseOrange {
+                0%, 100% { box-shadow: 0 0 5px rgba(243, 156, 18, 0.2); }
+                50% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); }
+            }
+            .pouch-slot.ticket-progress {
+                border: 2px solid #8e44ad;
+                animation: pulsePurple 1.5s ease-in-out infinite;
+                background: #f4ecf7;
+            }
+            @keyframes pulsePurple {
+                0%, 100% { box-shadow: 0 0 5px rgba(142, 68, 173, 0.2); }
+                50% { box-shadow: 0 0 20px rgba(142, 68, 173, 0.4); }
+            }
+            .pouch-slot.ticket-rejected {
+                border: 2px solid #e74c3c;
+                opacity: 0.6;
+                filter: grayscale(0.3);
+            }
+
             .pouch-actions {
                 display: flex;
                 gap: 10px;
@@ -475,6 +719,9 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 2px #8b6b4d;
                 animation: slideUp 0.3s ease;
                 position: relative;
+            }
+            .ticket-modal.ticket-detail {
+                max-width: 500px;
             }
             .ticket-modal .modal-close {
                 position: absolute;
@@ -595,7 +842,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 to { transform: translateY(0); opacity: 1; }
             }
 
-            /* ─── RESPONSIVE ─── */
             @media (max-width: 768px) {
                 .badge-page { padding: 20px 16px; border-width: 6px; }
                 .corner-bracket { width: 24px; height: 24px; }
@@ -624,7 +870,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         </style>
 
         <div class="badge-page">
-            <!-- Corner Brackets -->
             <div class="corner-bracket corner-tl"></div>
             <div class="corner-bracket corner-tr"></div>
             <div class="corner-bracket corner-bl"></div>
@@ -670,7 +915,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
     container.innerHTML = html;
 
-    // ─── SCOUT AVATAR ANIMATION (simple image swap) ──────────
+    // ─── SCOUT AVATAR ANIMATION ──────────────────────────────
     function initAvatarAnimation() {
         const img = document.getElementById('scoutAvatar');
         if (!img) return;
@@ -696,79 +941,11 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             timer = setTimeout(nextFrame, frame.duration);
         }
 
-        // Preload images
-        const preload = frames.map(f => {
-            const i = new Image();
-            i.src = f.src;
-        });
-
+        const preload = frames.map(f => { const i = new Image(); i.src = f.src; });
         nextFrame();
 
         window.addEventListener('beforeunload', () => {
             if (timer) clearTimeout(timer);
-        });
-    }
-
-    // ─── Render grid ─────────────────────────────────────────────
-    function renderGrid() {
-        const grid = document.getElementById('pouchGrid');
-        if (!grid) return;
-
-        const filtered = getFilteredBadges();
-
-        if (filtered.length === 0) {
-            grid.innerHTML = `
-                <div style="grid-column:1/-1;text-align:center;color:#6b5f4a;padding:40px 0;font-size:14px;font-family:'Georgia',serif;font-style:italic;">
-                    No badges of this type yet. Keep exploring! 🧭
-                </div>
-            `;
-            return;
-        }
-
-        grid.innerHTML = '';
-
-        filtered.forEach((badge) => {
-            const isUnlocked = badge.unlocked;
-            const slot = document.createElement('div');
-            slot.className = `pouch-slot ${isUnlocked ? 'unlocked' : 'locked'}`;
-            slot.dataset.index = badge.id;
-            slot.innerHTML = `
-                <span>${badge.icon}</span>
-                <span class="slot-name">${badge.name}</span>
-                <span class="slot-type">${typeLabels[badge.type] || ''}</span>
-                ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
-                <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
-            `;
-
-            slot.addEventListener('click', async () => {
-                if (badge.unlocked) {
-                    alert(`🎉 You already earned "${badge.name}"!`);
-                    return;
-                }
-
-                try {
-                    const module = await import('./tickets.js');
-                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    
-                    const result = await module.getScoutTickets(currentUser.username);
-                    if (result.success) {
-                        const existing = result.data.find(t => 
-                            t.badgeId === badge.id && 
-                            (t.status === 'pending' || t.status === 'in-progress')
-                        );
-                        if (existing) {
-                            alert(`⏳ You already have a ticket for "${badge.name}" (${existing.status}). Check with your leader.`);
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Ticket check failed:', e);
-                }
-
-                openTicketModal(badge);
-            });
-
-            grid.appendChild(slot);
         });
     }
 
