@@ -674,3 +674,156 @@ a {
 .bottom-nav a.active .icon {
     color: white;
 }
+
+/* ─── TICKET MODAL ─── */
+.ticket-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.ticket-modal {
+    background: white;
+    border-radius: 24px;
+    padding: 32px;
+    max-width: 450px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s ease;
+    position: relative;
+}
+
+.ticket-modal .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.ticket-modal .modal-close:hover {
+    color: var(--text-dark);
+}
+
+.ticket-modal .badge-preview {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--lavender-bg);
+}
+
+.ticket-modal .badge-preview .icon {
+    font-size: 48px;
+}
+
+.ticket-modal .badge-preview .info .name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.ticket-modal .badge-preview .info .type {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.ticket-modal label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+
+.ticket-modal textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0d6ec;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.ticket-modal textarea:focus {
+    outline: none;
+    border-color: var(--purple);
+}
+
+.ticket-modal .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.ticket-modal .modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ticket-modal .modal-actions .btn-cancel {
+    background: var(--lavender-bg);
+    color: var(--text-dark);
+}
+.ticket-modal .modal-actions .btn-cancel:hover {
+    background: #d5cae0;
+}
+
+.ticket-modal .modal-actions .btn-submit {
+    background: var(--purple);
+    color: white;
+}
+.ticket-modal .modal-actions .btn-submit:hover {
+    background: var(--purple-dark);
+}
+
+.ticket-modal .modal-message {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+.ticket-modal .modal-message.success {
+    display: block;
+    background: #d4edda;
+    color: #155724;
+}
+.ticket-modal .modal-message.error {
+    display: block;
+    background: #f8d7da;
+    color: #721c24;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
