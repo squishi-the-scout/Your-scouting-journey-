@@ -1,21 +1,14 @@
 <!-- ===== BADGE POUCH CONTENT (Embedded in Dashboard) ===== -->
 <div class="badge-page">
     <div class="pouch-header-text">
-        <h2>🎒 WELCOME TO YOUR BADGE POUCH</h2>
+        <h2> WELCOME TO YOUR BADGE POUCH</h2>
         <p>"Every badge tells a story"</p>
     </div>
 
     <div class="pouch-scout-card" id="scoutCard">
         <div class="scout-info">
             <div class="pixel-scout-wrapper">
-                <img src="idle.png" class="pixel-scout-img frame-idle" alt="idle" />
-                <img src="wave.png" class="pixel-scout-img frame-wave" alt="wave" />
-                <img src="idle.png" class="pixel-scout-img frame-idle2" alt="idle" />
-                <img src="map.png" class="pixel-scout-img frame-map" alt="map" />
-                <img src="left.png" class="pixel-scout-img frame-left" alt="left" />
-                <img src="right.png" class="pixel-scout-img frame-right" alt="right" />
-                <img src="map.png" class="pixel-scout-img frame-map2" alt="map" />
-                <img src="idle.png" class="pixel-scout-img frame-idle3" alt="idle" />
+                <canvas id="scoutCanvas" width="64" height="64"></canvas>
             </div>
             <div>
                 <div class="name" id="scoutName">Scout</div>
@@ -95,35 +88,17 @@
     }
     .pouch-scout-card .scout-info .pixel-scout-wrapper {
         position: relative;
-        width: 56px;
-        height: 56px;
+        width: 64px;
+        height: 64px;
         flex-shrink: 0;
     }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .pixel-scout-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 56px;
-        height: 56px;
+    .pouch-scout-card .scout-info .pixel-scout-wrapper canvas {
+        width: 64px;
+        height: 64px;
         image-rendering: pixelated;
-        opacity: 0;
-        animation: scoutAnimation 12s infinite;
+        display: block;
+        background: transparent;
     }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle { animation-delay: 0s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-wave { animation-delay: 2.5s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle2 { animation-delay: 3.1s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map { animation-delay: 5.6s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-left { animation-delay: 7.6s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-right { animation-delay: 8.1s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-map2 { animation-delay: 8.6s; }
-    .pouch-scout-card .scout-info .pixel-scout-wrapper .frame-idle3 { animation-delay: 10.6s; }
-
-    @keyframes scoutAnimation {
-        0%, 100% { opacity: 0; }
-        2%, 12% { opacity: 1; }
-        15%, 100% { opacity: 0; }
-    }
-
     .pouch-scout-card .scout-info .name {
         font-weight: 700;
         font-size: 16px;
