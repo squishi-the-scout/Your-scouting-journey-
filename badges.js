@@ -500,14 +500,53 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 ${!isUnlocked ? '<span class="lock-badge">🔒</span>' : ''}
                 <span class="tooltip-text">${isUnlocked ? '✅ Earned!' : '🔒 Click to request'}</span>
             `;
+slot.addEventListener('click', async () => {
+    if (badge.unlocked) {
+        alert(`🎉 You already earned "${badge.name}"!`);
+        return;
+    }
 
-            slot.addEventListener('click', () => {
-                if (badge.unlocked) {
-                    alert(`🎉 You already earned "${badge.name}"!`);
-                } else {
-                    alert(`🎫 Request ticket for "${badge.name}"?`);
-                }
-            });
+    // ─── Check if there's already a pending ticket ──────────
+    try {
+        const module = await import('./tickets.js');
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        
+        // Get scout's tickets for this badge
+        const result = await module.getScoutTickets(currentUser.username);
+        if (result.success) {
+            const existing = result.data.find(t => 
+                t.badgeId === badge.id && 
+                (t.status === 'pending' || t.status === 'in-progress')
+            );
+            if (existing) {
+                alert(`⏳ You already have a ticket for "${badge.name}" (${existing.status}). Check with your leader.`);
+                return;
+            }
+        }
+
+        // ─── Ask for optional note ────────────────────────────
+        const note = prompt(`📝 Request "${badge.name}"?\n\nAdd a note for your leader (optional):`, '');
+        if (note === null) return; // User cancelled
+
+        // ─── Create the ticket ──────────────────────────────────
+        const createResult = await module.createTicket(
+            currentUser.username,
+            badge.id,
+            badge.name,
+            badge.icon,
+            note || ''
+        );
+
+        if (createResult.success) {
+            alert(`✅ Ticket created for "${badge.name}"!\n\nYour leader will review it.`);
+        } else {
+            alert(`❌ Failed to create ticket: ${createResult.error}`);
+        }
+    } catch (error) {
+        console.error('Error creating ticket:', error);
+        alert('❌ Failed to create ticket. Check console.');
+    }
+});
 
             grid.appendChild(slot);
         });
