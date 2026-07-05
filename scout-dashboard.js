@@ -6,6 +6,7 @@ import { membershipRequirements } from './data/membership-requirements.js';
 import { secondClassRequirements } from './data/secondclass-requirements.js';
 import { firstClassRequirements } from './data/firstclass-requirements.js';
 import { resizeImage } from './resize-image.js';
+import { renderBadgePouch } from './badges.js';  // ← ADD THIS LINE
 
 // ─── State ──────────────────────────────────────────────
 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -220,21 +221,10 @@ function renderView() {
         }
     }
     else if (currentView === 'badges') {
-        // Load badge pouch from badges.js
-        import('./badges.js').then(module => {
-            const displayName = scoutData.fullName || currentUser.username;
-            const rank = scoutData.rank || 'Membership';
-            module.renderBadgePouch('page-content', displayName, rank);
-        }).catch(error => {
-            console.error('Error loading badges:', error);
-            pageContent.innerHTML = `
-                <div style="text-align:center;padding:60px 20px;background:white;border-radius:24px;">
-                    <div style="font-size:48px;margin-bottom:16px;">❌</div>
-                    <h3 style="color:var(--text-dark);">Could not load Badges</h3>
-                    <p style="color:var(--text-muted);">Please try again later.</p>
-                </div>
-            `;
-        });
+        // ─── FIXED: Use imported function instead of dynamic import ───
+        const displayName = scoutData.fullName || currentUser.username;
+        const rank = scoutData.rank || 'Membership';
+        renderBadgePouch('page-content', displayName, rank);
     }
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
