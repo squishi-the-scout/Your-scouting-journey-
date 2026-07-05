@@ -47,99 +47,6 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
-// ─── SCOUT ANIMATION ────────────────────────────────────
-function initScoutAnimation() {
-    const canvas = document.getElementById('scoutCanvas');
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-
-    const IMAGES = {
-        idle: 'idle.png',
-        wave: 'wave.png',
-        map: 'map.png',
-        left: 'left.png',
-        right: 'right.png'
-    };
-
-    const SEQUENCE = [
-        { action: 'idle', duration: 3000 },
-        { action: 'left', duration: 1500 },
-        { action: 'right', duration: 1500 },
-        { action: 'map', duration: 2000 },
-        { action: 'left', duration: 1000 },
-        { action: 'right', duration: 1000 },
-        { action: 'idle', duration: 1000 },
-        { action: 'wave', duration: 2000 },
-    ];
-
-    let loadedImages = {};
-    let imagesLoaded = 0;
-    const totalImages = Object.keys(IMAGES).length;
-
-    function loadImages() {
-        Object.keys(IMAGES).forEach(key => {
-            const img = new Image();
-            img.onload = () => {
-                loadedImages[key] = img;
-                imagesLoaded++;
-                if (imagesLoaded === totalImages) {
-                    startAnimation();
-                }
-            };
-            img.onerror = () => {
-                console.error(`❌ Failed to load: ${IMAGES[key]}`);
-                imagesLoaded++;
-                if (imagesLoaded === totalImages) {
-                    startAnimation();
-                }
-            };
-            img.src = IMAGES[key];
-        });
-    }
-
-    function drawAction(actionKey) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const img = loadedImages[actionKey];
-        if (img) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
-    }
-
-    let sequenceTimer = null;
-    let actionIndex = 0;
-
-    function startAnimation() {
-        if (sequenceTimer) clearTimeout(sequenceTimer);
-        let startTime = Date.now();
-
-        function playNext() {
-            const item = SEQUENCE[actionIndex];
-            if (!item) return;
-
-            drawAction(item.action);
-
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, item.duration - elapsed);
-
-            sequenceTimer = setTimeout(() => {
-                actionIndex = (actionIndex + 1) % SEQUENCE.length;
-                startTime = Date.now();
-                playNext();
-            }, delay);
-        }
-
-        playNext();
-    }
-
-    loadImages();
-
-    window.addEventListener('beforeunload', () => {
-        if (sequenceTimer) clearTimeout(sequenceTimer);
-    });
-}
-
 // ─── TICKET MODAL ──────────────────────────────────────────
 function openTicketModal(badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
@@ -238,7 +145,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         <style>
             /* ─── LEATHER LOGBOOK THEME ─── */
             .badge-page {
-                max-width: 800px;
+                max-width: 100%;
                 width: 100%;
                 background: #f2e8d5;
                 background-image: 
@@ -248,7 +155,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 box-shadow: 
                     inset 0 0 0 2px #8b6b4d,
                     0 8px 32px rgba(0,0,0,0.3);
-                padding: 30px 24px;
+                padding: 24px 24px 28px;
                 margin: 0 auto;
                 position: relative;
             }
@@ -271,12 +178,12 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             /* ─── HEADER ─── */
             .pouch-header-text {
                 text-align: center;
-                margin-bottom: 24px;
+                margin-bottom: 20px;
                 position: relative;
             }
             .pouch-header-text h2 {
                 font-family: 'Georgia', 'Times New Roman', serif;
-                font-size: 26px;
+                font-size: 28px;
                 color: #3d2b1f;
                 background: #c4a882;
                 display: inline-block;
@@ -312,7 +219,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 border: 4px solid #8b6b4d;
                 border-radius: 16px;
                 box-shadow: inset 0 0 0 2px #b8a080, 0 4px 12px rgba(0,0,0,0.1);
-                padding: 14px 20px;
+                padding: 12px 20px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
@@ -330,22 +237,23 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 align-items: center;
                 gap: 16px;
             }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper {
-                position: relative;
-                width: 64px;
-                height: 64px;
-                flex-shrink: 0;
-                background: #b8a080;
+            .pouch-scout-card .scout-info .scout-avatar {
+                width: 56px;
+                height: 56px;
+                image-rendering: pixelated;
                 border-radius: 50%;
+                background: #b8a080;
                 padding: 4px;
                 box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
-            .pouch-scout-card .scout-info .pixel-scout-wrapper canvas {
-                width: 64px;
-                height: 64px;
+            .pouch-scout-card .scout-info .scout-avatar img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
                 image-rendering: pixelated;
-                display: block;
-                background: transparent;
                 border-radius: 50%;
             }
             .pouch-scout-card .scout-info .name {
@@ -729,8 +637,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
             <div class="pouch-scout-card" id="scoutCard">
                 <div class="scout-info">
-                    <div class="pixel-scout-wrapper">
-                        <canvas id="scoutCanvas" width="64" height="64"></canvas>
+                    <div class="scout-avatar">
+                        <img id="scoutAvatar" src="idle.png" alt="Scout" />
                     </div>
                     <div>
                         <div class="name" id="scoutName">${scoutName}</div>
@@ -761,6 +669,45 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
     `;
 
     container.innerHTML = html;
+
+    // ─── SCOUT AVATAR ANIMATION (simple image swap) ──────────
+    function initAvatarAnimation() {
+        const img = document.getElementById('scoutAvatar');
+        if (!img) return;
+
+        const frames = [
+            { src: 'idle.png', duration: 3000 },
+            { src: 'left.png', duration: 1500 },
+            { src: 'right.png', duration: 1500 },
+            { src: 'map.png', duration: 2000 },
+            { src: 'left.png', duration: 1000 },
+            { src: 'right.png', duration: 1000 },
+            { src: 'idle.png', duration: 1000 },
+            { src: 'wave.png', duration: 2000 },
+        ];
+
+        let currentFrame = 0;
+        let timer = null;
+
+        function nextFrame() {
+            const frame = frames[currentFrame];
+            img.src = frame.src;
+            currentFrame = (currentFrame + 1) % frames.length;
+            timer = setTimeout(nextFrame, frame.duration);
+        }
+
+        // Preload images
+        const preload = frames.map(f => {
+            const i = new Image();
+            i.src = f.src;
+        });
+
+        nextFrame();
+
+        window.addEventListener('beforeunload', () => {
+            if (timer) clearTimeout(timer);
+        });
+    }
 
     // ─── Render grid ─────────────────────────────────────────────
     function renderGrid() {
@@ -799,7 +746,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                     return;
                 }
 
-                // ─── Check if there's already a pending ticket ──────────
                 try {
                     const module = await import('./tickets.js');
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -819,7 +765,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                     console.warn('Ticket check failed:', e);
                 }
 
-                // ─── Open the modal ──────────────────────────────────────
                 openTicketModal(badge);
             });
 
@@ -868,9 +813,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         renderGrid();
     });
 
-    // ─── INIT SCOUT ANIMATION ──────────────────────────────────
-    initScoutAnimation();
-
-    // ─── Initial render ──────────────────────────────────────────
+    // ─── INIT ──────────────────────────────────────────────────
+    initAvatarAnimation();
     renderGrid();
 }
