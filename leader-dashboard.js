@@ -392,6 +392,9 @@ function updatePageHeading() {
     } else if (currentView === 'profile') {
         pageHeading.textContent = 'My Profile';
         if (pageSubtitle) pageSubtitle.textContent = 'Manage your personal information';
+    } else if (currentView === 'tickets') {
+        pageHeading.textContent = '🎫 Tickets';
+        if (pageSubtitle) pageSubtitle.textContent = 'Manage scout badge requests';
     }
 }
 
@@ -411,6 +414,7 @@ function renderView() {
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'export') renderExport();
     else if (currentView === 'profile') renderLeaderProfile();
+    else if (currentView === 'tickets') renderLeaderTickets();
 }
 
 // ─── Dashboard ──────────────────────────────────────────
@@ -737,6 +741,169 @@ function renderDashboard() {
     };
 }
 
+// ─── LEADER TICKETS ──────────────────────────────────────────
+async function renderLeaderTickets() {
+    try {
+        const module = await import('./tickets.js');
+        const result = await module.getAllTickets();
+        
+        if (!result.success) {
+            pageContent.innerHTML = `<p style="color:red;">Error loading tickets: ${result.error}</p>`;
+            return;
+        }
+        
+        const tickets = result.data;
+        const pendingCount = tickets.filter(t => t.status === 'pending' || t.status === 'in-progress').length;
+        
+        let html = `
+            <div style="max-width:900px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+                    <h2 style="color:var(--text-dark);margin:0;">🎫 Tickets <span style="font-size:14px;color:var(--text-muted);font-weight:400;">(${tickets.length} total)</span></h2>
+                    <span style="background:#e74c3c;color:white;padding:4px 16px;border-radius:20px;font-size:14px;font-weight:600;">${pendingCount} pending</span>
+                </div>
+                
+                <div style="display:flex;flex-direction:column;gap:12px;">
+        `;
+        
+        if (tickets.length === 0) {
+            html += `
+                <div style="background:white;border-radius:24px;padding:60px 20px;text-align:center;">
+                    <div style="font-size:48px;margin-bottom:16px;">🎫</div>
+                    <p style="color:var(--text-muted);font-size:16px;">No tickets yet. Scouts will request badges here.</p>
+                </div>
+            `;
+        }
+        
+        for (const ticket of tickets) {
+            const statusColors = {
+                pending: '#f39c12',
+                'in-progress': '#8e44ad',
+                approved: '#27ae60',
+                rejected: '#e74c3c',
+                cancelled: '#95a5a6'
+            };
+            const statusLabels = {
+                pending: '⏳ Pending',
+                'in-progress': '💜 In Progress',
+                approved: '✅ Approved',
+                rejected: '❌ Rejected',
+                cancelled: '🚫 Cancelled'
+            };
+            
+            // Get scout name
+            const scoutDoc = await getDoc(doc(db, 'users', ticket.scoutId));
+            const scoutName = scoutDoc.exists() ? (scoutDoc.data().fullName || ticket.scoutId) : ticket.scoutId;
+            
+            html += `
+                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${statusColors[ticket.status] || '#95a5a6'};">
+                    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                        <div style="flex:1;">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <span style="font-weight:600;font-size:16px;">${ticket.badgeIcon} ${ticket.badgeName}</span>
+                                <span style="font-size:12px;color:var(--text-muted);">— ${scoutName}</span>
+                            </div>
+                            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
+                                ${ticket.note ? `📝 "${ticket.note}"` : ''}
+                            </div>
+                            ${ticket.requirements ? `
+                                <div style="font-size:13px;color:var(--purple);margin-top:6px;padding:8px 12px;background:#f5f0f8;border-radius:8px;">
+                                    📋 Requirements: ${ticket.requirements}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:${statusColors[ticket.status]}20;color:${statusColors[ticket.status]};">
+                                ${statusLabels[ticket.status] || ticket.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #e8e0f0;">
+                        ${ticket.status === 'pending' || ticket.status === 'in-progress' ? `
+                            <input type="text" id="req-input-${ticket.id}" placeholder="Assign requirements..." style="flex:1;min-width:150px;padding:6px 12px;border-radius:8px;border:1px solid #e0d6ec;font-size:13px;" value="${ticket.requirements || ''}" />
+                            <button class="save-req-btn" data-ticket-id="${ticket.id}" style="background:var(--purple);color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">Save Requirements</button>
+                            <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
+                            <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div></div>';
+        pageContent.innerHTML = html;
+        
+        // ─── Event listeners ──────────────────────────────────────
+        document.querySelectorAll('.save-req-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const ticketId = this.dataset.ticketId;
+                const input = document.getElementById(`req-input-${ticketId}`);
+                const requirements = input.value.trim();
+                
+                if (!requirements) {
+                    alert('Please enter requirements.');
+                    return;
+                }
+                
+                const module = await import('./tickets.js');
+                const result = await module.updateTicketRequirements(ticketId, requirements);
+                if (result.success) {
+                    alert('✅ Requirements saved! Status updated to In Progress.');
+                    renderLeaderTickets();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.approve-ticket-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const ticketId = this.dataset.ticketId;
+                if (!confirm('Approve this ticket? The badge will be unlocked.')) return;
+                
+                const module = await import('./tickets.js');
+                const result = await module.updateTicketStatus(ticketId, 'approved');
+                if (result.success) {
+                    // Unlock the badge
+                    const ticket = (await module.getTicket(ticketId)).data;
+                    if (ticket) {
+                        const pouch = JSON.parse(localStorage.getItem('badgePouch') || '[]');
+                        const badge = pouch.find(b => b.id === ticket.badgeId);
+                        if (badge) {
+                            badge.unlocked = true;
+                            localStorage.setItem('badgePouch', JSON.stringify(pouch));
+                        }
+                    }
+                    alert('🎉 Badge unlocked!');
+                    renderLeaderTickets();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.reject-ticket-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const ticketId = this.dataset.ticketId;
+                if (!confirm('Reject this ticket?')) return;
+                
+                const module = await import('./tickets.js');
+                const result = await module.updateTicketStatus(ticketId, 'rejected');
+                if (result.success) {
+                    alert('Ticket rejected.');
+                    renderLeaderTickets();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            });
+        });
+        
+    } catch (error) {
+        console.error('Error loading tickets:', error);
+        pageContent.innerHTML = `<p style="color:red;">Failed to load tickets. Check console.</p>`;
+    }
+}
+
+// ─── All Scouts ──────────────────────────────────────────
 function renderAllScouts() {
     let html = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
@@ -797,6 +964,7 @@ function renderAllScouts() {
     });
 }
 
+// ─── Scout Profile ──────────────────────────────────────────
 async function renderScoutProfile(username) {
     const scout = allScouts.find(s => s.username === username);
     if (!scout) {
@@ -1037,6 +1205,7 @@ async function renderScoutProfile(username) {
     });
 }
 
+// ─── Pending Approvals ──────────────────────────────────
 function renderPendingApprovals() {
     let pendingItems = [];
     let readyForPromotion = [];
@@ -1221,6 +1390,7 @@ function renderPendingApprovals() {
     });
 }
 
+// ─── Sessions View ──────────────────────────────────────
 function renderSessions() {
     let totalSessions = allSessions.length;
     let totalHours = 0;
