@@ -187,8 +187,8 @@ function renderView() {
             pageHeading.textContent = 'First Class Badge';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Complete all requirements to earn your badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = 'My Badges';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Track your badge progress';
+            pageHeading.textContent = '';
+           if (scoutSubtitle) scoutSubtitle.textContent = '';
         } else if (currentView === 'sessions') {
             pageHeading.textContent = 'My Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Sessions you have attended';
