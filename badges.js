@@ -47,7 +47,7 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
-// ─── SPRITE SHEET ANIMATION ─────────────────────────────
+// ─── SCOUT ANIMATION (USING YOUR EXISTING IMAGES) ──────
 function initScoutAnimation() {
     const canvas = document.getElementById('scoutCanvas');
     if (!canvas) return;
@@ -55,129 +55,120 @@ function initScoutAnimation() {
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    // ════════════════════════════════════════════════════════
-    // 🎨  CONFIGURE THESE TO MATCH YOUR SPRITE SHEET
-    // ════════════════════════════════════════════════════════
-    
-    const SPRITE_SHEET_URL = 'spritesheet.png';  // Your exported sprite sheet
-    const FRAME_WIDTH = 32;    // Your Piskel canvas width
-    const FRAME_HEIGHT = 32;   // Your Piskel canvas height
-    
-    // Your 5 actions - in the order you want them to loop
-    const ACTIONS = [
-        { id: 'idle', row: 0, frames: 4, speed: 6 },
-        { id: 'wave', row: 4, frames: 6, speed: 8 },
-        { id: 'idle', row: 0, frames: 4, speed: 6 },
-        { id: 'readMap', row: 3, frames: 4, speed: 5 },
-        { id: 'lookLeft', row: 1, frames: 3, speed: 5 },
-        { id: 'lookRight', row: 2, frames: 3, speed: 5 },
-        { id: 'readMap', row: 3, frames: 4, speed: 5 },
-        { id: 'idle', row: 0, frames: 4, speed: 6 },
+    // ─── YOUR IMAGES (on GitHub) ────────────────────────────
+    const IMAGES = {
+        idle: 'idle.png',
+        wave: 'wave.png',
+        map: 'map.png',
+        left: 'left.png',
+        right: 'right.png'
+    };
+
+    // ─── YOUR SEQUENCE (action, duration in ms) ──────────────
+    const SEQUENCE = [
+        { action: 'idle', duration: 3000 },   // IDLE for 3 seconds
+        { action: 'left', duration: 1500 },   // LOOK LEFT for 1.5s
+        { action: 'right', duration: 1500 },  // LOOK RIGHT for 1.5s
+        { action: 'map', duration: 2000 },    // READ MAP for 2s
+        { action: 'left', duration: 1000 },   // LOOK LEFT for 1s
+        { action: 'right', duration: 1000 },  // LOOK RIGHT for 1s
+        { action: 'idle', duration: 1000 },   // IDLE for 1s
+        { action: 'wave', duration: 2000 },   // WAVE for 2s
     ];
-    
-    // How long each action plays (in milliseconds)
-    const ACTION_DURATION = 3000; // 3 seconds per action
 
-    // ─── State ──────────────────────────────────────────────
-    let spriteImage = null;
-    let currentActionIndex = 0;
-    let frameIndex = 0;
-    let frameCounter = 0;
-    let actionStartTime = Date.now();
-    let animationId = null;
+    // ─── Load images ──────────────────────────────────────────
+    let loadedImages = {};
+    let imagesLoaded = 0;
+    const totalImages = Object.keys(IMAGES).length;
 
-    // ─── Load sprite sheet ─────────────────────────────────
-    function loadSpriteSheet() {
-        const img = new Image();
-        img.onload = () => {
-            spriteImage = img;
-            console.log('✅ Sprite sheet loaded for scout animation!');
-            animateScout();
-        };
-        img.onerror = () => {
-            console.error('❌ Failed to load sprite sheet:', SPRITE_SHEET_URL);
-            // Fallback: draw a simple pixel character
-            drawFallback();
-            // Keep animating the fallback
-            animateScout();
-        };
-        img.src = SPRITE_SHEET_URL;
+    function loadImages() {
+        Object.keys(IMAGES).forEach(key => {
+            const img = new Image();
+            img.onload = () => {
+                loadedImages[key] = img;
+                imagesLoaded++;
+                if (imagesLoaded === totalImages) {
+                    console.log('✅ All scout images loaded!');
+                    startAnimation();
+                }
+            };
+            img.onerror = () => {
+                console.error(`❌ Failed to load: ${IMAGES[key]}`);
+                imagesLoaded++;
+                if (imagesLoaded === totalImages) {
+                    startAnimation();
+                }
+            };
+            img.src = IMAGES[key];
+        });
     }
 
-    function getCurrentAction() {
-        return ACTIONS[currentActionIndex];
-    }
-
-    function drawFrame() {
+    // ─── Draw current action ──────────────────────────────────
+    function drawAction(actionKey) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (!spriteImage) {
+        const img = loadedImages[actionKey];
+        if (img) {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        } else {
+            // Fallback: draw a simple pixel character
             drawFallback();
-            return;
         }
-
-        const action = getCurrentAction();
-        const sx = frameIndex * FRAME_WIDTH;
-        const sy = action.row * FRAME_HEIGHT;
-
-        // Draw the frame scaled to fit the canvas
-        ctx.drawImage(
-            spriteImage,
-            sx, sy, FRAME_WIDTH, FRAME_HEIGHT,
-            0, 0, canvas.width, canvas.height
-        );
     }
 
     function drawFallback() {
-        // Draw a simple pixel character if sprite sheet fails
         ctx.fillStyle = '#e94560';
-        ctx.fillRect(16, 20, 32, 32); // Body
-        ctx.fillRect(20, 8, 24, 16);  // Head
+        ctx.fillRect(16, 20, 32, 32);
+        ctx.fillRect(20, 8, 24, 16);
         ctx.fillStyle = '#fff';
-        ctx.fillRect(24, 12, 6, 6);   // Left eye
-        ctx.fillRect(34, 12, 6, 6);   // Right eye
+        ctx.fillRect(24, 12, 6, 6);
+        ctx.fillRect(34, 12, 6, 6);
         ctx.fillStyle = '#1a1a2e';
-        ctx.fillRect(26, 14, 3, 3);   // Left pupil
-        ctx.fillRect(36, 14, 3, 3);   // Right pupil
+        ctx.fillRect(26, 14, 3, 3);
+        ctx.fillRect(36, 14, 3, 3);
         ctx.fillStyle = '#e94560';
-        ctx.fillRect(28, 44, 8, 12);  // Left leg
-        ctx.fillRect(36, 44, 8, 12);  // Right leg
+        ctx.fillRect(28, 44, 8, 12);
+        ctx.fillRect(36, 44, 8, 12);
     }
 
-    function advanceAction() {
-        currentActionIndex = (currentActionIndex + 1) % ACTIONS.length;
-        frameIndex = 0;
-        frameCounter = 0;
-        actionStartTime = Date.now();
-    }
+    // ─── Animation loop ──────────────────────────────────────
+    let sequenceTimer = null;
+    let actionIndex = 0;
 
-    function animateScout() {
-        const action = getCurrentAction();
+    function startAnimation() {
+        // Cancel any existing timer
+        if (sequenceTimer) clearTimeout(sequenceTimer);
 
-        // Advance frame
-        frameCounter++;
-        if (frameCounter >= action.speed) {
-            frameCounter = 0;
-            frameIndex = (frameIndex + 1) % action.frames;
+        let startTime = Date.now();
+
+        function playNext() {
+            const item = SEQUENCE[actionIndex];
+            if (!item) return;
+
+            // Draw the current action
+            drawAction(item.action);
+            console.log(`🎬 Playing: ${item.action} for ${item.duration}ms`);
+
+            // Schedule the next action
+            const elapsed = Date.now() - startTime;
+            const delay = Math.max(0, item.duration - elapsed);
+
+            sequenceTimer = setTimeout(() => {
+                actionIndex = (actionIndex + 1) % SEQUENCE.length;
+                startTime = Date.now();
+                playNext();
+            }, delay);
         }
 
-        drawFrame();
-
-        // Check if it's time to switch actions
-        const elapsed = Date.now() - actionStartTime;
-        if (elapsed >= ACTION_DURATION) {
-            advanceAction();
-        }
-
-        animationId = requestAnimationFrame(animateScout);
+        playNext();
     }
 
-    // ─── Start animation ────────────────────────────────────
-    loadSpriteSheet();
+    // ─── Start ──────────────────────────────────────────────
+    loadImages();
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', () => {
-        if (animationId) cancelAnimationFrame(animationId);
+        if (sequenceTimer) clearTimeout(sequenceTimer);
     });
 }
 
