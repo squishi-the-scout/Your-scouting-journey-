@@ -4,6 +4,7 @@ import { allBadges, typeLabels } from './data/badges-data.js';
 let badgeState = [];
 let currentFilter = 'all';
 let scoutTicketsCache = [];
+let currentReportTicket = null;
 
 // ─── Load badge state from localStorage ─────────────────
 export function loadBadgeState() {
@@ -59,7 +60,7 @@ function openTicketModal(badge) {
     overlay.innerHTML = `
         <div class="ticket-modal">
             <button class="modal-close" id="modalCloseBtn">✕</button>
-            
+
             <div class="badge-preview">
                 <span class="icon">${badge.icon}</span>
                 <div class="info">
@@ -134,7 +135,173 @@ function openTicketModal(badge) {
     });
 }
 
-// ─── SHOW TICKET DETAILS (Scout View) ──────────────────────
+// ─── REPORT MODAL (Scout submits work) ──────────────────
+function openReportModal(ticket, badge) {
+    const existing = document.querySelector('.report-modal-overlay');
+    if (existing) existing.remove();
+
+    currentReportTicket = ticket;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'report-modal-overlay';
+
+    overlay.innerHTML = `
+        <div class="report-modal">
+            <button class="modal-close" id="reportCloseBtn">✕</button>
+
+            <div class="badge-preview">
+                <span class="icon">${badge.icon}</span>
+                <div class="info">
+                    <div class="name">${badge.name}</div>
+                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:16px;padding:12px 16px;background:#d4c4a8;border-radius:10px;border-left:4px solid #8e44ad;">
+                <strong style="color:#3d2b1f;">📋 Requirements:</strong>
+                <div style="color:#3d2b1f;margin-top:4px;font-size:15px;">${ticket.requirements || 'No requirements assigned yet.'}</div>
+            </div>
+
+            <label for="reportNote">📝 Your Report Note</label>
+            <textarea id="reportNote" placeholder="Describe what you did to complete this badge..."></textarea>
+
+            <label style="margin-top:12px;">📸 Upload Images (max 5)</label>
+            <div id="reportDropZone" style="border:2px dashed #b8a080;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8f0e0;">
+                <div style="font-size:32px;margin-bottom:4px;">📸</div>
+                <p style="color:#6b5f4a;font-size:13px;">Drag & drop images here, or click to select</p>
+                <p style="font-size:11px;color:#8b7a6a;">Max 5 images</p>
+                <input type="file" id="reportFileInput" multiple accept="image/*" style="display:none;">
+            </div>
+
+            <div id="reportImagePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+
+            <div class="modal-message" id="reportMessage"></div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" id="reportCancelBtn">Cancel</button>
+                <button class="btn-submit" id="reportSubmitBtn">📤 Submit Report</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeModal = () => {
+        overlay.remove();
+        currentReportTicket = null;
+    };
+
+    document.getElementById('reportCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('reportCancelBtn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    // ─── Image upload handling ────────────────────────────
+    let reportImages = [];
+
+    const dropZone = document.getElementById('reportDropZone');
+    const fileInput = document.getElementById('reportFileInput');
+    const previewContainer = document.getElementById('reportImagePreview');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#b8860b';
+        dropZone.style.background = '#f0e8d8';
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.style.borderColor = '#b8a080';
+        dropZone.style.background = '#f8f0e0';
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#b8a080';
+        dropZone.style.background = '#f8f0e0';
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    function handleFiles(files) {
+        if (reportImages.length + files.length > 5) {
+            document.getElementById('reportMessage').className = 'modal-message error';
+            document.getElementById('reportMessage').textContent = '⚠️ Maximum 5 images allowed.';
+            return;
+        }
+
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                reportImages.push(e.target.result);
+                renderPreview();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function renderPreview() {
+        previewContainer.innerHTML = '';
+        reportImages.forEach((imgData, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:2px solid #b8a080;flex-shrink:0;';
+            div.innerHTML = `
+                <img src="${imgData}" style="width:100%;height:100%;object-fit:cover;">
+                <button data-index="${index}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">×</button>
+            `;
+            div.querySelector('button').addEventListener('click', () => {
+                reportImages.splice(index, 1);
+                renderPreview();
+            });
+            previewContainer.appendChild(div);
+        });
+    }
+
+    // ─── Submit report ──────────────────────────────────────
+    document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
+        const note = document.getElementById('reportNote').value.trim();
+        const messageEl = document.getElementById('reportMessage');
+        const submitBtn = this;
+
+        if (!note && reportImages.length === 0) {
+            messageEl.className = 'modal-message error';
+            messageEl.textContent = '⚠️ Please add a note or at least one image.';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ Submitting...';
+
+        try {
+            const module = await import('./tickets.js');
+            const result = await module.submitReport(
+                ticket.id,
+                note || '',
+                reportImages
+            );
+
+            if (result.success) {
+                messageEl.className = 'modal-message success';
+                messageEl.textContent = '✅ Report submitted! Your leader will review it.';
+                submitBtn.textContent = '✅ Submitted';
+                setTimeout(closeModal, 3000);
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            messageEl.className = 'modal-message error';
+            messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong.'}`;
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📤 Submit Report';
+        }
+    });
+}
+
+// ─── SHOW TICKET DETAILS (Scout View) ──────────────────
 function showTicketDetails(ticket, badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
     if (existing) existing.remove();
@@ -142,15 +309,18 @@ function showTicketDetails(ticket, badge) {
     const statusColors = {
         pending: '#f39c12',
         'in-progress': '#8e44ad',
+        'needs-review': '#e67e22',
         approved: '#27ae60',
         rejected: '#e74c3c',
         cancelled: '#95a5a6'
     };
+
     const statusLabels = {
-        pending: '⏳ Pending',
-        'in-progress': '💜 In Progress',
-        approved: '✅ Approved',
-        rejected: '❌ Rejected',
+        pending: '⏳ Waiting for Leader',
+        'in-progress': '💜 Requirements Assigned',
+        'needs-review': '📤 Report Submitted',
+        approved: '✅ Approved!',
+        rejected: '❌ Not Approved',
         cancelled: '🚫 Cancelled'
     };
 
@@ -160,7 +330,7 @@ function showTicketDetails(ticket, badge) {
     overlay.innerHTML = `
         <div class="ticket-modal ticket-detail">
             <button class="modal-close" id="modalCloseBtn">✕</button>
-            
+
             <div class="badge-preview">
                 <span class="icon">${badge.icon}</span>
                 <div class="info">
@@ -169,28 +339,41 @@ function showTicketDetails(ticket, badge) {
                 </div>
             </div>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:8px 12px;background:${statusColors[ticket.status]}20;border-radius:8px;border-left:4px solid ${statusColors[ticket.status]};">
-                <span style="font-weight:600;color:${statusColors[ticket.status]};">${statusLabels[ticket.status] || ticket.status}</span>
-                ${ticket.status === 'pending' ? `<button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:4px 14px;border-radius:12px;font-size:12px;cursor:pointer;">Cancel</button>` : ''}
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:${statusColors[ticket.status]}20;border-radius:10px;border-left:4px solid ${statusColors[ticket.status]};">
+                <span style="font-weight:700;color:${statusColors[ticket.status]};font-size:15px;">${statusLabels[ticket.status] || ticket.status}</span>
+                ${ticket.status === 'pending' ? `<button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:4px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;">Cancel Request</button>` : ''}
+                ${ticket.status === 'approved' ? `<span style="margin-left:auto;font-size:24px;">🎉</span>` : ''}
             </div>
 
-            ${ticket.note ? `<div style="margin-bottom:12px;"><strong>📝 Your Note:</strong><br><span style="color:#6b5f4a;">${ticket.note}</span></div>` : ''}
+            ${ticket.note ? `
+                <div style="margin-bottom:12px;padding:10px 14px;background:#f8f0e0;border-radius:8px;">
+                    <strong style="color:#3d2b1f;font-size:13px;">📝 Your Note:</strong>
+                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.note}</div>
+                </div>
+            ` : ''}
 
             ${ticket.requirements ? `
-                <div style="margin-bottom:12px;padding:12px;background:#d4c4a8;border-radius:8px;">
-                    <strong style="color:#3d2b1f;">📋 Requirements from Leader:</strong>
-                    <div style="color:#6b5f4a;margin-top:4px;">${ticket.requirements}</div>
+                <div style="margin-bottom:14px;padding:14px 16px;background:#d4c4a8;border-radius:10px;border:2px solid #8b6b4d;">
+                    <strong style="color:#3d2b1f;font-size:14px;display:block;margin-bottom:6px;">📋 Requirements from Leader</strong>
+                    <div style="color:#3d2b1f;font-size:15px;line-height:1.5;">${ticket.requirements}</div>
+                    <button id="submitReportBtn" style="margin-top:10px;background:#8e44ad;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;">📤 Submit Report</button>
                 </div>
             ` : `
-                <div style="margin-bottom:12px;padding:12px;background:#f8f0e0;border-radius:8px;border:1px dashed #b8a080;">
-                    <em style="color:#8b7a6a;">⏳ Waiting for leader to assign requirements...</em>
+                <div style="margin-bottom:14px;padding:14px 16px;background:#f8f0e0;border-radius:10px;border:2px dashed #b8a080;text-align:center;">
+                    <em style="color:#8b7a6a;font-size:14px;">⏳ Your leader is reviewing this request and will assign requirements soon.</em>
                 </div>
             `}
 
-            ${ticket.leaderNote ? `<div style="margin-bottom:12px;"><strong>💬 Leader's Note:</strong><br><span style="color:#6b5f4a;">${ticket.leaderNote}</span></div>` : ''}
+            ${ticket.leaderNote ? `
+                <div style="margin-bottom:12px;padding:10px 14px;background:#f0e8e0;border-radius:8px;border-left:3px solid #8b6b4d;">
+                    <strong style="color:#3d2b1f;font-size:13px;">💬 Leader's Note:</strong>
+                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.leaderNote}</div>
+                </div>
+            ` : ''}
 
-            <div style="font-size:12px;color:#8b7a6a;margin-top:8px;border-top:1px solid #d4c4a8;padding-top:8px;">
-                Created: ${ticket.createdAt ? new Date(ticket.createdAt.seconds * 1000).toLocaleString() : 'Recently'}
+            <div style="font-size:12px;color:#8b7a6a;margin-top:12px;border-top:1px solid #d4c4a8;padding-top:10px;display:flex;justify-content:space-between;">
+                <span>Requested: ${ticket.createdAt ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}</span>
+                <span>Status: ${ticket.status}</span>
             </div>
         </div>
     `;
@@ -204,21 +387,32 @@ function showTicketDetails(ticket, badge) {
         if (e.target === overlay) closeModal();
     });
 
-    // ─── Cancel ticket ──────────────────────────────────────────
+    // ─── Cancel ticket ──────────────────────────────────────
     const cancelBtn = overlay.querySelector('.cancel-ticket-btn');
     if (cancelBtn) {
         cancelBtn.addEventListener('click', async function() {
-            if (confirm('Cancel this ticket?')) {
+            if (confirm('Cancel this request?')) {
                 const module = await import('./tickets.js');
                 const result = await module.cancelTicket(ticket.id);
                 if (result.success) {
-                    alert('Ticket cancelled.');
+                    alert('Request cancelled.');
                     closeModal();
                     renderGrid();
                 } else {
                     alert('Error: ' + result.error);
                 }
             }
+        });
+    }
+
+    // ─── Submit Report button ──────────────────────────────
+    const reportBtn = overlay.querySelector('#submitReportBtn');
+    if (reportBtn) {
+        reportBtn.addEventListener('click', () => {
+            closeModal();
+            setTimeout(() => {
+                openReportModal(ticket, badge);
+            }, 300);
         });
     }
 }
@@ -239,7 +433,6 @@ function renderGrid() {
         return;
     }
 
-    // ─── Fetch tickets for this scout ──────────────────────────
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
     if (currentUser) {
         import('./tickets.js').then(module => {
@@ -270,40 +463,42 @@ function renderGridWithTickets(filtered) {
         const requirements = ticket ? ticket.requirements : null;
         const leaderNote = ticket ? ticket.leaderNote : null;
 
-        // ─── Determine slot style ──────────────────────────────────
+        // ─── Determine slot style ──────────────────────────
         let slotClass = 'pouch-slot';
         let statusEmoji = '';
         let statusText = '';
+        let hoverText = '';
 
         if (isUnlocked) {
             slotClass += ' unlocked';
             statusEmoji = '✅';
             statusText = 'Earned!';
+            hoverText = 'Earned! 🎉';
         } else if (ticketStatus === 'pending') {
             slotClass += ' ticket-pending';
             statusEmoji = '⏳';
             statusText = 'Pending';
+            hoverText = '⏳ Waiting for leader...';
         } else if (ticketStatus === 'in-progress') {
             slotClass += ' ticket-progress';
             statusEmoji = '💜';
-            statusText = 'In Progress';
+            statusText = 'Requirements Assigned';
+            hoverText = requirements ? `📋 ${requirements}` : '💜 Click to see requirements';
+        } else if (ticketStatus === 'needs-review') {
+            slotClass += ' ticket-review';
+            statusEmoji = '📤';
+            statusText = 'Report Submitted';
+            hoverText = '📤 Waiting for leader to review your report';
         } else if (ticketStatus === 'rejected') {
             slotClass += ' ticket-rejected';
             statusEmoji = '❌';
             statusText = 'Rejected';
+            hoverText = '❌ Not approved. Talk to your leader.';
         } else {
             slotClass += ' locked';
             statusEmoji = '🔒';
             statusText = 'Click to request';
-        }
-
-        // ─── Build tooltip ──────────────────────────────────────────
-        let tooltipText = statusText;
-        if (requirements) {
-            tooltipText += ` | 📋 ${requirements}`;
-        }
-        if (leaderNote) {
-            tooltipText += ` | 💬 ${leaderNote}`;
+            hoverText = 'Click to request this badge';
         }
 
         const slot = document.createElement('div');
@@ -314,32 +509,30 @@ function renderGridWithTickets(filtered) {
             <span class="slot-name">${badge.name}</span>
             <span class="slot-type">${typeLabels[badge.type] || ''}</span>
             ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
-            <span class="tooltip-text">${tooltipText}</span>
+            <span class="tooltip-text">${hoverText}</span>
         `;
 
-        // ─── Click handler ──────────────────────────────────────────
+        // ─── Click handler ──────────────────────────────────
         slot.addEventListener('click', async () => {
             if (isUnlocked) {
                 alert(`🎉 You already earned "${badge.name}"!`);
                 return;
             }
 
-            // If there's a ticket, show ticket details
             if (ticket) {
                 showTicketDetails(ticket, badge);
                 return;
             }
 
-            // ─── Check if there's already a pending ticket ──────────
             try {
                 const module = await import('./tickets.js');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                
+
                 const result = await module.getScoutTickets(currentUser.username);
                 if (result.success) {
-                    const existing = result.data.find(t => 
-                        t.badgeId === badge.id && 
-                        (t.status === 'pending' || t.status === 'in-progress')
+                    const existing = result.data.find(t =>
+                        t.badgeId === badge.id &&
+                        (t.status === 'pending' || t.status === 'in-progress' || t.status === 'needs-review')
                     );
                     if (existing) {
                         showTicketDetails(existing, badge);
@@ -350,7 +543,6 @@ function renderGridWithTickets(filtered) {
                 console.warn('Ticket check failed:', e);
             }
 
-            // ─── Open the modal ──────────────────────────────────────
             openTicketModal(badge);
         });
 
@@ -368,18 +560,14 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
     let html = `
         <style>
-            /* ─── LEATHER LOGBOOK THEME ─── */
             .badge-page {
                 max-width: 100%;
                 width: 100%;
                 background: #f2e8d5;
-                background-image: 
-                    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4a882' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+                background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c4a882' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
                 border: 8px solid #6b4c3a;
                 border-radius: 24px;
-                box-shadow: 
-                    inset 0 0 0 2px #8b6b4d,
-                    0 8px 32px rgba(0,0,0,0.3);
+                box-shadow: inset 0 0 0 2px #8b6b4d, 0 8px 32px rgba(0,0,0,0.3);
                 padding: 24px 24px 28px;
                 margin: 0 auto;
                 position: relative;
@@ -550,8 +738,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             .pouch-slot {
                 aspect-ratio: 1 / 1;
                 background: #e8dcc8;
-                background-image: 
-                    repeating-linear-gradient(45deg, rgba(120, 90, 60, 0.05) 0px, rgba(120, 90, 60, 0.05) 2px, transparent 2px, transparent 6px);
+                background-image: repeating-linear-gradient(45deg, rgba(120,90,60,0.05) 0px, rgba(120,90,60,0.05) 2px, transparent 2px, transparent 6px);
                 border: 2px dashed #a08060;
                 border-radius: 12px;
                 display: flex;
@@ -579,12 +766,12 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             .pouch-slot.unlocked {
                 border: 2px solid #b8860b;
                 background: #f0e8d8;
-                box-shadow: 0 0 20px rgba(184, 134, 11, 0.15), inset 0 2px 4px rgba(0,0,0,0.05);
+                box-shadow: 0 0 20px rgba(184,134,11,0.15), inset 0 2px 4px rgba(0,0,0,0.05);
                 animation: slotGlow 3s ease-in-out infinite;
             }
             @keyframes slotGlow {
-                0%, 100% { box-shadow: 0 0 10px rgba(184, 134, 11, 0.1); }
-                50% { box-shadow: 0 0 25px rgba(184, 134, 11, 0.25); }
+                0%, 100% { box-shadow: 0 0 10px rgba(184,134,11,0.1); }
+                50% { box-shadow: 0 0 25px rgba(184,134,11,0.25); }
             }
             .pouch-slot .slot-name {
                 font-size: 8px;
@@ -642,18 +829,26 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #fef9e7;
             }
             @keyframes pulseOrange {
-                0%, 100% { box-shadow: 0 0 5px rgba(243, 156, 18, 0.2); }
-                50% { box-shadow: 0 0 20px rgba(243, 156, 18, 0.4); }
+                0%, 100% { box-shadow: 0 0 5px rgba(243,156,18,0.2); }
+                50% { box-shadow: 0 0 20px rgba(243,156,18,0.4); }
             }
+
             .pouch-slot.ticket-progress {
                 border: 2px solid #8e44ad;
                 animation: pulsePurple 1.5s ease-in-out infinite;
                 background: #f4ecf7;
             }
             @keyframes pulsePurple {
-                0%, 100% { box-shadow: 0 0 5px rgba(142, 68, 173, 0.2); }
-                50% { box-shadow: 0 0 20px rgba(142, 68, 173, 0.4); }
+                0%, 100% { box-shadow: 0 0 5px rgba(142,68,173,0.2); }
+                50% { box-shadow: 0 0 20px rgba(142,68,173,0.4); }
             }
+
+            .pouch-slot.ticket-review {
+                border: 2px solid #e67e22;
+                animation: pulseOrange 1.5s ease-in-out infinite;
+                background: #fdf2e9;
+            }
+
             .pouch-slot.ticket-rejected {
                 border: 2px solid #e74c3c;
                 opacity: 0.6;
@@ -694,8 +889,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #d4a017;
             }
 
-            /* ─── TICKET MODAL ─── */
-            .ticket-modal-overlay {
+            /* ─── MODALS ─── */
+            .ticket-modal-overlay, .report-modal-overlay {
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -709,21 +904,22 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 padding: 20px;
                 animation: fadeIn 0.3s ease;
             }
-            .ticket-modal {
+
+            .ticket-modal, .report-modal {
                 background: #f2e8d5;
                 border: 6px solid #6b4c3a;
                 border-radius: 24px;
                 padding: 32px;
-                max-width: 450px;
+                max-width: 500px;
                 width: 100%;
+                max-height: 90vh;
+                overflow-y: auto;
                 box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 2px #8b6b4d;
                 animation: slideUp 0.3s ease;
                 position: relative;
             }
-            .ticket-modal.ticket-detail {
-                max-width: 500px;
-            }
-            .ticket-modal .modal-close {
+
+            .ticket-modal .modal-close, .report-modal .modal-close {
                 position: absolute;
                 top: 16px;
                 right: 20px;
@@ -734,10 +930,11 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 cursor: pointer;
                 transition: color 0.2s;
             }
-            .ticket-modal .modal-close:hover {
+            .ticket-modal .modal-close:hover, .report-modal .modal-close:hover {
                 color: #3d2b1f;
             }
-            .ticket-modal .badge-preview {
+
+            .ticket-modal .badge-preview, .report-modal .badge-preview {
                 display: flex;
                 align-items: center;
                 gap: 16px;
@@ -745,20 +942,21 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 padding-bottom: 16px;
                 border-bottom: 2px solid #d4c4a8;
             }
-            .ticket-modal .badge-preview .icon {
+            .ticket-modal .badge-preview .icon, .report-modal .badge-preview .icon {
                 font-size: 48px;
             }
-            .ticket-modal .badge-preview .info .name {
+            .ticket-modal .badge-preview .info .name, .report-modal .badge-preview .info .name {
                 font-size: 20px;
                 font-weight: 700;
                 color: #3d2b1f;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .badge-preview .info .type {
+            .ticket-modal .badge-preview .info .type, .report-modal .badge-preview .info .type {
                 font-size: 14px;
                 color: #6b5f4a;
             }
-            .ticket-modal label {
+
+            .ticket-modal label, .report-modal label {
                 display: block;
                 font-weight: 600;
                 font-size: 14px;
@@ -766,7 +964,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 margin-bottom: 6px;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal textarea {
+
+            .ticket-modal textarea, .report-modal textarea {
                 width: 100%;
                 padding: 12px;
                 border: 2px solid #b8a080;
@@ -779,16 +978,17 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 box-sizing: border-box;
                 background: #f8f0e0;
             }
-            .ticket-modal textarea:focus {
+            .ticket-modal textarea:focus, .report-modal textarea:focus {
                 outline: none;
                 border-color: #b8860b;
             }
-            .ticket-modal .modal-actions {
+
+            .ticket-modal .modal-actions, .report-modal .modal-actions {
                 display: flex;
                 gap: 12px;
                 margin-top: 20px;
             }
-            .ticket-modal .modal-actions button {
+            .ticket-modal .modal-actions button, .report-modal .modal-actions button {
                 flex: 1;
                 padding: 12px;
                 border: none;
@@ -799,21 +999,22 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 transition: all 0.2s;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .modal-actions .btn-cancel {
+            .ticket-modal .modal-actions .btn-cancel, .report-modal .modal-actions .btn-cancel {
                 background: #d4c4a8;
                 color: #3d2b1f;
             }
-            .ticket-modal .modal-actions .btn-cancel:hover {
+            .ticket-modal .modal-actions .btn-cancel:hover, .report-modal .modal-actions .btn-cancel:hover {
                 background: #c4a882;
             }
-            .ticket-modal .modal-actions .btn-submit {
+            .ticket-modal .modal-actions .btn-submit, .report-modal .modal-actions .btn-submit {
                 background: #6b4c3a;
                 color: #f2e8d5;
             }
-            .ticket-modal .modal-actions .btn-submit:hover {
+            .ticket-modal .modal-actions .btn-submit:hover, .report-modal .modal-actions .btn-submit:hover {
                 background: #8b6b4d;
             }
-            .ticket-modal .modal-message {
+
+            .ticket-modal .modal-message, .report-modal .modal-message {
                 margin-top: 12px;
                 padding: 10px;
                 border-radius: 8px;
@@ -822,15 +1023,40 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 display: none;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .modal-message.success {
+            .ticket-modal .modal-message.success, .report-modal .modal-message.success {
                 display: block;
                 background: #d4edda;
                 color: #155724;
             }
-            .ticket-modal .modal-message.error {
+            .ticket-modal .modal-message.error, .report-modal .modal-message.error {
                 display: block;
                 background: #f8d7da;
                 color: #721c24;
+            }
+
+            #reportDropZone {
+                border: 2px dashed #b8a080;
+                border-radius: 12px;
+                padding: 20px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s;
+                background: #f8f0e0;
+            }
+            #reportDropZone:hover {
+                border-color: #b8860b;
+                background: #f0e8d8;
+            }
+            #reportDropZone.dragover {
+                border-color: #b8860b;
+                background: #f0e8d8;
+            }
+
+            #reportImagePreview {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 10px;
             }
 
             @keyframes fadeIn {
@@ -853,7 +1079,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 .pouch-slot { font-size: 22px; min-height: 70px; }
                 .pouch-slot .slot-name { font-size: 7px; }
                 .pouch-header-text h2 { font-size: 20px; padding: 6px 20px; }
-                .ticket-modal { padding: 24px; margin: 16px; }
+                .ticket-modal, .report-modal { padding: 24px; margin: 16px; }
             }
             @media (max-width: 500px) {
                 .badge-page { padding: 16px 12px; border-width: 4px; }
@@ -864,8 +1090,9 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 .pouch-scout-card .badge-count { text-align: center; }
                 .pouch-filters .filter-btn { font-size: 10px; padding: 4px 12px; }
                 .pouch-header-text h2 { font-size: 18px; }
-                .ticket-modal { padding: 20px; }
-                .ticket-modal .modal-actions { flex-direction: column; }
+                .ticket-modal, .report-modal { padding: 20px; }
+                .ticket-modal .modal-actions, .report-modal .modal-actions { flex-direction: column; }
+                #reportDropZone { padding: 12px; }
             }
         </style>
 
