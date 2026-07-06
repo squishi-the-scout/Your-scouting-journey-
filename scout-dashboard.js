@@ -60,8 +60,8 @@ let sessionsUnsubscribe = null;
 let currentReportTab = '';
 let currentReportReq = '';
 let tempReportImages = [];
-let scoutTickets = []; // ← NEW: Cache for tickets
-let ticketsUnsubscribe = null; // ← NEW: Ticket listener
+let scoutTickets = []; // Cache for tickets
+let ticketsUnsubscribe = null; // Ticket listener
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
@@ -133,7 +133,7 @@ function listenToSessions() {
     });
 }
 
-// ─── NEW: Real-time tickets listener ──────────────────────
+// ─── Real-time tickets listener ──────────────────────────
 function listenToTickets() {
     if (ticketsUnsubscribe) {
         ticketsUnsubscribe();
@@ -148,9 +148,17 @@ function listenToTickets() {
         snapshot.forEach(doc => {
             scoutTickets.push({ id: doc.id, ...doc.data() });
         });
-        // If on badges view, re-render to show updated status
+        
+        // Update the global cache for badges.js
+        window.__scoutTickets = scoutTickets;
+        
+        // If on badges view, re-render
         if (currentView === 'badges') {
-            renderBadgeView();
+            if (window.renderBadgeGrid) {
+                window.renderBadgeGrid();
+            } else {
+                renderBadgeView();
+            }
         }
     }, (error) => {
         console.error('Tickets listener error:', error);
@@ -247,26 +255,31 @@ function renderView() {
         }
     }
     else if (currentView === 'badges') {
-        renderBadgeView(); // ← UPDATED: Uses ticket-aware function
+        renderBadgeView();
     }
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
     else if (currentView === 'reportModal') renderReportModal();
 }
 
-// ─── NEW: Badge View with Ticket Integration ──────────────
+// ─── Badge View with Ticket Integration ──────────────────
 function renderBadgeView() {
     const displayName = scoutData.fullName || currentUser.username;
     const rank = scoutData.rank || 'Membership';
-    
-    // Call the existing renderBadgePouch but pass tickets data
-    // We need to modify the renderBadgePouch function to accept tickets
-    // OR we can pass tickets via a global variable
     
     // Store tickets in a global for badges.js to use
     window.__scoutTickets = scoutTickets;
     
     renderBadgePouch('page-content', displayName, rank);
+    
+    // ─── Store reference for re-render on ticket updates ───
+    window.renderBadgeGrid = function() {
+        if (currentView === 'badges') {
+            // Refresh tickets from global
+            window.__scoutTickets = scoutTickets;
+            renderBadgePouch('page-content', displayName, rank);
+        }
+    };
 }
 
 // ─── Dashboard ──────────────────────────────────────────
@@ -1036,7 +1049,7 @@ document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => 
 document.getElementById('logout-btn').addEventListener('click', () => {
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
-    if (ticketsUnsubscribe) ticketsUnsubscribe(); // ← NEW
+    if (ticketsUnsubscribe) ticketsUnsubscribe();
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
@@ -1046,7 +1059,7 @@ async function init() {
     await loadScoutData();
     listenToStatus();
     listenToSessions();
-    listenToTickets(); // ← NEW: Start listening for tickets
+    listenToTickets();
     renderView();
 
     const hamburger = document.getElementById('hamburger-btn');
@@ -1093,7 +1106,7 @@ async function init() {
         closeMobileSidebar();
         if (statusUnsubscribe) statusUnsubscribe();
         if (sessionsUnsubscribe) sessionsUnsubscribe();
-        if (ticketsUnsubscribe) ticketsUnsubscribe(); // ← NEW
+        if (ticketsUnsubscribe) ticketsUnsubscribe();
         localStorage.removeItem('currentUser');
         window.location.href = 'index.html';
     });
