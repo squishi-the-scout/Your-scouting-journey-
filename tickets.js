@@ -1,5 +1,5 @@
-// tickets.js — Firebase Ticket Operations
-import { db, storage } from './firebase-config.js';
+// tickets.js — Firebase Ticket Operations (Base64 version)
+import { db } from './firebase-config.js';
 import {
     collection,
     addDoc,
@@ -12,14 +12,8 @@ import {
     getDoc,
     deleteDoc,
     Timestamp,
-    writeBatch
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {
-    ref,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // ─── HELPERS ──────────────────────────────────────────────
 
@@ -31,12 +25,6 @@ function getCurrentUser() {
 
 function generateTicketId() {
     return `TICKET-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-}
-
-async function uploadImage(file, path) {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
 }
 
 // ─── CREATE TICKET ─────────────────────────────────────────
@@ -51,15 +39,13 @@ export async function createTicket(scoutName, badgeId, badgeName, badgeIcon, not
             badgeId: badgeId,
             badgeName: badgeName,
             badgeIcon: badgeIcon || '🏅',
-            status: 'pending', // pending | requirements_added | report_submitted | approved | rejected | cancelled
+            status: 'pending',
             
             // Scout request
-            requestDate: new Date().toISOString().split('T')[0],
-            requestTime: new Date().toTimeString().slice(0, 5),
             requestNote: note || '',
             createdAt: Timestamp.now(),
             
-            // Leader fields (empty initially)
+            // Leader fields
             requirements: null,
             requirementsImage: null,
             leaderId: null,
@@ -67,12 +53,12 @@ export async function createTicket(scoutName, badgeId, badgeName, badgeIcon, not
             leaderNote: null,
             requirementsAddedAt: null,
             
-            // Scout report (empty initially)
+            // Scout report
             reportText: null,
             reportImages: [],
             reportSubmittedAt: null,
             
-            // Decision (empty initially)
+            // Decision
             decision: null,
             decisionNote: null,
             decidedAt: null
@@ -165,15 +151,20 @@ export async function addRequirements(ticketId, requirementsText, imageFile = nu
         const user = getCurrentUser();
         const docRef = doc(db, 'tickets', ticketId);
         
-        let imageUrl = null;
+        let imageBase64 = null;
         if (imageFile) {
-            const path = `requirements/${ticketId}/${Date.now()}-${imageFile.name}`;
-            imageUrl = await uploadImage(imageFile, path);
+            // Convert to base64 (like report-viewer)
+            imageBase64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(imageFile);
+            });
         }
 
         await updateDoc(docRef, {
             requirements: requirementsText,
-            requirementsImage: imageUrl,
+            requirementsImage: imageBase64,
             leaderId: user.uid || 'leader',
             leaderName: leaderName || user.username || 'Leader',
             requirementsAddedAt: Timestamp.now(),
@@ -211,29 +202,23 @@ export async function rejectTicket(ticketId, reason = '') {
     }
 }
 
-// ─── SCOUT: SUBMIT REPORT ──────────────────────────────────
+// ─── SCOUT: SUBMIT REPORT WITH BASE64 ──────────────────────
 
-export async function submitReport(ticketId, reportText, imageFiles = []) {
+export async function submitReportWithBase64(ticketId, reportText, imageBase64 = []) {
     try {
         const docRef = doc(db, 'tickets', ticketId);
         
-        // Upload images
-        const imageUrls = [];
-        for (let i = 0; i < imageFiles.length; i++) {
-            const file = imageFiles[i];
-            const path = `reports/${ticketId}/${Date.now()}-${i}-${file.name}`;
-            const url = await uploadImage(file, path);
-            imageUrls.push(url);
-        }
-
+        // Cap image count at 5
+        const images = imageBase64.slice(0, 5);
+        
         await updateDoc(docRef, {
             reportText: reportText,
-            reportImages: imageUrls,
+            reportImages: images,
             reportSubmittedAt: Timestamp.now(),
             status: 'report_submitted'
         });
 
-        console.log(`✅ Report submitted for ticket: ${ticketId}`);
+        console.log(`✅ Report submitted for ticket: ${ticketId} with ${images.length} images`);
         return { success: true };
     } catch (error) {
         console.error('❌ Failed to submit report:', error);
@@ -290,39 +275,6 @@ export async function deleteTicket(ticketId) {
         return { success: true };
     } catch (error) {
         console.error('❌ Failed to delete ticket:', error);
-        return { success: false, error: error.message };
-    }
-}
-
-// ─── BULK: UPDATE SCOUT BADGE STATUS ──────────────────────
-
-export async function awardBadgeToScout(scoutName, badgeId) {
-    try {
-        // Get all tickets for this scout + badge
-        const ticketsRef = collection(db, 'tickets');
-        const q = query(
-            ticketsRef,
-            where('scoutName', '==', scoutName),
-            where('badgeId', '==', badgeId),
-            where('status', '==', 'approved')
-        );
-        const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-            return { success: false, error: 'No approved ticket found for this badge' };
-        }
-
-        // Update the scout's badge state (local storage)
-        const badgeState = JSON.parse(localStorage.getItem('badgePouch') || '[]');
-        const badge = badgeState.find(b => b.id === badgeId);
-        if (badge) {
-            badge.unlocked = true;
-            localStorage.setItem('badgePouch', JSON.stringify(badgeState));
-        }
-
-        return { success: true };
-    } catch (error) {
-        console.error('❌ Failed to award badge:', error);
         return { success: false, error: error.message };
     }
 }
