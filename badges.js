@@ -51,11 +51,9 @@ export function getFilteredBadges() {
 
 // ─── Get tickets from global cache ──────────────────────
 function getScoutTickets() {
-    // Try to get tickets from the global cache set by scout-dashboard.js
     if (window.__scoutTickets) {
         return window.__scoutTickets;
     }
-    // Fallback: try to load from localStorage
     try {
         const cached = JSON.parse(localStorage.getItem('scoutTicketsCache'));
         if (cached) return cached;
@@ -133,7 +131,6 @@ function openTicketModal(badge) {
             const module = await import('./tickets.js');
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-            // Build the note with date/time included
             const fullNote = `📅 ${date} at ${time}\n${note ? `📝 ${note}` : ''}`;
 
             const result = await module.createTicket(
@@ -152,8 +149,8 @@ function openTicketModal(badge) {
                 cancelBtn.textContent = 'Close';
                 cancelBtn.disabled = false;
                 cancelBtn.onclick = closeModal;
-                // Refresh tickets in parent
                 if (window.refreshTickets) window.refreshTickets();
+                if (window.renderBadgeGrid) window.renderBadgeGrid();
                 setTimeout(closeModal, 3500);
             } else {
                 throw new Error(result.error);
@@ -275,6 +272,11 @@ function openReportModal(ticket, badge) {
                 reportImages.push(e.target.result);
                 renderPreview();
             };
+            reader.onerror = (e) => {
+                console.error('File read error:', e);
+                document.getElementById('reportMessage').className = 'modal-message error';
+                document.getElementById('reportMessage').textContent = '❌ Error reading file.';
+            };
             reader.readAsDataURL(file);
         }
     }
@@ -296,7 +298,7 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report ──────────────────────────────────────
+    // ─── Submit report (UPDATED — uses base64 directly) ──
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -314,19 +316,15 @@ function openReportModal(ticket, badge) {
         try {
             const module = await import('./tickets.js');
             
-            // Convert base64 images to File objects for upload
-            const imageFiles = [];
-            for (const base64 of reportImages) {
-                const response = await fetch(base64);
-                const blob = await response.blob();
-                const file = new File([blob], `report-${Date.now()}.jpg`, { type: 'image/jpeg' });
-                imageFiles.push(file);
-            }
+            // ─── Pass base64 images directly ──────────────────
+            const imageBase64 = reportImages;
 
-            const result = await module.submitReport(
+            console.log(`📤 Submitting report with ${imageBase64.length} images...`);
+
+            const result = await module.submitReportWithBase64(
                 ticket.id,
                 note || '',
-                imageFiles
+                imageBase64
             );
 
             if (result.success) {
@@ -334,11 +332,13 @@ function openReportModal(ticket, badge) {
                 messageEl.textContent = '✅ Report submitted! Your leader will review it.';
                 submitBtn.textContent = '✅ Submitted';
                 if (window.refreshTickets) window.refreshTickets();
+                if (window.renderBadgeGrid) window.renderBadgeGrid();
                 setTimeout(closeModal, 3000);
             } else {
                 throw new Error(result.error);
             }
         } catch (error) {
+            console.error('❌ Submit error:', error);
             messageEl.className = 'modal-message error';
             messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong.'}`;
             submitBtn.disabled = false;
@@ -481,6 +481,7 @@ function showTicketDetails(ticket, badge) {
                 if (result.success) {
                     alert('Request cancelled.');
                     if (window.refreshTickets) window.refreshTickets();
+                    if (window.renderBadgeGrid) window.renderBadgeGrid();
                     closeModal();
                     renderGrid();
                 } else {
@@ -508,7 +509,6 @@ function renderGrid() {
     if (!grid) return;
 
     const filtered = getFilteredBadges();
-    // Get tickets from global cache
     scoutTicketsCache = getScoutTickets();
 
     if (filtered.length === 0) {
@@ -603,7 +603,6 @@ function renderGridWithTickets(filtered) {
                 return;
             }
 
-            // No ticket exists - open request modal
             openTicketModal(badge);
         });
 
@@ -618,7 +617,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
     loadBadgeState();
     const { total, earned } = getBadgeStats();
-    // Refresh tickets from global cache
     scoutTicketsCache = getScoutTickets();
 
     let html = `
