@@ -19,9 +19,12 @@ export async function createTicket(scoutId, badgeId, badgeName, badgeIcon, note 
             badgeName: badgeName,
             badgeIcon: badgeIcon,
             note: note || '',
-            status: 'pending', // pending | in-progress | approved | rejected | cancelled
+            status: 'pending', // pending | in-progress | needs-review | approved | rejected | cancelled
             requirements: '',
             leaderNote: '',
+            reportNote: '',
+            reportImages: [],
+            reportSubmittedAt: null,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
             approvedAt: null,
@@ -57,13 +60,18 @@ export async function getScoutTickets(scoutId) {
     try {
         const q = query(
             collection(db, TICKETS_COLLECTION),
-            where('scoutId', '==', scoutId),
-            orderBy('createdAt', 'desc')
+            where('scoutId', '==', scoutId)
         );
         const snapshot = await getDocs(q);
         const tickets = [];
         snapshot.forEach(doc => {
             tickets.push({ id: doc.id, ...doc.data() });
+        });
+        // Sort in JavaScript (newest first)
+        tickets.sort((a, b) => {
+            const timeA = a.createdAt?.seconds || 0;
+            const timeB = b.createdAt?.seconds || 0;
+            return timeB - timeA;
         });
         return { success: true, data: tickets };
     } catch (error) {
@@ -96,7 +104,7 @@ export async function getPendingTickets() {
     try {
         const q = query(
             collection(db, TICKETS_COLLECTION),
-            where('status', 'in', ['pending', 'in-progress']),
+            where('status', 'in', ['pending', 'in-progress', 'needs-review']),
             orderBy('createdAt', 'asc')
         );
         const snapshot = await getDocs(q);
@@ -160,6 +168,38 @@ export async function updateTicketRequirements(ticketId, requirements, leaderNot
     }
 }
 
+// ─── Submit a report (scout submits work) ──────────────────
+export async function submitReport(ticketId, note, images = []) {
+    try {
+        const docRef = doc(db, TICKETS_COLLECTION, ticketId);
+        
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            return { success: false, error: 'Ticket not found' };
+        }
+        
+        const ticketData = docSnap.data();
+        
+        if (!ticketData.requirements || ticketData.requirements.trim() === '') {
+            return { success: false, error: 'No requirements assigned yet. Wait for your leader.' };
+        }
+        
+        const updateData = {
+            status: 'needs-review',
+            reportNote: note || '',
+            reportImages: images || [],
+            reportSubmittedAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        };
+        
+        await updateDoc(docRef, updateData);
+        return { success: true };
+    } catch (error) {
+        console.error('Error submitting report:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 // ─── Cancel a ticket (scout) ──────────────────────────────
 export async function cancelTicket(ticketId) {
     return await updateTicketStatus(ticketId, 'cancelled');
@@ -206,7 +246,7 @@ export function listenToAllTickets(callback) {
 export function listenToPendingTickets(callback) {
     const q = query(
         collection(db, TICKETS_COLLECTION),
-        where('status', 'in', ['pending', 'in-progress']),
+        where('status', 'in', ['pending', 'in-progress', 'needs-review']),
         orderBy('createdAt', 'asc')
     );
     return onSnapshot(q, (snapshot) => {
