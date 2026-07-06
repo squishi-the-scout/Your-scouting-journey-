@@ -741,7 +741,7 @@ function renderDashboard() {
     };
 }
 
-// ─── LEADER TICKETS ──────────────────────────────────────────
+// ─── LEADER TICKETS (UPDATED) ──────────────────────────────
 async function renderLeaderTickets() {
     try {
         const module = await import('./tickets.js');
@@ -753,13 +753,27 @@ async function renderLeaderTickets() {
         }
         
         const tickets = result.data;
-        const pendingCount = tickets.filter(t => t.status === 'pending' || t.status === 'in-progress').length;
+        const pendingCount = tickets.filter(t => 
+            t.status === 'pending' || 
+            t.status === 'requirements_added' || 
+            t.status === 'report_submitted'
+        ).length;
+        
+        // ─── Status config ──────────────────────────────────────
+        const statusConfig = {
+            pending: { label: '⏳ Pending', color: '#f39c12', bg: '#fef9e7' },
+            requirements_added: { label: '📋 Requirements Added', color: '#8e44ad', bg: '#f4ecf7' },
+            report_submitted: { label: '📤 Report Submitted', color: '#e67e22', bg: '#fdf2e9' },
+            approved: { label: '✅ Approved', color: '#27ae60', bg: '#d4edda' },
+            rejected: { label: '❌ Rejected', color: '#e74c3c', bg: '#f8d7da' },
+            cancelled: { label: '🚫 Cancelled', color: '#95a5a6', bg: '#e8e0f0' }
+        };
         
         let html = `
             <div style="max-width:900px;margin:0 auto;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
                     <h2 style="color:var(--text-dark);margin:0;">🎫 Tickets <span style="font-size:14px;color:var(--text-muted);font-weight:400;">(${tickets.length} total)</span></h2>
-                    <span style="background:#e74c3c;color:white;padding:4px 16px;border-radius:20px;font-size:14px;font-weight:600;">${pendingCount} pending</span>
+                    ${pendingCount > 0 ? `<span style="background:#e74c3c;color:white;padding:4px 16px;border-radius:20px;font-size:14px;font-weight:600;">${pendingCount} pending</span>` : ''}
                 </div>
                 
                 <div style="display:flex;flex-direction:column;gap:12px;">
@@ -775,56 +789,80 @@ async function renderLeaderTickets() {
         }
         
         for (const ticket of tickets) {
-            const statusColors = {
-                pending: '#f39c12',
-                'in-progress': '#8e44ad',
-                approved: '#27ae60',
-                rejected: '#e74c3c',
-                cancelled: '#95a5a6'
-            };
-            const statusLabels = {
-                pending: '⏳ Pending',
-                'in-progress': '💜 In Progress',
-                approved: '✅ Approved',
-                rejected: '❌ Rejected',
-                cancelled: '🚫 Cancelled'
-            };
+            const status = statusConfig[ticket.status] || statusConfig.pending;
+            const scoutName = ticket.scoutName || 'Unknown Scout';
+            const date = ticket.createdAt?.seconds ? 
+                new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 
+                'Recently';
             
-            // Get scout name
-            const scoutDoc = await getDoc(doc(db, 'users', ticket.scoutId));
-            const scoutName = scoutDoc.exists() ? (scoutDoc.data().fullName || ticket.scoutId) : ticket.scoutId;
+            // ─── Determine action buttons based on status ──────
+            let actionsHtml = '';
+            
+            if (ticket.status === 'pending') {
+                actionsHtml = `
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
+                        <input type="text" id="req-input-${ticket.id}" placeholder="Add requirements..." style="flex:1;min-width:150px;padding:6px 12px;border-radius:8px;border:1px solid #e0d6ec;font-size:13px;" />
+                        <button class="save-req-btn" data-ticket-id="${ticket.id}" style="background:#8e44ad;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">📋 Add Requirements</button>
+                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    </div>
+                `;
+            } else if (ticket.status === 'requirements_added') {
+                actionsHtml = `
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
+                        <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
+                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    </div>
+                `;
+            } else if (ticket.status === 'report_submitted') {
+                actionsHtml = `
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
+                        <button class="view-report-btn" data-ticket-id="${ticket.id}" style="background:#3498db;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">📤 View Report</button>
+                        <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
+                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    </div>
+                `;
+            } else if (ticket.status === 'approved') {
+                actionsHtml = `
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
+                        <span style="color:#27ae60;font-weight:600;">✅ Approved${ticket.decisionNote ? `: ${ticket.decisionNote}` : ''}</span>
+                    </div>
+                `;
+            } else if (ticket.status === 'rejected') {
+                actionsHtml = `
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
+                        <span style="color:#e74c3c;font-weight:600;">❌ Rejected${ticket.decisionNote ? `: ${ticket.decisionNote}` : ''}</span>
+                    </div>
+                `;
+            }
             
             html += `
-                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${statusColors[ticket.status] || '#95a5a6'};">
+                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${status.color};">
                     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                                <span style="font-weight:600;font-size:16px;">${ticket.badgeIcon} ${ticket.badgeName}</span>
+                                <span style="font-weight:600;font-size:16px;">${ticket.badgeIcon || '🏅'} ${ticket.badgeName}</span>
                                 <span style="font-size:12px;color:var(--text-muted);">— ${scoutName}</span>
+                                <span style="font-size:11px;background:${status.bg};color:${status.color};padding:2px 10px;border-radius:12px;font-weight:500;">${status.label}</span>
                             </div>
                             <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">
-                                ${ticket.note ? `📝 "${ticket.note}"` : ''}
+                                ${ticket.requestNote ? `📝 "${ticket.requestNote}"` : ''}
+                                <span style="margin-left:12px;">📅 ${date}</span>
                             </div>
                             ${ticket.requirements ? `
-                                <div style="font-size:13px;color:var(--purple);margin-top:6px;padding:8px 12px;background:#f5f0f8;border-radius:8px;">
-                                    📋 Requirements: ${ticket.requirements}
+                                <div style="font-size:13px;color:#3d2b1f;margin-top:6px;padding:8px 12px;background:#f5f0f8;border-radius:8px;border-left:3px solid #8e44ad;">
+                                    📋 ${ticket.requirements}
+                                    ${ticket.requirementsImage ? ` <a href="${ticket.requirementsImage}" target="_blank" style="color:#8e44ad;font-size:12px;">[view image]</a>` : ''}
+                                </div>
+                            ` : ''}
+                            ${ticket.reportText ? `
+                                <div style="font-size:13px;color:#3d2b1f;margin-top:6px;padding:8px 12px;background:#fdf2e9;border-radius:8px;border-left:3px solid #e67e22;">
+                                    📤 Report: ${ticket.reportText}
+                                    ${ticket.reportImages?.length ? ` <span style="font-size:12px;color:#e67e22;">(${ticket.reportImages.length} images)</span>` : ''}
                                 </div>
                             ` : ''}
                         </div>
-                        <div style="text-align:right;">
-                            <span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:${statusColors[ticket.status]}20;color:${statusColors[ticket.status]};">
-                                ${statusLabels[ticket.status] || ticket.status}
-                            </span>
-                        </div>
                     </div>
-                    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #e8e0f0;">
-                        ${ticket.status === 'pending' || ticket.status === 'in-progress' ? `
-                            <input type="text" id="req-input-${ticket.id}" placeholder="Assign requirements..." style="flex:1;min-width:150px;padding:6px 12px;border-radius:8px;border:1px solid #e0d6ec;font-size:13px;" value="${ticket.requirements || ''}" />
-                            <button class="save-req-btn" data-ticket-id="${ticket.id}" style="background:var(--purple);color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">Save Requirements</button>
-                            <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
-                            <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
-                        ` : ''}
-                    </div>
+                    ${actionsHtml}
                 </div>
             `;
         }
@@ -833,6 +871,7 @@ async function renderLeaderTickets() {
         pageContent.innerHTML = html;
         
         // ─── Event listeners ──────────────────────────────────────
+        // Save Requirements
         document.querySelectorAll('.save-req-btn').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const ticketId = this.dataset.ticketId;
@@ -845,9 +884,9 @@ async function renderLeaderTickets() {
                 }
                 
                 const module = await import('./tickets.js');
-                const result = await module.updateTicketRequirements(ticketId, requirements);
+                const result = await module.addRequirements(ticketId, requirements, null, currentUser.username);
                 if (result.success) {
-                    alert('✅ Requirements saved! Status updated to In Progress.');
+                    alert('✅ Requirements saved! Scout has been notified.');
                     renderLeaderTickets();
                 } else {
                     alert('Error: ' + result.error);
@@ -855,25 +894,28 @@ async function renderLeaderTickets() {
             });
         });
         
+        // Approve Ticket
         document.querySelectorAll('.approve-ticket-btn').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const ticketId = this.dataset.ticketId;
-                if (!confirm('Approve this ticket? The badge will be unlocked.')) return;
+                if (!confirm('Approve this ticket? The badge will be unlocked for the scout.')) return;
                 
                 const module = await import('./tickets.js');
-                const result = await module.updateTicketStatus(ticketId, 'approved');
+                const result = await module.approveTicket(ticketId, 'Approved by leader');
                 if (result.success) {
-                    // Unlock the badge
-                    const ticket = (await module.getTicket(ticketId)).data;
-                    if (ticket) {
-                        const pouch = JSON.parse(localStorage.getItem('badgePouch') || '[]');
-                        const badge = pouch.find(b => b.id === ticket.badgeId);
-                        if (badge) {
-                            badge.unlocked = true;
-                            localStorage.setItem('badgePouch', JSON.stringify(pouch));
+                    // Try to unlock the badge in local storage
+                    try {
+                        const ticket = (await module.getTicketById(ticketId)).data;
+                        if (ticket) {
+                            const pouch = JSON.parse(localStorage.getItem('badgePouch') || '[]');
+                            const badge = pouch.find(b => b.id === ticket.badgeId);
+                            if (badge) {
+                                badge.unlocked = true;
+                                localStorage.setItem('badgePouch', JSON.stringify(pouch));
+                            }
                         }
-                    }
-                    alert('🎉 Badge unlocked!');
+                    } catch (e) { console.warn('Could not update local badge state:', e); }
+                    alert('🎉 Badge unlocked for scout!');
                     renderLeaderTickets();
                 } else {
                     alert('Error: ' + result.error);
@@ -881,19 +923,48 @@ async function renderLeaderTickets() {
             });
         });
         
+        // Reject Ticket
         document.querySelectorAll('.reject-ticket-btn').forEach(btn => {
             btn.addEventListener('click', async function() {
                 const ticketId = this.dataset.ticketId;
+                const reason = prompt('Why are you rejecting this ticket? (Optional)');
                 if (!confirm('Reject this ticket?')) return;
                 
                 const module = await import('./tickets.js');
-                const result = await module.updateTicketStatus(ticketId, 'rejected');
+                const result = await module.rejectTicket(ticketId, reason || 'Rejected by leader');
                 if (result.success) {
                     alert('Ticket rejected.');
                     renderLeaderTickets();
                 } else {
                     alert('Error: ' + result.error);
                 }
+            });
+        });
+        
+        // View Report (for report_submitted tickets)
+        document.querySelectorAll('.view-report-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const ticketId = this.dataset.ticketId;
+                const module = await import('./tickets.js');
+                const result = await module.getTicketById(ticketId);
+                if (!result.success) {
+                    alert('Error loading report.');
+                    return;
+                }
+                const ticket = result.data;
+                
+                let imagesHtml = '';
+                if (ticket.reportImages?.length) {
+                    imagesHtml = `
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+                            ${ticket.reportImages.map(url => 
+                                `<img src="${url}" style="max-width:120px;max-height:120px;border-radius:8px;object-fit:cover;border:2px solid #e8e0f0;" onclick="window.open('${url}','_blank')">`
+                            ).join('')}
+                        </div>
+                    `;
+                }
+                
+                alert(`📤 Report from ${ticket.scoutName}:\n\n${ticket.reportText || 'No text provided.'}\n\n${ticket.reportImages?.length || 0} images attached.`);
             });
         });
         
