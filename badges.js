@@ -49,6 +49,20 @@ export function getFilteredBadges() {
     return badgeState.filter(b => b.type === currentFilter);
 }
 
+// ─── Get tickets from global cache ──────────────────────
+function getScoutTickets() {
+    // Try to get tickets from the global cache set by scout-dashboard.js
+    if (window.__scoutTickets) {
+        return window.__scoutTickets;
+    }
+    // Fallback: try to load from localStorage
+    try {
+        const cached = JSON.parse(localStorage.getItem('scoutTicketsCache'));
+        if (cached) return cached;
+    } catch (e) {}
+    return [];
+}
+
 // ─── TICKET MODAL (Request) ──────────────────────────────
 function openTicketModal(badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
@@ -68,6 +82,12 @@ function openTicketModal(badge) {
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
                 </div>
             </div>
+
+            <label for="ticketDate">📅 Date</label>
+            <input type="date" id="ticketDate" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #b8a080;margin-bottom:12px;font-size:14px;background:#f8f0e0;box-sizing:border-box;">
+
+            <label for="ticketTime">⏰ Time</label>
+            <input type="time" id="ticketTime" value="${new Date().toTimeString().slice(0, 5)}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #b8a080;margin-bottom:12px;font-size:14px;background:#f8f0e0;box-sizing:border-box;">
 
             <label for="ticketNote">📝 Message to your leader (optional)</label>
             <textarea id="ticketNote" placeholder="Why do you want this badge? Any special request?"></textarea>
@@ -92,10 +112,18 @@ function openTicketModal(badge) {
     });
 
     document.getElementById('modalSubmitBtn').addEventListener('click', async function() {
+        const date = document.getElementById('ticketDate').value;
+        const time = document.getElementById('ticketTime').value;
         const note = document.getElementById('ticketNote').value.trim();
         const messageEl = document.getElementById('modalMessage');
         const submitBtn = this;
         const cancelBtn = document.getElementById('modalCancelBtn');
+
+        if (!date || !time) {
+            messageEl.className = 'modal-message error';
+            messageEl.textContent = '⚠️ Please select a date and time.';
+            return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.textContent = '⏳ Submitting...';
@@ -105,12 +133,15 @@ function openTicketModal(badge) {
             const module = await import('./tickets.js');
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
+            // Build the note with date/time included
+            const fullNote = `📅 ${date} at ${time}\n${note ? `📝 ${note}` : ''}`;
+
             const result = await module.createTicket(
                 currentUser.username,
                 badge.id,
                 badge.name,
                 badge.icon,
-                note || ''
+                fullNote || ''
             );
 
             if (result.success) {
@@ -121,6 +152,8 @@ function openTicketModal(badge) {
                 cancelBtn.textContent = 'Close';
                 cancelBtn.disabled = false;
                 cancelBtn.onclick = closeModal;
+                // Refresh tickets in parent
+                if (window.refreshTickets) window.refreshTickets();
                 setTimeout(closeModal, 3500);
             } else {
                 throw new Error(result.error);
@@ -160,6 +193,8 @@ function openReportModal(ticket, badge) {
             <div style="margin-bottom:16px;padding:12px 16px;background:#d4c4a8;border-radius:10px;border-left:4px solid #8e44ad;">
                 <strong style="color:#3d2b1f;">📋 Requirements:</strong>
                 <div style="color:#3d2b1f;margin-top:4px;font-size:15px;">${ticket.requirements || 'No requirements assigned yet.'}</div>
+                ${ticket.requirementsImage ? `<img src="${ticket.requirementsImage}" style="max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;">` : ''}
+                ${ticket.leaderName ? `<div style="font-size:12px;color:#6b5f4a;margin-top:4px;">Added by: ${ticket.leaderName}</div>` : ''}
             </div>
 
             <label for="reportNote">📝 Your Report Note</label>
@@ -278,16 +313,27 @@ function openReportModal(ticket, badge) {
 
         try {
             const module = await import('./tickets.js');
+            
+            // Convert base64 images to File objects for upload
+            const imageFiles = [];
+            for (const base64 of reportImages) {
+                const response = await fetch(base64);
+                const blob = await response.blob();
+                const file = new File([blob], `report-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                imageFiles.push(file);
+            }
+
             const result = await module.submitReport(
                 ticket.id,
                 note || '',
-                reportImages
+                imageFiles
             );
 
             if (result.success) {
                 messageEl.className = 'modal-message success';
                 messageEl.textContent = '✅ Report submitted! Your leader will review it.';
                 submitBtn.textContent = '✅ Submitted';
+                if (window.refreshTickets) window.refreshTickets();
                 setTimeout(closeModal, 3000);
             } else {
                 throw new Error(result.error);
@@ -308,8 +354,8 @@ function showTicketDetails(ticket, badge) {
 
     const statusColors = {
         pending: '#f39c12',
-        'in-progress': '#8e44ad',
-        'needs-review': '#e67e22',
+        'requirements_added': '#8e44ad',
+        'report_submitted': '#e67e22',
         approved: '#27ae60',
         rejected: '#e74c3c',
         cancelled: '#95a5a6'
@@ -317,8 +363,8 @@ function showTicketDetails(ticket, badge) {
 
     const statusLabels = {
         pending: '⏳ Waiting for Leader',
-        'in-progress': '💜 Requirements Assigned',
-        'needs-review': '📤 Report Submitted',
+        'requirements_added': '📋 Requirements Assigned',
+        'report_submitted': '📤 Report Submitted',
         approved: '✅ Approved!',
         rejected: '❌ Not Approved',
         cancelled: '🚫 Cancelled'
@@ -326,6 +372,26 @@ function showTicketDetails(ticket, badge) {
 
     const overlay = document.createElement('div');
     overlay.className = 'ticket-modal-overlay';
+
+    // Parse the request note to extract date/time
+    let requestDate = 'Unknown';
+    let requestTime = 'Unknown';
+    let requestNote = '';
+    if (ticket.requestNote) {
+        const lines = ticket.requestNote.split('\n');
+        for (const line of lines) {
+            if (line.startsWith('📅')) {
+                const parts = line.replace('📅 ', '').split(' at ');
+                requestDate = parts[0] || 'Unknown';
+                requestTime = parts[1] || 'Unknown';
+            } else if (line.startsWith('📝')) {
+                requestNote = line.replace('📝 ', '');
+            }
+        }
+        if (!requestNote && lines.length === 1) {
+            requestNote = lines[0];
+        }
+    }
 
     overlay.innerHTML = `
         <div class="ticket-modal ticket-detail">
@@ -339,24 +405,27 @@ function showTicketDetails(ticket, badge) {
                 </div>
             </div>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:${statusColors[ticket.status]}20;border-radius:10px;border-left:4px solid ${statusColors[ticket.status]};">
-                <span style="font-weight:700;color:${statusColors[ticket.status]};font-size:15px;">${statusLabels[ticket.status] || ticket.status}</span>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:${statusColors[ticket.status] || '#95a5a6'}20;border-radius:10px;border-left:4px solid ${statusColors[ticket.status] || '#95a5a6'};">
+                <span style="font-weight:700;color:${statusColors[ticket.status] || '#95a5a6'};font-size:15px;">${statusLabels[ticket.status] || ticket.status}</span>
                 ${ticket.status === 'pending' ? `<button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:4px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;">Cancel Request</button>` : ''}
                 ${ticket.status === 'approved' ? `<span style="margin-left:auto;font-size:24px;">🎉</span>` : ''}
             </div>
 
-            ${ticket.note ? `
-                <div style="margin-bottom:12px;padding:10px 14px;background:#f8f0e0;border-radius:8px;">
-                    <strong style="color:#3d2b1f;font-size:13px;">📝 Your Note:</strong>
-                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.note}</div>
+            <div style="margin-bottom:12px;padding:10px 14px;background:#f8f0e0;border-radius:8px;">
+                <strong style="color:#3d2b1f;font-size:13px;">📅 Request Details:</strong>
+                <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">
+                    ${requestDate !== 'Unknown' ? `📅 ${requestDate} at ${requestTime}` : ''}
+                    ${requestNote ? `<br>📝 ${requestNote}` : ''}
                 </div>
-            ` : ''}
+            </div>
 
             ${ticket.requirements ? `
                 <div style="margin-bottom:14px;padding:14px 16px;background:#d4c4a8;border-radius:10px;border:2px solid #8b6b4d;">
-                    <strong style="color:#3d2b1f;font-size:14px;display:block;margin-bottom:6px;">📋 Requirements from Leader</strong>
+                    <strong style="color:#3d2b1f;font-size:14px;display:block;margin-bottom:6px;">📋 Requirements from ${ticket.leaderName || 'Leader'}</strong>
                     <div style="color:#3d2b1f;font-size:15px;line-height:1.5;">${ticket.requirements}</div>
-                    <button id="submitReportBtn" style="margin-top:10px;background:#8e44ad;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;">📤 Submit Report</button>
+                    ${ticket.requirementsImage ? `<img src="${ticket.requirementsImage}" style="max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;">` : ''}
+                    ${ticket.requirementsAddedAt ? `<div style="font-size:11px;color:#6b5f4a;margin-top:4px;">Added: ${new Date(ticket.requirementsAddedAt.seconds * 1000).toLocaleString()}</div>` : ''}
+                    ${ticket.status === 'requirements_added' ? `<button id="submitReportBtn" style="margin-top:10px;background:#8e44ad;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;">📤 Submit Report</button>` : ''}
                 </div>
             ` : `
                 <div style="margin-bottom:14px;padding:14px 16px;background:#f8f0e0;border-radius:10px;border:2px dashed #b8a080;text-align:center;">
@@ -364,15 +433,30 @@ function showTicketDetails(ticket, badge) {
                 </div>
             `}
 
-            ${ticket.leaderNote ? `
-                <div style="margin-bottom:12px;padding:10px 14px;background:#f0e8e0;border-radius:8px;border-left:3px solid #8b6b4d;">
-                    <strong style="color:#3d2b1f;font-size:13px;">💬 Leader's Note:</strong>
-                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.leaderNote}</div>
+            ${ticket.reportText ? `
+                <div style="margin-bottom:12px;padding:10px 14px;background:#fdf2e9;border-radius:8px;border-left:3px solid #e67e22;">
+                    <strong style="color:#3d2b1f;font-size:13px;">📤 Your Report:</strong>
+                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.reportText}</div>
+                    ${ticket.reportImages?.length ? `
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+                            ${ticket.reportImages.map(url => 
+                                `<img src="${url}" style="max-width:80px;max-height:80px;border-radius:6px;object-fit:cover;border:1px solid #d4c4a8;cursor:pointer;" onclick="window.open('${url}','_blank')">`
+                            ).join('')}
+                        </div>
+                    ` : ''}
+                    ${ticket.reportSubmittedAt ? `<div style="font-size:11px;color:#6b5f4a;margin-top:4px;">Submitted: ${new Date(ticket.reportSubmittedAt.seconds * 1000).toLocaleString()}</div>` : ''}
+                </div>
+            ` : ''}
+
+            ${ticket.decisionNote ? `
+                <div style="margin-bottom:12px;padding:10px 14px;background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};border-radius:8px;border-left:3px solid ${ticket.status === 'approved' ? '#27ae60' : '#e74c3c'};">
+                    <strong style="color:${ticket.status === 'approved' ? '#155724' : '#721c24'};font-size:13px;">${ticket.status === 'approved' ? '✅ Leader\'s Note:' : '❌ Leader\'s Note:'}</strong>
+                    <div style="color:${ticket.status === 'approved' ? '#155724' : '#721c24'};margin-top:3px;font-size:14px;">${ticket.decisionNote}</div>
                 </div>
             ` : ''}
 
             <div style="font-size:12px;color:#8b7a6a;margin-top:12px;border-top:1px solid #d4c4a8;padding-top:10px;display:flex;justify-content:space-between;">
-                <span>Requested: ${ticket.createdAt ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}</span>
+                <span>Requested: ${ticket.createdAt?.seconds ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}</span>
                 <span>Status: ${ticket.status}</span>
             </div>
         </div>
@@ -396,6 +480,7 @@ function showTicketDetails(ticket, badge) {
                 const result = await module.cancelTicket(ticket.id);
                 if (result.success) {
                     alert('Request cancelled.');
+                    if (window.refreshTickets) window.refreshTickets();
                     closeModal();
                     renderGrid();
                 } else {
@@ -423,6 +508,8 @@ function renderGrid() {
     if (!grid) return;
 
     const filtered = getFilteredBadges();
+    // Get tickets from global cache
+    scoutTicketsCache = getScoutTickets();
 
     if (filtered.length === 0) {
         grid.innerHTML = `
@@ -433,21 +520,7 @@ function renderGrid() {
         return;
     }
 
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (currentUser) {
-        import('./tickets.js').then(module => {
-            module.getScoutTickets(currentUser.username).then(result => {
-                if (result.success) {
-                    scoutTicketsCache = result.data;
-                }
-                renderGridWithTickets(filtered);
-            }).catch(() => {
-                renderGridWithTickets(filtered);
-            });
-        });
-    } else {
-        renderGridWithTickets(filtered);
-    }
+    renderGridWithTickets(filtered);
 }
 
 function renderGridWithTickets(filtered) {
@@ -461,7 +534,7 @@ function renderGridWithTickets(filtered) {
         const ticket = scoutTicketsCache.find(t => t.badgeId === badge.id);
         const ticketStatus = ticket ? ticket.status : null;
         const requirements = ticket ? ticket.requirements : null;
-        const leaderNote = ticket ? ticket.leaderNote : null;
+        const leaderName = ticket ? ticket.leaderName : null;
 
         // ─── Determine slot style ──────────────────────────
         let slotClass = 'pouch-slot';
@@ -479,12 +552,12 @@ function renderGridWithTickets(filtered) {
             statusEmoji = '⏳';
             statusText = 'Pending';
             hoverText = '⏳ Waiting for leader...';
-        } else if (ticketStatus === 'in-progress') {
+        } else if (ticketStatus === 'requirements_added') {
             slotClass += ' ticket-progress';
-            statusEmoji = '💜';
+            statusEmoji = '📋';
             statusText = 'Requirements Assigned';
-            hoverText = requirements ? `📋 ${requirements}` : '💜 Click to see requirements';
-        } else if (ticketStatus === 'needs-review') {
+            hoverText = requirements ? `📋 ${requirements}` : '📋 Click to see requirements';
+        } else if (ticketStatus === 'report_submitted') {
             slotClass += ' ticket-review';
             statusEmoji = '📤';
             statusText = 'Report Submitted';
@@ -494,6 +567,11 @@ function renderGridWithTickets(filtered) {
             statusEmoji = '❌';
             statusText = 'Rejected';
             hoverText = '❌ Not approved. Talk to your leader.';
+        } else if (ticketStatus === 'approved') {
+            slotClass += ' unlocked';
+            statusEmoji = '✅';
+            statusText = 'Approved!';
+            hoverText = '✅ Approved! Talk to your leader about earning this badge.';
         } else {
             slotClass += ' locked';
             statusEmoji = '🔒';
@@ -509,6 +587,7 @@ function renderGridWithTickets(filtered) {
             <span class="slot-name">${badge.name}</span>
             <span class="slot-type">${typeLabels[badge.type] || ''}</span>
             ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
+            ${ticket && ticket.leaderName && ticketStatus === 'requirements_added' ? `<span class="slot-type" style="font-size:7px;">by ${ticket.leaderName}</span>` : ''}
             <span class="tooltip-text">${hoverText}</span>
         `;
 
@@ -524,25 +603,7 @@ function renderGridWithTickets(filtered) {
                 return;
             }
 
-            try {
-                const module = await import('./tickets.js');
-                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-
-                const result = await module.getScoutTickets(currentUser.username);
-                if (result.success) {
-                    const existing = result.data.find(t =>
-                        t.badgeId === badge.id &&
-                        (t.status === 'pending' || t.status === 'in-progress' || t.status === 'needs-review')
-                    );
-                    if (existing) {
-                        showTicketDetails(existing, badge);
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.warn('Ticket check failed:', e);
-            }
-
+            // No ticket exists - open request modal
             openTicketModal(badge);
         });
 
@@ -557,6 +618,8 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
     loadBadgeState();
     const { total, earned } = getBadgeStats();
+    // Refresh tickets from global cache
+    scoutTicketsCache = getScoutTickets();
 
     let html = `
         <style>
