@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { 
-    doc, getDoc, setDoc, collection, getDocs, onSnapshot 
+    doc, getDoc, setDoc, collection, getDocs, onSnapshot, query, where
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { membershipRequirements } from './data/membership-requirements.js';
 import { secondClassRequirements } from './data/secondclass-requirements.js';
@@ -60,6 +60,8 @@ let sessionsUnsubscribe = null;
 let currentReportTab = '';
 let currentReportReq = '';
 let tempReportImages = [];
+let scoutTickets = []; // ← NEW: Cache for tickets
+let ticketsUnsubscribe = null; // ← NEW: Ticket listener
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
@@ -128,6 +130,30 @@ function listenToSessions() {
         }
     }, (error) => {
         console.error('Sessions listener error:', error);
+    });
+}
+
+// ─── NEW: Real-time tickets listener ──────────────────────
+function listenToTickets() {
+    if (ticketsUnsubscribe) {
+        ticketsUnsubscribe();
+        ticketsUnsubscribe = null;
+    }
+    
+    const ticketsRef = collection(db, 'tickets');
+    const q = query(ticketsRef, where('scoutName', '==', currentUser.username));
+    
+    ticketsUnsubscribe = onSnapshot(q, (snapshot) => {
+        scoutTickets = [];
+        snapshot.forEach(doc => {
+            scoutTickets.push({ id: doc.id, ...doc.data() });
+        });
+        // If on badges view, re-render to show updated status
+        if (currentView === 'badges') {
+            renderBadgeView();
+        }
+    }, (error) => {
+        console.error('Tickets listener error:', error);
     });
 }
 
@@ -221,13 +247,26 @@ function renderView() {
         }
     }
     else if (currentView === 'badges') {
-        const displayName = scoutData.fullName || currentUser.username;
-        const rank = scoutData.rank || 'Membership';
-        renderBadgePouch('page-content', displayName, rank);
+        renderBadgeView(); // ← UPDATED: Uses ticket-aware function
     }
     else if (currentView === 'sessions') renderSessions();
     else if (currentView === 'profile') renderProfile();
     else if (currentView === 'reportModal') renderReportModal();
+}
+
+// ─── NEW: Badge View with Ticket Integration ──────────────
+function renderBadgeView() {
+    const displayName = scoutData.fullName || currentUser.username;
+    const rank = scoutData.rank || 'Membership';
+    
+    // Call the existing renderBadgePouch but pass tickets data
+    // We need to modify the renderBadgePouch function to accept tickets
+    // OR we can pass tickets via a global variable
+    
+    // Store tickets in a global for badges.js to use
+    window.__scoutTickets = scoutTickets;
+    
+    renderBadgePouch('page-content', displayName, rank);
 }
 
 // ─── Dashboard ──────────────────────────────────────────
@@ -997,6 +1036,7 @@ document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => 
 document.getElementById('logout-btn').addEventListener('click', () => {
     if (statusUnsubscribe) statusUnsubscribe();
     if (sessionsUnsubscribe) sessionsUnsubscribe();
+    if (ticketsUnsubscribe) ticketsUnsubscribe(); // ← NEW
     localStorage.removeItem('currentUser');
     window.location.href = 'index.html';
 });
@@ -1006,6 +1046,7 @@ async function init() {
     await loadScoutData();
     listenToStatus();
     listenToSessions();
+    listenToTickets(); // ← NEW: Start listening for tickets
     renderView();
 
     const hamburger = document.getElementById('hamburger-btn');
@@ -1052,6 +1093,7 @@ async function init() {
         closeMobileSidebar();
         if (statusUnsubscribe) statusUnsubscribe();
         if (sessionsUnsubscribe) sessionsUnsubscribe();
+        if (ticketsUnsubscribe) ticketsUnsubscribe(); // ← NEW
         localStorage.removeItem('currentUser');
         window.location.href = 'index.html';
     });
