@@ -226,6 +226,11 @@ export async function submitReportWithBase64(ticketId, reportText, imageBase64 =
     }
 }
 
+// ─── SCOUT: SUBMIT REPORT (alias for compatibility) ──────────
+export async function submitReport(ticketId, reportText, imageBase64 = []) {
+    return submitReportWithBase64(ticketId, reportText, imageBase64);
+}
+
 // ─── LEADER: APPROVE TICKET ───────────────────────────────
 
 export async function approveTicket(ticketId, note = '') {
