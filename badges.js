@@ -298,54 +298,54 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report (UPDATED — uses base64 directly) ──
-    document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
-        const note = document.getElementById('reportNote').value.trim();
-        const messageEl = document.getElementById('reportMessage');
-        const submitBtn = this;
+   // ─── Submit report ──────────────────────────────────────
+document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
+    const note = document.getElementById('reportNote').value.trim();
+    const messageEl = document.getElementById('reportMessage');
+    const submitBtn = this;
 
-        if (!note && reportImages.length === 0) {
-            messageEl.className = 'modal-message error';
-            messageEl.textContent = '⚠️ Please add a note or at least one image.';
-            return;
+    if (!note && reportImages.length === 0) {
+        messageEl.className = 'modal-message error';
+        messageEl.textContent = '⚠️ Please add a note or at least one image.';
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '⏳ Submitting...';
+
+    try {
+        const module = await import('./tickets.js');
+        
+        // ─── Pass base64 images directly ──────────────────
+        const imageBase64 = reportImages;
+
+        console.log(`📤 Submitting report with ${imageBase64.length} images...`);
+
+        // Use submitReport (the alias function)
+        const result = await module.submitReport(
+            ticket.id,
+            note || '',
+            imageBase64
+        );
+
+        if (result.success) {
+            messageEl.className = 'modal-message success';
+            messageEl.textContent = '✅ Report submitted! Your leader will review it.';
+            submitBtn.textContent = '✅ Submitted';
+            if (window.refreshTickets) window.refreshTickets();
+            if (window.renderBadgeGrid) window.renderBadgeGrid();
+            setTimeout(closeModal, 3000);
+        } else {
+            throw new Error(result.error);
         }
-
-        submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Submitting...';
-
-        try {
-            const module = await import('./tickets.js');
-            
-            // ─── Pass base64 images directly ──────────────────
-            const imageBase64 = reportImages;
-
-            console.log(`📤 Submitting report with ${imageBase64.length} images...`);
-
-            const result = await module.submitReportWithBase64(
-                ticket.id,
-                note || '',
-                imageBase64
-            );
-
-            if (result.success) {
-                messageEl.className = 'modal-message success';
-                messageEl.textContent = '✅ Report submitted! Your leader will review it.';
-                submitBtn.textContent = '✅ Submitted';
-                if (window.refreshTickets) window.refreshTickets();
-                if (window.renderBadgeGrid) window.renderBadgeGrid();
-                setTimeout(closeModal, 3000);
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (error) {
-            console.error('❌ Submit error:', error);
-            messageEl.className = 'modal-message error';
-            messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong.'}`;
-            submitBtn.disabled = false;
-            submitBtn.textContent = '📤 Submit Report';
-        }
-    });
-}
+    } catch (error) {
+        console.error('❌ Submit error:', error);
+        messageEl.className = 'modal-message error';
+        messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong.'}`;
+        submitBtn.disabled = false;
+        submitBtn.textContent = '📤 Submit Report';
+    }
+});
 
 // ─── SHOW TICKET DETAILS (Scout View) ──────────────────
 function showTicketDetails(ticket, badge) {
