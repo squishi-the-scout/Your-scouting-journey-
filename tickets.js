@@ -153,7 +153,6 @@ export async function addRequirements(ticketId, requirementsText, imageFile = nu
         
         let imageBase64 = null;
         if (imageFile) {
-            // Convert to base64 (like report-viewer)
             imageBase64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
@@ -202,8 +201,8 @@ export async function rejectTicket(ticketId, reason = '') {
     }
 }
 
-// ─── SCOUT: SUBMIT REPORT WITH BASE64 ──────────────────────
-
+// ─── SCOUT: SUBMIT REPORT (with Base64 images) ────────────
+// This is the function your badges.js calls
 export async function submitReportWithBase64(ticketId, reportText, imageBase64 = []) {
     try {
         const docRef = doc(db, 'tickets', ticketId);
@@ -224,11 +223,6 @@ export async function submitReportWithBase64(ticketId, reportText, imageBase64 =
         console.error('❌ Failed to submit report:', error);
         return { success: false, error: error.message };
     }
-}
-
-// ─── SCOUT: SUBMIT REPORT (alias for compatibility) ──────────
-export async function submitReport(ticketId, reportText, imageBase64 = []) {
-    return submitReportWithBase64(ticketId, reportText, imageBase64);
 }
 
 // ─── LEADER: APPROVE TICKET ───────────────────────────────
