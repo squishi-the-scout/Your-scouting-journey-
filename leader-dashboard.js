@@ -295,11 +295,9 @@ function checkHealthAlerts() {
     return healthAlerts;
 }
 
-// ─── UPDATE PENDING BADGE (with ticket count) ──────────────
+// ─── UPDATE PENDING BADGE (with both counts) ──────────────
 function updatePendingBadge() {
-    if (!pendingBadge) return;
-    
-    // Count pending from requirements
+    // Count pending requirements
     let pendingCount = 0;
     for (const scout of allScouts) {
         const status = allStatus[scout.username] || {};
@@ -308,22 +306,38 @@ function updatePendingBadge() {
         }
     }
     
-    // ─── Count active tickets ──────────────────────────────
+    // Count active tickets
     const activeTickets = allTickets.filter(t => 
         t.status === 'pending' || 
         t.status === 'requirements_added' || 
         t.status === 'report_submitted'
     );
     
-    // Show total pending (requirements + tickets)
-    const totalPending = pendingCount + activeTickets.length;
-    pendingBadge.textContent = totalPending;
+    // ─── Update pending badge ──────────────────────────────
+    const pendingBadge = document.getElementById('pending-badge');
+    if (pendingBadge) {
+        pendingBadge.textContent = pendingCount;
+        pendingBadge.classList.toggle('visible', pendingCount > 0);
+    }
     
-    // ─── Update ticket badge in sidebar ─────────────────────
+    // ─── Update ticket badge ────────────────────────────────
     const ticketBadge = document.getElementById('leader-ticket-badge');
     if (ticketBadge) {
         ticketBadge.textContent = activeTickets.length;
-        ticketBadge.style.display = activeTickets.length > 0 ? 'inline-block' : 'none';
+        ticketBadge.classList.toggle('visible', activeTickets.length > 0);
+    }
+    
+    // ─── Also update mobile badges ──────────────────────────
+    const mobilePending = document.getElementById('mobile-pending-badge');
+    if (mobilePending) {
+        mobilePending.textContent = pendingCount;
+        mobilePending.classList.toggle('visible', pendingCount > 0);
+    }
+    
+    const mobileTicket = document.getElementById('mobile-ticket-badge');
+    if (mobileTicket) {
+        mobileTicket.textContent = activeTickets.length;
+        mobileTicket.classList.toggle('visible', activeTickets.length > 0);
     }
 }
 
@@ -489,7 +503,7 @@ function renderDashboard() {
         totalServiceHours += session.duration || 0;
     }
 
-    // ─── Pending items ────────────────────────────────────────
+    // ─── Pending items (requirements only) ────────────────────────
     const pendingItems = [];
     for (const scout of allScouts) {
         const status = allStatus[scout.username] || {};
@@ -524,18 +538,6 @@ function renderDashboard() {
                 });
             }
         }
-    }
-    
-    // ─── Add ticket pending items ──────────────────────────
-    for (const ticket of activeTickets) {
-        const scout = allScouts.find(s => s.username === ticket.scoutName);
-        pendingItems.push({
-            scout: scout || { username: ticket.scoutName, fullName: ticket.scoutName },
-            reqName: `🎫 ${ticket.badgeName} (Ticket)`,
-            badgeType: 'ticket',
-            color: '#e67e22',
-            label: 'Badge Request'
-        });
     }
     
     pendingItems.sort((a, b) => a.badgeType.localeCompare(b.badgeType));
@@ -703,7 +705,7 @@ function renderDashboard() {
             <!-- ─── LEFT COLUMN ─── -->
             <div style="display:flex;flex-direction:column;gap:20px;">
 
-                <!-- PENDING APPROVALS -->
+                <!-- PENDING APPROVALS (requirements only) -->
                 <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="color:var(--text-dark);font-size:17px;margin:0;">⏳ Pending Approvals</h3>
@@ -1238,7 +1240,7 @@ async function renderScoutProfile(username) {
         `;
     }
 
-    // ─── BADGES SECTION (NEW — like membership/first/second) ──
+    // ─── BADGES SECTION ──────────────────────────────────────
     html += `
         <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
