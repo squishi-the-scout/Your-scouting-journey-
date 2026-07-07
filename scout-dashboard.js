@@ -60,8 +60,8 @@ let sessionsUnsubscribe = null;
 let currentReportTab = '';
 let currentReportReq = '';
 let tempReportImages = [];
-let scoutTickets = []; // Cache for tickets
-let ticketsUnsubscribe = null; // Ticket listener
+let scoutTickets = [];
+let ticketsUnsubscribe = null;
 
 // ─── Load scout data ─────────────────────────────────────
 async function loadScoutData() {
@@ -149,16 +149,17 @@ function listenToTickets() {
             scoutTickets.push({ id: doc.id, ...doc.data() });
         });
         
-        // Update the global cache for badges.js
         window.__scoutTickets = scoutTickets;
         
-        // If on badges view, re-render
         if (currentView === 'badges') {
             if (window.renderBadgeGrid) {
                 window.renderBadgeGrid();
             } else {
                 renderBadgeView();
             }
+        }
+        if (currentView === 'dashboard') {
+            renderView();
         }
     }, (error) => {
         console.error('Tickets listener error:', error);
@@ -267,19 +268,44 @@ function renderBadgeView() {
     const displayName = scoutData.fullName || currentUser.username;
     const rank = scoutData.rank || 'Membership';
     
-    // Store tickets in a global for badges.js to use
     window.__scoutTickets = scoutTickets;
     
     renderBadgePouch('page-content', displayName, rank);
     
-    // ─── Store reference for re-render on ticket updates ───
     window.renderBadgeGrid = function() {
         if (currentView === 'badges') {
-            // Refresh tickets from global
             window.__scoutTickets = scoutTickets;
             renderBadgePouch('page-content', displayName, rank);
         }
     };
+}
+
+// ─── RENDER EARNED BADGES ──────────────────────────────────
+function renderEarnedBadges() {
+    const earnedTickets = scoutTickets.filter(t => t.status === 'approved');
+    
+    if (earnedTickets.length === 0) {
+        return `
+            <div style="text-align:center;padding:20px;color:#8b7a6a;font-style:italic;font-size:14px;">
+                No badges earned yet. Keep exploring! 🧭
+            </div>
+        `;
+    }
+    
+    return `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;">
+            ${earnedTickets.map(t => `
+                <div style="text-align:center;padding:12px;background:#f5f0f8;border-radius:16px;border:2px solid #b8860b;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer;transition:transform 0.2s;" 
+                     onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'"
+                     onmouseover="this.style.transform='scale(1.05)'" 
+                     onmouseout="this.style.transform='scale(1)'">
+                    <div style="font-size:36px;">${t.badgeIcon || '🏅'}</div>
+                    <div style="font-size:11px;color:#3d2b1f;font-weight:600;margin-top:4px;">${t.badgeName}</div>
+                    <div style="font-size:9px;color:#27ae60;font-weight:600;">✅ Earned</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // ─── Dashboard ──────────────────────────────────────────
@@ -309,13 +335,22 @@ function renderDashboard() {
         .sort((a, b) => a.date.localeCompare(b.date))
         .slice(0, 2);
 
+    // ─── Count earned badges ──────────────────────────────────
+    const earnedBadges = scoutTickets.filter(t => t.status === 'approved');
+    const badgeCount = earnedBadges.length;
+
+    // ─── Active tickets ──────────────────────────────────────
+    const activeTickets = scoutTickets.filter(t => 
+        t.status === 'pending' || 
+        t.status === 'requirements_added' || 
+        t.status === 'report_submitted'
+    );
+
     const achievements = [
         { key: 'membership', label: 'Membership', icon: '🏅', earned: completed === total },
         { key: 'second', label: 'Second Class', icon: '⭐', earned: false },
         { key: 'first', label: 'First Class', icon: '🌟', earned: false },
-        { key: 'badge1', label: 'Badge 1', icon: '🎯', earned: false },
-        { key: 'badge2', label: 'Badge 2', icon: '🎯', earned: false },
-        { key: 'badge3', label: 'Badge 3', icon: '🎯', earned: false },
+        { key: 'badges', label: 'Badges', icon: '🎯', earned: badgeCount > 0 },
     ];
 
     const patrolColors = {
@@ -348,6 +383,29 @@ function renderDashboard() {
         `;
     }
 
+    // ─── Active Tickets Alert ──────────────────────────────────
+    if (activeTickets.length > 0) {
+        const statusEmojis = {
+            'pending': '⏳',
+            'requirements_added': '📋',
+            'report_submitted': '📤'
+        };
+        html += `
+            <div style="background:#fdf2e9;border-radius:16px;padding:16px 20px;margin-bottom:16px;border-left:4px solid #e67e22;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span style="font-size:24px;">🎫</span>
+                    <div>
+                        <div style="font-weight:600;color:#d35400;">${activeTickets.length} Active Ticket${activeTickets.length > 1 ? 's' : ''}</div>
+                        <div style="font-size:13px;color:#6b5f4a;">
+                            ${activeTickets.map(t => `${statusEmojis[t.status] || '📌'} ${t.badgeName}`).join(' · ')}
+                        </div>
+                    </div>
+                </div>
+                <a href="#" data-view="badges" style="background:#e67e22;color:white;padding:6px 20px;border-radius:40px;font-weight:600;font-size:13px;text-decoration:none;">View Badges →</a>
+            </div>
+        `;
+    }
+
     // ─── Main Dashboard Content ─────────────────────────────
     html += `
         <!-- RANK + PATROL BADGES -->
@@ -358,6 +416,11 @@ function renderDashboard() {
             <span style="background:${patrolColor};color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
                 🦅 ${patrol} Patrol
             </span>
+            ${badgeCount > 0 ? `
+                <span style="background:#00897b;color:white;padding:6px 20px;border-radius:40px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:8px;">
+                    🏅 ${badgeCount} Badge${badgeCount > 1 ? 's' : ''}
+                </span>
+            ` : ''}
         </div>
 
         <!-- STATS GRID -->
@@ -400,10 +463,19 @@ function renderDashboard() {
             </div>
         </div>
 
+        <!-- EARNED BADGES SECTION (NEW) -->
+        <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="color:var(--text-dark);font-size:18px;margin:0;">🏅 Earned Badges</h3>
+                <a href="#" data-view="badges" style="color:var(--purple);font-size:13px;font-weight:500;text-decoration:none;">View All →</a>
+            </div>
+            ${renderEarnedBadges()}
+        </div>
+
         <!-- ACHIEVEMENTS -->
         <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:28px;">
             <h3 style="color:var(--text-dark);margin-bottom:16px;font-size:18px;">🏆 Achievements</h3>
-            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
                 ${achievements.map(a => `
                     <div style="text-align:center;padding:12px;border-radius:16px;background:${a.earned ? 'var(--lavender-bg)' : '#f5f5f5'};border:2px solid ${a.earned ? 'var(--purple)' : 'transparent'};">
                         <div style="font-size:32px;${a.earned ? '' : 'opacity:0.3;'}">${a.earned ? a.icon : '🔒'}</div>
@@ -970,7 +1042,6 @@ async function renderProfile() {
         const emergencyPhone = document.getElementById('profile-emergency-phone').value.trim();
         const emergencyRelation = document.getElementById('profile-emergency-relation').value.trim();
         
-        // Health fields
         const allergies = document.getElementById('health-allergies').value.trim();
         const conditions = document.getElementById('health-conditions').value.trim();
         const medications = document.getElementById('health-medications').value.trim();
@@ -1029,7 +1100,6 @@ function renderPlaceholder(title, unlockCondition = null) {
 }
 
 // ─── Navigation ──────────────────────────────────────────
-// ─── Only attach click listeners to links with data-view ───
 document.querySelectorAll('.sidebar-nav a[data-view], .bottom-nav a[data-view]').forEach(link => {
     link.addEventListener('click', function(e) {
         e.preventDefault();
