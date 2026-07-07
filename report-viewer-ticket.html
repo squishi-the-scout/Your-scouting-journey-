@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Viewer — GIS Scouts</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Same as report-viewer.html but bigger */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f3f0;
+            color: #2d2a3a;
+            padding: 32px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #8baa9a;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .back-link:hover {
+            color: var(--purple-dark);
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .report-header {
+            border-bottom: 2px solid #e8e0f0;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
+        }
+
+        .report-header h1 {
+            color: var(--purple-dark);
+            margin: 0 0 4px 0;
+            font-size: 28px;
+        }
+
+        .report-header .subtitle {
+            color: #6b5f7a;
+            font-size: 15px;
+        }
+
+        .report-header .badge-icon {
+            font-size: 48px;
+            margin-right: 12px;
+        }
+
+        .report-header .status-badge {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .report-section {
+            margin-bottom: 28px;
+        }
+
+        .report-section h3 {
+            color: #2d2a3a;
+            margin-bottom: 10px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        .report-section .note-text {
+            background: #f8f5fa;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.7;
+            color: #2d2a3a;
+            white-space: pre-wrap;
+            min-height: 100px;
+        }
+
+        .report-section .requirements-text {
+            background: #d4c4a8;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #8e44ad;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #3d2b1f;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .image-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #e8e0f0;
+            cursor: pointer;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.2s;
+        }
+
+        .image-item img:hover {
+            transform: scale(1.03);
+        }
+
+        .no-images {
+            color: #6b5f7a;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+            background: #f8f5fa;
+            border-radius: 12px;
+        }
+
+        .timestamp {
+            color: #6b5f7a;
+            font-size: 13px;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e0f0;
+        }
+
+        .status-pending { background: #fde8d0; color: #d35400; }
+        .status-requirements { background: #f4ecf7; color: #8e44ad; }
+        .status-report { background: #fdf2e9; color: #e67e22; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+
+        /* ─── Lightbox ─── */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            cursor: pointer;
+        }
+
+        .lightbox.active {
+            display: flex;
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        .lightbox .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 16px; }
+            .report-card { padding: 20px; }
+            .image-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .report-header h1 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="back-link" id="back-link">← Back</span>
+
+        <div id="report-content">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <p>Loading report...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        <button class="close-btn" id="lightbox-close">×</button>
+        <img id="lightbox-img" src="" alt="Full size image">
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ─── USER ─────────────────────────────────────────────
+        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+
+        const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
+        const isLeader = leaderRoles.includes(currentUser.role);
+
+        // ─── URL PARAMS ──────────────────────────────────────
+        const urlParams = new URLSearchParams(window.location.search);
+        const ticketId = urlParams.get('ticketId');
+        const scoutUsername = urlParams.get('scout');
+        const badgeId = urlParams.get('badge');
+
+        const container = document.getElementById('report-content');
+
+        // ─── BACK BUTTON ──────────────────────────────────────
+        document.getElementById('back-link').addEventListener('click', function() {
+            if (isLeader) {
+                window.location.href = 'leader-dashboard.html';
+            } else {
+                window.location.href = 'scout-dashboard.html';
+            }
+        });
+
+        // ─── LIGHTBOX ─────────────────────────────────────────
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        document.getElementById('lightbox-close').addEventListener('click', () => {
+            lightbox.classList.remove('active');
+        });
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) {
+                lightbox.classList.remove('active');
+            }
+        });
+
+        window.openLightbox = function(src) {
+            lightboxImg.src = src;
+            lightbox.classList.add('active');
+        };
+
+        // ─── STATUS CONFIG ──────────────────────────────────────
+        const statusConfig = {
+            pending: { label: '⏳ Pending', class: 'status-pending' },
+            requirements_added: { label: '📋 Requirements Added', class: 'status-requirements' },
+            report_submitted: { label: '📤 Report Submitted', class: 'status-report' },
+            approved: { label: '✅ Approved', class: 'status-approved' },
+            rejected: { label: '❌ Rejected', class: 'status-rejected' },
+            cancelled: { label: '🚫 Cancelled', class: '' }
+        };
+
+        // ─── LOAD REPORT ──────────────────────────────────────
+        async function loadReport() {
+            try {
+                let ticket = null;
+                let scoutName = scoutUsername || 'Unknown Scout';
+                let badgeName = 'Badge';
+                let badgeIcon = '🏅';
+
+                // If we have a ticketId, load from tickets collection
+                if (ticketId) {
+                    const ticketDoc = await getDoc(doc(db, 'tickets', ticketId));
+                    if (ticketDoc.exists()) {
+                        ticket = { id: ticketDoc.id, ...ticketDoc.data() };
+                        scoutName = ticket.scoutName || 'Unknown Scout';
+                        badgeName = ticket.badgeName || 'Badge';
+                        badgeIcon = ticket.badgeIcon || '🏅';
+                    } else {
+                        container.innerHTML = `
+                            <div class="error-message">
+                                <div class="icon">❌</div>
+                                <h3>Ticket not found</h3>
+                                <p>The requested ticket does not exist.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+                } else if (scoutUsername && badgeId) {
+                    // Fallback: try to find ticket by scout + badge
+                    // This would need a query - for now show error
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <div class="icon">❌</div>
+                            <h3>No ticket ID provided</h3>
+                            <p>Please provide a ticket ID to view the report.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (!ticket) {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <div class="icon">❌</div>
+                            <h3>Report not found</h3>
+                            <p>No report found for this ticket.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // ─── Parse request note ──────────────────────────
+                let requestDate = 'Unknown';
+                let requestTime = 'Unknown';
+                let requestNote = '';
+                if (ticket.requestNote) {
+                    const lines = ticket.requestNote.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('📅')) {
+                            const parts = line.replace('📅 ', '').split(' at ');
+                            requestDate = parts[0] || 'Unknown';
+                            requestTime = parts[1] || 'Unknown';
+                        } else if (line.startsWith('📝')) {
+                            requestNote = line.replace('📝 ', '');
+                        }
+                    }
+                    if (!requestNote && lines.length === 1) {
+                        requestNote = lines[0];
+                    }
+                }
+
+                const status = statusConfig[ticket.status] || statusConfig.pending;
+                const hasReport = ticket.reportText || (ticket.reportImages && ticket.reportImages.length > 0);
+                const hasRequirements = ticket.requirements;
+
+                let html = `
+                    <div class="report-card">
+                        <div class="report-header">
+                            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                                <span class="badge-icon">${badgeIcon}</span>
+                                <div>
+                                    <h1>${badgeName}</h1>
+                                    <div class="subtitle">${scoutName} · Requested ${requestDate} at ${requestTime}</div>
+                                    <span class="status-badge ${status.class}">${status.label}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${ticket.requestNote ? `
+                            <div class="report-section">
+                                <h3>📝 Scout's Request Note</h3>
+                                <div class="note-text">${requestNote || ticket.requestNote}</div>
+                            </div>
+                        ` : ''}
+
+                        ${hasRequirements ? `
+                            <div class="report-section">
+                                <h3>📋 Requirements (from ${ticket.leaderName || 'Leader'})</h3>
+                                <div class="requirements-text">
+                                    ${ticket.requirements}
+                                    ${ticket.requirementsImage ? `
+                                        <div style="margin-top:12px;">
+                                            <img src="${ticket.requirementsImage}" style="max-width:100%;max-height:200px;border-radius:8px;cursor:pointer;" onclick="window.openLightbox('${ticket.requirementsImage}')">
+                                        </div>
+                                    ` : ''}
+                                    ${ticket.requirementsAddedAt ? `
+                                        <div style="font-size:12px;color:#6b5f4a;margin-top:8px;">
+                                            Added: ${new Date(ticket.requirementsAddedAt.seconds * 1000).toLocaleString()}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${hasReport ? `
+                            <div class="report-section">
+                                <h3>📤 Scout's Report</h3>
+                                ${ticket.reportText ? `<div class="note-text">${ticket.reportText}</div>` : ''}
+                                
+                                ${ticket.reportImages && ticket.reportImages.length > 0 ? `
+                                    <div style="margin-top:12px;">
+                                        <div style="font-weight:600;margin-bottom:8px;">Images (${ticket.reportImages.length})</div>
+                                        <div class="image-grid">
+                                            ${ticket.reportImages.map(img => `
+                                                <div class="image-item" onclick="window.openLightbox('${img}')">
+                                                    <img src="${img}" alt="Report image" loading="lazy">
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                ${ticket.reportSubmittedAt ? `
+                                    <div style="font-size:13px;color:#6b5f4a;margin-top:12px;">
+                                        Submitted: ${new Date(ticket.reportSubmittedAt.seconds * 1000).toLocaleString()}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div class="report-section">
+                                <h3>📤 Report</h3>
+                                <div class="no-images">No report submitted yet.</div>
+                            </div>
+                        `}
+
+                        ${ticket.decisionNote ? `
+                            <div class="report-section">
+                                <h3>${ticket.status === 'approved' ? '✅' : '❌'} Leader's Decision</h3>
+                                <div class="note-text" style="background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};color:${ticket.status === 'approved' ? '#155724' : '#721c24'};">
+                                    ${ticket.decisionNote}
+                                    ${ticket.decidedAt ? `
+                                        <div style="font-size:12px;color:inherit;opacity:0.8;margin-top:8px;">
+                                            Decided: ${new Date(ticket.decidedAt.seconds * 1000).toLocaleString()}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="timestamp">
+                            Ticket ID: ${ticket.id?.slice(0, 12) || 'N/A'} · Status: ${ticket.status}
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Error loading report:', error);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <div class="icon">❌</div>
+                        <h3>Error loading report</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        loadReport();
+    </script>
+</body>
+</html>
