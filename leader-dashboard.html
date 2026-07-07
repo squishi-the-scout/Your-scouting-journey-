@@ -157,6 +157,23 @@
             color: white;
         }
 
+        /* ─── BADGE COUNT (matching style) ─── */
+        .badge-count {
+            display: none;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 50%;
+            margin-left: auto;
+            min-width: 20px;
+            text-align: center;
+        }
+        .badge-count.visible {
+            display: inline-block;
+        }
+
         .sidebar-footer {
             margin-top: auto;
             padding-top: 20px;
@@ -221,18 +238,25 @@
             z-index: 1001;
         }
 
-        /* ===== BADGE ===== */
-        .pending-badge {
-            background: var(--gold);
-            color: var(--text-dark);
-            border-radius: 50%;
-            padding: 2px 8px;
-            font-size: 11px;
-            font-weight: 700;
-            min-width: 20px;
-            display: inline-block;
+        /* ===== STAT CARD ===== */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 16px;
             text-align: center;
+            box-shadow: var(--shadow);
         }
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stat-card.green .number { color: var(--green-primary); }
+        .stat-card.gold .number { color: var(--gold); }
+        .stat-card.mint .number { color: var(--green-secondary); }
 
         /* ===== STAGNATION BANNER ===== */
         .stagnation-banner {
@@ -437,26 +461,6 @@
             box-shadow: 0 4px 16px rgba(249,168,37,0.4);
         }
 
-        /* ===== STAT CARD ===== */
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 16px;
-            text-align: center;
-            box-shadow: var(--shadow);
-        }
-        .stat-card .number {
-            font-size: 28px;
-            font-weight: 700;
-        }
-        .stat-card .stat-label {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-        .stat-card.green .number { color: var(--green-primary); }
-        .stat-card.gold .number { color: var(--gold); }
-        .stat-card.mint .number { color: var(--green-secondary); }
-
         /* ===== PENDING ITEM ===== */
         .pending-item {
             background: var(--card-bg);
@@ -541,6 +545,26 @@
         .color-key .key-item.badges { background: #00897b; }
         .color-key .key-item.promo { background: linear-gradient(135deg, #b8860b, #6b8e23); }
 
+        /* ===== TICKET LIST ITEM ===== */
+        .ticket-list-item {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .ticket-list-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
         /* ===== MOBILE ===== */
         @media (max-width: 768px) {
             .sidebar { display: none; }
@@ -588,6 +612,170 @@
             stroke-width: 2;
             fill: none;
         }
+
+        /* ===== MOBILE SIDEBAR ===== */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+        .mobile-overlay.active {
+            display: block;
+        }
+
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100vh;
+            background: var(--text-dark);
+            color: #e8f0ec;
+            padding: 28px 20px;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-sidebar.open {
+            left: 0;
+        }
+        .mobile-sidebar .close-btn {
+            background: none;
+            border: none;
+            color: #e8f0ec;
+            font-size: 28px;
+            cursor: pointer;
+            text-align: right;
+            margin-bottom: 16px;
+            padding: 0;
+        }
+        .mobile-sidebar .sidebar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: white;
+        }
+        .mobile-sidebar .sidebar-brand span {
+            color: #a8c4d4;
+        }
+        .mobile-sidebar .sidebar-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px 0 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        .mobile-sidebar .person-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #7a9e8a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: 8px;
+        }
+        .mobile-sidebar .person-avatar .head {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 12px;
+        }
+        .mobile-sidebar .person-avatar .body {
+            width: 28px;
+            height: 16px;
+            border-radius: 50% 50% 0 0;
+            background: white;
+            position: absolute;
+            bottom: 10px;
+        }
+        .mobile-sidebar .sidebar-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e8f0ec;
+        }
+        .mobile-sidebar .sidebar-role {
+            font-size: 12px;
+            color: #a8c4d4;
+            margin-top: 2px;
+        }
+        .mobile-sidebar .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+        .mobile-sidebar .sidebar-nav a {
+            color: #c4d9ce;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        .mobile-sidebar .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+        .mobile-sidebar .sidebar-nav a.active {
+            background: #3d6e5c;
+            color: white;
+        }
+        .mobile-sidebar .sidebar-nav a .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .mobile-sidebar .sidebar-nav a .badge-count {
+            margin-left: auto;
+        }
+        .mobile-sidebar .sidebar-footer {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .mobile-sidebar .sidebar-footer a {
+            color: #c4d9ce;
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .mobile-sidebar .sidebar-footer a:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+        .mobile-sidebar .sidebar-footer a .nav-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
     </style>
 </head>
 <body>
@@ -624,17 +812,18 @@
                 <polyline points="12 6 12 12 16 14"/>
             </svg>
             <span>Pending</span>
-            <span class="badge-count" id="pending-badge" style="display:none;background:#e74c3c;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:50%;margin-left:auto;min-width:20px;text-align:center;">0</span>
+            <span class="badge-count" id="pending-badge">0</span>
         </a>
         <a href="#" data-view="tickets">
-    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-    <span>Tickets</span>
-   <span class="badge-count" id="leader-ticket-badge" style="display:none;background:#e74c3c;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:50%;margin-left:auto;min-width:20px;text-align:center;">0</span>
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Tickets</span>
+            <span class="badge-count" id="leader-ticket-badge">0</span>
+        </a>
         <a href="#" data-view="sessions">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -712,6 +901,17 @@
                     <polyline points="12 6 12 12 16 14"/>
                 </svg>
                 <span>Pending</span>
+                <span class="badge-count" id="mobile-pending-badge">0</span>
+            </a>
+            <a href="#" data-view="tickets">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>Tickets</span>
+                <span class="badge-count" id="mobile-ticket-badge">0</span>
             </a>
             <a href="#" data-view="sessions">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
