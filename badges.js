@@ -298,7 +298,7 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report (UPDATED — uses base64 directly) ──
+    // ─── Submit report ──────────────────────────────────────
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -316,7 +316,6 @@ function openReportModal(ticket, badge) {
         try {
             const module = await import('./tickets.js');
             
-            // ─── Pass base64 images directly ──────────────────
             const imageBase64 = reportImages;
 
             console.log(`📤 Submitting report with ${imageBase64.length} images...`);
@@ -546,7 +545,7 @@ function renderGridWithTickets(filtered) {
             slotClass += ' unlocked';
             statusEmoji = '✅';
             statusText = 'Earned!';
-            hoverText = 'Earned! 🎉';
+            hoverText = 'Click to view report 🎉';
         } else if (ticketStatus === 'pending') {
             slotClass += ' ticket-pending';
             statusEmoji = '⏳';
@@ -571,7 +570,7 @@ function renderGridWithTickets(filtered) {
             slotClass += ' unlocked';
             statusEmoji = '✅';
             statusText = 'Approved!';
-            hoverText = '✅ Approved! Talk to your leader about earning this badge.';
+            hoverText = '✅ Click to view report!';
         } else {
             slotClass += ' locked';
             statusEmoji = '🔒';
@@ -593,8 +592,19 @@ function renderGridWithTickets(filtered) {
 
         // ─── Click handler ──────────────────────────────────
         slot.addEventListener('click', async () => {
-            if (isUnlocked) {
-                alert(`🎉 You already earned "${badge.name}"!`);
+            // ─── If badge is unlocked OR status is approved ──
+            if (isUnlocked || ticketStatus === 'approved') {
+                // Find the approved ticket for this badge
+                const approvedTicket = scoutTicketsCache.find(t => 
+                    t.badgeId === badge.id && t.status === 'approved'
+                );
+                
+                if (approvedTicket) {
+                    // Open the report viewer page
+                    window.location.href = `report-viewer-ticket.html?ticketId=${approvedTicket.id}`;
+                } else {
+                    alert(`🎉 You earned "${badge.name}"!`);
+                }
                 return;
             }
 
