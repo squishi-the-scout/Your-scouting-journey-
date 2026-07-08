@@ -295,18 +295,22 @@ function checkHealthAlerts() {
     return healthAlerts;
 }
 
-// ─── UPDATE PENDING BADGE (with both counts) ──────────────
+// ─── UPDATE PENDING BADGE ──────────────────────────────
 function updatePendingBadge() {
-    // Count pending requirements
+    // Count pending requirements (membership, second, first, badges)
     let pendingCount = 0;
     for (const scout of allScouts) {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
-            if (status[key].status === 'pending') pendingCount++;
+            if (status[key].status === 'pending') {
+                // Skip ticket items
+                if (key.startsWith('ticket_')) continue;
+                pendingCount++;
+            }
         }
     }
     
-    // Count active tickets
+    // Count active tickets (for ticket badge)
     const activeTickets = allTickets.filter(t => 
         t.status === 'pending' || 
         t.status === 'requirements_added' || 
@@ -487,17 +491,20 @@ function renderDashboard() {
     for (const scout of allScouts) {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
-            if (status[key].status === 'pending') totalPending++;
+            if (status[key].status === 'pending') {
+                // Skip ticket items for pending count
+                if (key.startsWith('ticket_')) continue;
+                totalPending++;
+            }
         }
     }
     
-    // ─── Add ticket pending count ──────────────────────────
+    // ─── Add ticket pending count separately ──────────────
     const activeTickets = allTickets.filter(t => 
         t.status === 'pending' || 
         t.status === 'requirements_added' || 
         t.status === 'report_submitted'
     );
-    totalPending += activeTickets.length;
 
     for (const session of allSessions) {
         totalServiceHours += session.duration || 0;
@@ -509,6 +516,9 @@ function renderDashboard() {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
             if (status[key].status === 'pending') {
+                // Skip ticket items
+                if (key.startsWith('ticket_')) continue;
+                
                 let reqName = key;
                 let badgeType = 'membership';
                 let color = '#7bcb7b';
@@ -1551,202 +1561,6 @@ function renderPendingApprovals() {
             });
             updatePendingBadge();
             renderPendingApprovals();
-        });
-    });
-
-    document.querySelectorAll('.promote-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const username = this.dataset.username;
-            const scout = allScouts.find(s => s.username === username);
-            if (!scout) return;
-            
-            const promo = isReadyForPromotion(username);
-            if (!promo) return;
-            
-            if (confirm(`Promote ${scout.fullName || scout.username} from ${promo.currentRank} to ${promo.nextRank}?`)) {
-                try {
-                    await setDoc(doc(db, 'users', username), { rank: promo.nextRank }, { merge: true });
-                    scout.rank = promo.nextRank;
-                    alert(`${scout.fullName || scout.username} promoted to ${promo.nextRank}!`);
-                } catch (error) {
-                    alert('Error promoting: ' + error.message);
-                }
-            }
-        });
-    });
-}
-    
-    // ─── Add ticket pending items ──────────────────────────
-    const activeTickets = allTickets.filter(t => 
-        t.status === 'pending' || 
-        t.status === 'requirements_added' || 
-        t.status === 'report_submitted'
-    );
-    for (const ticket of activeTickets) {
-        const scout = allScouts.find(s => s.username === ticket.scoutName);
-        pendingItems.push({
-            scout: scout || { username: ticket.scoutName, fullName: ticket.scoutName },
-            field: `ticket_${ticket.id}`,
-            reqName: `🎫 ${ticket.badgeName}`,
-            badgeType: 'ticket',
-            status: { status: ticket.status }
-        });
-    }
-
-    const order = { membership: 0, secondClass: 1, firstClass: 2, badge: 3, ticket: 4 };
-    pendingItems.sort((a, b) => order[a.badgeType] - order[b.badgeType]);
-
-    const totalPending = pendingItems.length + readyForPromotion.length;
-
-    let html = `
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#7bcb7b;color:white;font-size:12px;font-weight:500;">Membership</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#4caf50;color:white;font-size:12px;font-weight:500;">Second Class</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#2e7d32;color:white;font-size:12px;font-weight:500;">First Class</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#00897b;color:white;font-size:12px;font-weight:500;">Badges</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:#e67e22;color:white;font-size:12px;font-weight:500;">🎫 Tickets</span>
-            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:12px;background:linear-gradient(135deg,#b8860b,#6b8e23);color:white;font-size:12px;font-weight:500;">Ready for Promotion</span>
-        </div>
-    `;
-
-    if (totalPending === 0) {
-        html += `
-            <div style="background:white;border-radius:24px;padding:40px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-                <div style="font-size:48px;margin-bottom:16px;">🎉</div>
-                <p style="color:var(--text-muted);font-size:18px;">No pending approvals! All caught up.</p>
-            </div>
-        `;
-        pageContent.innerHTML = html;
-        return;
-    }
-
-    html += `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
-            <span style="color:var(--text-muted);font-size:14px;">${totalPending} items</span>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:12px;">
-    `;
-
-    for (const item of pendingItems) {
-        let color, label, border;
-        if (item.badgeType === 'ticket') {
-            color = { bg: '#fdf2e9', text: '#e67e22', border: '#e67e22' };
-            label = 'Badge Request';
-            border = '#e67e22';
-        } else {
-            const info = getBadgeInfo(item.field);
-            color = info;
-            label = getBadgeLabel(item.field);
-            border = info.border;
-        }
-        const name = item.scout?.fullName || item.scout?.username || 'Unknown';
-
-        let statusDisplay = '';
-        if (item.badgeType === 'ticket') {
-            const statusMap = {
-                'pending': '⏳ Pending',
-                'requirements_added': '📋 Requirements Added',
-                'report_submitted': '📤 Report Submitted'
-            };
-            statusDisplay = statusMap[item.status.status] || item.status.status;
-        } else {
-            statusDisplay = item.status.status === 'pending' ? '⏳ Pending' : '';
-        }
-
-        html += `
-            <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid ${border};">
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${border};"></span>
-                    <span style="font-size:12px;font-weight:600;color:${color.text};background:${color.bg};padding:2px 10px;border-radius:8px;">${label}</span>
-                    <span style="font-weight:500;">${item.reqName}</span>
-                    <span style="color:var(--text-muted);font-size:14px;">— ${name}</span>
-                    ${statusDisplay ? `<span style="font-size:12px;color:var(--text-muted);">${statusDisplay}</span>` : ''}
-                </div>
-                ${item.badgeType === 'ticket' ? `
-                    <div style="display:flex;gap:8px;">
-                        <button class="view-ticket-btn" data-ticket-id="${item.field.replace('ticket_', '')}" style="background:#3498db;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">View Ticket</button>
-                    </div>
-                ` : `
-                    <div style="display:flex;gap:8px;">
-                        <button class="approve-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Approve</button>
-                        <button class="reject-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Reject</button>
-                    </div>
-                `}
-            </div>
-        `;
-    }
-
-    for (const item of readyForPromotion) {
-        const name = item.scout.fullName || item.scout.username;
-        const goldenGreen = 'linear-gradient(135deg, #b8860b, #6b8e23)';
-
-        html += `
-            <div style="background:linear-gradient(135deg, #fdf8e7, #f0f7e6);border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid #b8860b;">
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <span style="display:inline-block;width:12px;height:12px;border-radius:4px;background:${goldenGreen};"></span>
-                    <span style="font-size:12px;font-weight:600;color:white;background:${goldenGreen};padding:2px 10px;border-radius:8px;">Ready for Promotion</span>
-                    <span style="font-weight:500;">${name}</span>
-                    <span style="color:var(--text-muted);font-size:14px;">${item.promo.currentRank} → ${item.promo.nextRank}</span>
-                </div>
-                <button class="promote-btn" data-username="${item.scout.username}" style="background:${goldenGreen};color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(184,134,11,0.3);">Promote Now</button>
-            </div>
-        `;
-    }
-
-    html += '</div>';
-    pageContent.innerHTML = html;
-
-    document.querySelectorAll('.approve-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const username = this.dataset.username;
-            const field = this.dataset.field;
-            
-            const docRef = doc(db, 'scoutStatus', username);
-            const docSnap = await getDoc(docRef);
-            const data = docSnap.data() || {};
-            data[field] = { 
-                status: 'approved', 
-                approvedBy: currentUser.username,
-                approvedAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            await setDoc(docRef, data);
-            
-            allStatus = {};
-            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
-            statusSnap.forEach(doc => {
-                allStatus[doc.id] = doc.data();
-            });
-            updatePendingBadge();
-            renderPendingApprovals();
-        });
-    });
-
-    document.querySelectorAll('.reject-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-            const username = this.dataset.username;
-            const field = this.dataset.field;
-            const docRef = doc(db, 'scoutStatus', username);
-            const docSnap = await getDoc(docRef);
-            const data = docSnap.data() || {};
-            data[field] = { status: 'todo', updatedAt: new Date().toISOString() };
-            await setDoc(docRef, data);
-            
-            allStatus = {};
-            const statusSnap = await getDocs(collection(db, 'scoutStatus'));
-            statusSnap.forEach(doc => {
-                allStatus[doc.id] = doc.data();
-            });
-            updatePendingBadge();
-            renderPendingApprovals();
-        });
-    });
-
-    document.querySelectorAll('.view-ticket-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const ticketId = this.dataset.ticketId;
-            window.location.href = `report-viewer-ticket.html?ticketId=${ticketId}`;
         });
     });
 
