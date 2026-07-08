@@ -23,6 +23,14 @@ function getCurrentUser() {
     return user;
 }
 
+// ─── Get display name (fullName or username) ──────────────
+function getUserDisplayName(user) {
+    if (user.fullName && user.fullName.trim()) {
+        return user.fullName;
+    }
+    return user.username || 'Leader';
+}
+
 function generateTicketId() {
     return `TICKET-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 }
@@ -45,7 +53,7 @@ export async function createTicket(scoutName, badgeId, badgeName, badgeIcon, not
             requestNote: note || '',
             createdAt: Timestamp.now(),
             
-            // Leader fields
+            // Leader fields (empty initially)
             requirements: null,
             requirementsImage: null,
             leaderId: null,
@@ -53,15 +61,16 @@ export async function createTicket(scoutName, badgeId, badgeName, badgeIcon, not
             leaderNote: null,
             requirementsAddedAt: null,
             
-            // Scout report
+            // Scout report (empty initially)
             reportText: null,
             reportImages: [],
             reportSubmittedAt: null,
             
-            // Decision
+            // Decision (empty initially)
             decision: null,
             decisionNote: null,
-            decidedAt: null
+            decidedAt: null,
+            decidedBy: null
         };
 
         const docRef = await addDoc(collection(db, 'tickets'), ticketData);
@@ -146,10 +155,13 @@ export async function getPendingTicketCount() {
 
 // ─── LEADER: ADD REQUIREMENTS ─────────────────────────────
 
-export async function addRequirements(ticketId, requirementsText, imageFile = null, leaderName = 'Leader') {
+export async function addRequirements(ticketId, requirementsText, imageFile = null, leaderName = null) {
     try {
         const user = getCurrentUser();
         const docRef = doc(db, 'tickets', ticketId);
+        
+        // Use provided leaderName or get from user
+        const leaderDisplayName = leaderName || getUserDisplayName(user);
         
         let imageBase64 = null;
         if (imageFile) {
@@ -165,12 +177,13 @@ export async function addRequirements(ticketId, requirementsText, imageFile = nu
             requirements: requirementsText,
             requirementsImage: imageBase64,
             leaderId: user.uid || 'leader',
-            leaderName: leaderName || user.username || 'Leader',
+            leaderName: leaderDisplayName,
+            leaderNote: null,
             requirementsAddedAt: Timestamp.now(),
             status: 'requirements_added'
         });
 
-        console.log(`✅ Requirements added to ticket: ${ticketId}`);
+        console.log(`✅ Requirements added to ticket: ${ticketId} by ${leaderDisplayName}`);
         return { success: true };
     } catch (error) {
         console.error('❌ Failed to add requirements:', error);
@@ -185,15 +198,18 @@ export async function rejectTicket(ticketId, reason = '') {
         const user = getCurrentUser();
         const docRef = doc(db, 'tickets', ticketId);
         
+        const leaderDisplayName = getUserDisplayName(user);
+        
         await updateDoc(docRef, {
             status: 'rejected',
             decision: 'rejected',
             decisionNote: reason || 'No reason provided',
             decidedAt: Timestamp.now(),
-            leaderName: user.username || 'Leader'
+            decidedBy: leaderDisplayName,
+            leaderName: leaderDisplayName
         });
 
-        console.log(`❌ Ticket rejected: ${ticketId}`);
+        console.log(`❌ Ticket rejected: ${ticketId} by ${leaderDisplayName}`);
         return { success: true };
     } catch (error) {
         console.error('❌ Failed to reject ticket:', error);
@@ -201,9 +217,9 @@ export async function rejectTicket(ticketId, reason = '') {
     }
 }
 
-// ─── SCOUT: SUBMIT REPORT (with Base64 images) ────────────
-// This is the function your badges.js calls
-export async function submitReportWithBase64(ticketId, reportText, imageBase64 = []) {
+// ─── SCOUT: SUBMIT REPORT WITH BASE64 ──────────────────────
+
+export async function submitReport(ticketId, reportText, imageBase64 = []) {
     try {
         const docRef = doc(db, 'tickets', ticketId);
         
@@ -232,15 +248,18 @@ export async function approveTicket(ticketId, note = '') {
         const user = getCurrentUser();
         const docRef = doc(db, 'tickets', ticketId);
         
+        const leaderDisplayName = getUserDisplayName(user);
+        
         await updateDoc(docRef, {
             status: 'approved',
             decision: 'approved',
             decisionNote: note || 'Approved! Well done!',
             decidedAt: Timestamp.now(),
-            leaderName: user.username || 'Leader'
+            decidedBy: leaderDisplayName,
+            leaderName: leaderDisplayName
         });
 
-        console.log(`✅ Ticket approved: ${ticketId}`);
+        console.log(`✅ Ticket approved: ${ticketId} by ${leaderDisplayName}`);
         return { success: true };
     } catch (error) {
         console.error('❌ Failed to approve ticket:', error);
