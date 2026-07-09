@@ -492,14 +492,12 @@ function renderDashboard() {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
             if (status[key].status === 'pending') {
-                // Skip ticket items for pending count
                 if (key.startsWith('ticket_')) continue;
                 totalPending++;
             }
         }
     }
     
-    // ─── Add ticket pending count separately ──────────────
     const activeTickets = allTickets.filter(t => 
         t.status === 'pending' || 
         t.status === 'requirements_added' || 
@@ -510,13 +508,11 @@ function renderDashboard() {
         totalServiceHours += session.duration || 0;
     }
 
-    // ─── Pending items (requirements only) ────────────────────────
     const pendingItems = [];
     for (const scout of allScouts) {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
             if (status[key].status === 'pending') {
-                // Skip ticket items
                 if (key.startsWith('ticket_')) continue;
                 
                 let reqName = key;
@@ -552,7 +548,6 @@ function renderDashboard() {
     
     pendingItems.sort((a, b) => a.badgeType.localeCompare(b.badgeType));
 
-    // ─── Patrol overview ──────────────────────────────────────
     const patrols = ['Eagle', 'Falcon', 'Wolf', 'Bear', 'Lion'];
     const patrolColors = {
         'Eagle': '#f1c40f',
@@ -623,7 +618,6 @@ function renderDashboard() {
         });
     }
 
-    // ─── Attendance overview ──────────────────────────────────
     let totalAttendances = 0;
     let totalPossible = 0;
     for (const scout of allScouts) {
@@ -636,16 +630,11 @@ function renderDashboard() {
     }
     const attendancePct = totalPossible > 0 ? Math.round((totalAttendances / totalPossible) * 100) : 0;
 
-    // ─── Stagnation ──────────────────────────────────────────
     const stagnantScouts = checkStagnation();
-
-    // ─── Health alerts ──────────────────────────────────────
     const healthAlerts = checkHealthAlerts();
     const totalAlerts = stagnantScouts.length + healthAlerts.length;
 
-    // ─── Build HTML ──────────────────────────────────────────
     let html = `
-        <!-- ===== STATS GRID ===== -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;">
             <div style="background:white;border-radius:20px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
                 <div style="font-size:32px;font-weight:700;color:var(--purple);">${totalScouts}</div>
@@ -666,7 +655,6 @@ function renderDashboard() {
         </div>
     `;
 
-    // ─── ALERT CARD (Health + Stagnation) ────────────────────
     if (totalAlerts > 0) {
         html += `
             <div style="background:#fff8e1;border-radius:16px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #f9a825;">
@@ -709,13 +697,10 @@ function renderDashboard() {
         `;
     }
 
-    // ─── TWO COLUMN LAYOUT ──────────────────────────────────
     html += `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
-            <!-- ─── LEFT COLUMN ─── -->
             <div style="display:flex;flex-direction:column;gap:20px;">
 
-                <!-- PENDING APPROVALS (requirements only) -->
                 <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="color:var(--text-dark);font-size:17px;margin:0;">⏳ Pending Approvals</h3>
@@ -735,7 +720,6 @@ function renderDashboard() {
                     `}
                 </div>
                 
-                <!-- ACTIVE TICKETS -->
                 <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="color:var(--text-dark);font-size:17px;margin:0;">🎫 Active Tickets</h3>
@@ -759,10 +743,8 @@ function renderDashboard() {
                 </div>
             </div>
 
-            <!-- ─── RIGHT COLUMN ─── -->
             <div style="display:flex;flex-direction:column;gap:20px;">
 
-                <!-- PATROL OVERVIEW -->
                 <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
                     <h3 style="color:var(--text-dark);font-size:17px;margin-bottom:16px;">🦅 Patrol Overview</h3>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:16px;">
@@ -790,7 +772,6 @@ function renderDashboard() {
                     </div>
                 </div>
 
-                <!-- ATTENDANCE OVERVIEW -->
                 <div style="background:white;border-radius:24px;padding:24px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
                     <h3 style="color:var(--text-dark);font-size:17px;margin-bottom:16px;">📊 Attendance Overview</h3>
                     <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
@@ -827,7 +808,6 @@ function renderDashboard() {
 
     pageContent.innerHTML = html;
 
-    // ─── Event listeners ──────────────────────────────────────
     document.querySelectorAll('a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -897,37 +877,100 @@ async function renderLeaderTickets() {
                 new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 
                 'Recently';
             
-            // ─── Determine action buttons based on status ──────
+            // Parse request note
+            let requestDate = 'Unknown';
+            let requestTime = 'Unknown';
+            let requestNote = '';
+            if (ticket.requestNote) {
+                const lines = ticket.requestNote.split('\n');
+                for (const line of lines) {
+                    if (line.startsWith('📅')) {
+                        const parts = line.replace('📅 ', '').split(' at ');
+                        requestDate = parts[0] || 'Unknown';
+                        requestTime = parts[1] || 'Unknown';
+                    } else if (line.startsWith('📝')) {
+                        requestNote = line.replace('📝 ', '');
+                    }
+                }
+                if (!requestNote && lines.length === 1) {
+                    requestNote = lines[0];
+                }
+            }
+            
+            // ─── Determine action area based on status ──────
             let actionsHtml = '';
             
             if (ticket.status === 'pending') {
                 actionsHtml = `
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
-                        <input type="text" id="req-input-${ticket.id}" placeholder="Add requirements..." style="flex:1;min-width:150px;padding:6px 12px;border-radius:8px;border:1px solid #e0d6ec;font-size:13px;" />
-                        <button class="save-req-btn" data-ticket-id="${ticket.id}" style="background:#8e44ad;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">📋 Add Requirements</button>
-                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e8e0f0;">
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <input type="text" id="req-input-${ticket.id}" 
+                                       placeholder="Enter requirements for this badge..." 
+                                       style="flex:1;min-width:200px;padding:10px 14px;border-radius:8px;border:2px solid #b8a080;font-size:14px;background:#f8f0e0;box-sizing:border-box;" />
+                                <button class="save-req-btn" data-ticket-id="${ticket.id}" 
+                                        style="background:#8e44ad;color:white;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+                                    📋 Save Requirements
+                                </button>
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                                <input type="file" id="req-image-${ticket.id}" accept="image/*" style="display:none;" />
+                                <button class="upload-req-image-btn" data-ticket-id="${ticket.id}" 
+                                        style="background:#6b5f4a;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                    📷 Add Image
+                                </button>
+                                <span id="req-image-name-${ticket.id}" style="font-size:12px;color:#6b5f4a;"></span>
+                                <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" 
+                                        style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500;">
+                                    ❌ Reject
+                                </button>
+                            </div>
+                            <div id="req-message-${ticket.id}" style="font-size:13px;color:var(--text-muted);"></div>
+                        </div>
                     </div>
                 `;
             } else if (ticket.status === 'requirements_added') {
                 actionsHtml = `
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
-                        <button class="view-report-btn" data-ticket-id="${ticket.id}" style="background:#3498db;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">📄 View Report</button>
-                        <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
-                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e8e0f0;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="view-report-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#3498db;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                📄 View Report
+                            </button>
+                            <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#27ae60;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                ✅ Approve
+                            </button>
+                            <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#e74c3c;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                ❌ Reject
+                            </button>
+                        </div>
                     </div>
                 `;
             } else if (ticket.status === 'report_submitted') {
                 actionsHtml = `
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid #e8e0f0;">
-                        <button class="view-report-btn" data-ticket-id="${ticket.id}" style="background:#3498db;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">📄 View Report</button>
-                        <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">✅ Approve</button>
-                        <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;">❌ Reject</button>
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e8e0f0;">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button class="view-report-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#3498db;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                📄 View Report
+                            </button>
+                            <button class="approve-ticket-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#27ae60;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                ✅ Approve
+                            </button>
+                            <button class="reject-ticket-btn" data-ticket-id="${ticket.id}" 
+                                    style="background:#e74c3c;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;">
+                                ❌ Reject
+                            </button>
+                        </div>
                     </div>
                 `;
             }
             
             html += `
-                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${status.color};cursor:pointer;" onclick="window.location.href='report-viewer-ticket.html?ticketId=${ticket.id}'">
+                <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${status.color};">
                     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                         <div style="flex:1;">
                             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -943,12 +986,19 @@ async function renderLeaderTickets() {
                                 <div style="font-size:13px;color:#3d2b1f;margin-top:6px;padding:8px 12px;background:#f5f0f8;border-radius:8px;border-left:3px solid #8e44ad;">
                                     📋 ${ticket.requirements}
                                     ${ticket.requirementsImage ? ` <span style="font-size:11px;color:#8e44ad;">[has image]</span>` : ''}
+                                    ${ticket.leaderName ? `<span style="font-size:11px;color:#6b5f4a;margin-left:8px;">— ${ticket.leaderName}</span>` : ''}
                                 </div>
                             ` : ''}
                             ${ticket.reportText ? `
                                 <div style="font-size:13px;color:#3d2b1f;margin-top:6px;padding:8px 12px;background:#fdf2e9;border-radius:8px;border-left:3px solid #e67e22;">
                                     📤 Report: ${ticket.reportText.substring(0, 60)}${ticket.reportText.length > 60 ? '...' : ''}
                                     ${ticket.reportImages?.length ? ` <span style="font-size:11px;color:#e67e22;">(${ticket.reportImages.length} images)</span>` : ''}
+                                </div>
+                            ` : ''}
+                            ${ticket.decisionNote ? `
+                                <div style="font-size:13px;color:#3d2b1f;margin-top:6px;padding:8px 12px;background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};border-radius:8px;border-left:3px solid ${ticket.status === 'approved' ? '#27ae60' : '#e74c3c'};">
+                                    ${ticket.status === 'approved' ? '✅' : '❌'} ${ticket.decisionNote}
+                                    ${ticket.decidedBy ? `<span style="font-size:11px;color:#6b5f4a;margin-left:8px;">— ${ticket.decidedBy}</span>` : ''}
                                 </div>
                             ` : ''}
                         </div>
@@ -962,6 +1012,28 @@ async function renderLeaderTickets() {
         pageContent.innerHTML = html;
         
         // ─── Event listeners ──────────────────────────────────────
+        // Upload image button
+        document.querySelectorAll('.upload-req-image-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const ticketId = this.dataset.ticketId;
+                document.getElementById(`req-image-${ticketId}`).click();
+            });
+        });
+        
+        // File input change
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const ticketId = this.id.replace('req-image-', '');
+                    window._reqImageFiles = window._reqImageFiles || {};
+                    window._reqImageFiles[ticketId] = file;
+                    document.getElementById(`req-image-name-${ticketId}`).textContent = `📎 ${file.name}`;
+                }
+            });
+        });
+        
         // Save Requirements
         document.querySelectorAll('.save-req-btn').forEach(btn => {
             btn.addEventListener('click', async function(e) {
@@ -969,19 +1041,33 @@ async function renderLeaderTickets() {
                 const ticketId = this.dataset.ticketId;
                 const input = document.getElementById(`req-input-${ticketId}`);
                 const requirements = input.value.trim();
+                const messageEl = document.getElementById(`req-message-${ticketId}`);
                 
                 if (!requirements) {
-                    alert('Please enter requirements.');
+                    messageEl.textContent = '⚠️ Please enter requirements.';
+                    messageEl.style.color = '#e74c3c';
                     return;
                 }
                 
+                const imageFile = window._reqImageFiles ? window._reqImageFiles[ticketId] : null;
+                
                 const module = await import('./tickets.js');
-                const result = await module.addRequirements(ticketId, requirements, null, currentUser.username);
+                const result = await module.addRequirements(ticketId, requirements, imageFile);
+                
                 if (result.success) {
-                    alert('✅ Requirements saved! Scout has been notified.');
+                    messageEl.textContent = '✅ Requirements saved! Scout has been notified.';
+                    messageEl.style.color = '#27ae60';
+                    
+                    // Clear the input and image
+                    input.value = '';
+                    if (window._reqImageFiles) delete window._reqImageFiles[ticketId];
+                    document.getElementById(`req-image-name-${ticketId}`).textContent = '';
+                    
+                    // Re-render tickets
                     renderLeaderTickets();
                 } else {
-                    alert('Error: ' + result.error);
+                    messageEl.textContent = '❌ Error: ' + result.error;
+                    messageEl.style.color = '#e74c3c';
                 }
             });
         });
@@ -1003,7 +1089,7 @@ async function renderLeaderTickets() {
                 if (!confirm('Approve this ticket? The badge will be unlocked for the scout.')) return;
                 
                 const module = await import('./tickets.js');
-                const result = await module.approveTicket(ticketId, 'Approved by leader');
+                const result = await module.approveTicket(ticketId);
                 if (result.success) {
                     // Try to unlock the badge in local storage
                     try {
@@ -1077,7 +1163,6 @@ function renderAllScouts() {
         
         const scoutNote = scout.note || '';
         
-        // ─── Get earned badges for this scout ──────────────────
         const scoutTickets = allTickets.filter(t => 
             t.scoutName === scout.username && t.status === 'approved'
         );
@@ -1140,7 +1225,6 @@ async function renderScoutProfile(username) {
     const attendedSessions = allSessions.filter(s => s.attendance && s.attendance[username] === true);
     const totalHours = attendedSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
     
-    // ─── Get earned badges for this scout ──────────────────
     const scoutTickets = allTickets.filter(t => 
         t.scoutName === username && t.status === 'approved'
     );
@@ -1250,7 +1334,6 @@ async function renderScoutProfile(username) {
         `;
     }
 
-    // ─── BADGES SECTION ──────────────────────────────────────
     html += `
         <div style="background:white;border-radius:24px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:16px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -1407,7 +1490,6 @@ function renderPendingApprovals() {
         
         for (const key in status) {
             if (status[key].status === 'pending') {
-                // ─── SKIP ticket items ──────────────────────────
                 if (key.startsWith('ticket_')) continue;
                 
                 let reqName = key;
@@ -1517,7 +1599,6 @@ function renderPendingApprovals() {
     html += '</div>';
     pageContent.innerHTML = html;
 
-    // ─── Event listeners ──────────────────────────────────────
     document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const username = this.dataset.username;
@@ -1772,7 +1853,6 @@ async function generateCSV() {
             if (status[key]?.status === 'approved') firstDone++;
         }
 
-        // ─── Count earned badges from tickets ──────────────────
         const scoutTickets = allTickets.filter(t => 
             t.scoutName === scout.username && t.status === 'approved'
         );
@@ -1902,7 +1982,6 @@ async function renderLeaderProfile() {
                         </div>
                     </div>
 
-                    <!-- ─── HEALTH SECTION ─── -->
                     <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                             <div style="font-weight:600;font-size:16px;">🏥 Health Information</div>
@@ -1935,7 +2014,6 @@ async function renderLeaderProfile() {
                         </div>
                     </div>
 
-                    <!-- ─── EMERGENCY CONTACT ─── -->
                     <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
                         <div style="font-weight:600;margin-bottom:8px;">📞 Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
