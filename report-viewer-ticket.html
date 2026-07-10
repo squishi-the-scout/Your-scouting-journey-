@@ -6,7 +6,6 @@
     <title>Report Viewer — GIS Scouts</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Same as report-viewer.html but bigger */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -32,10 +31,39 @@
             text-decoration: none;
             font-weight: 500;
             cursor: pointer;
+            font-size: 16px;
         }
         .back-link:hover {
-            color: var(--purple-dark);
+            color: #6b8a7a;
         }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .loading-spinner .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8e0f0;
+            border-top-color: var(--purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-spinner p {
+            color: #6b5f7a;
+            margin-top: 12px;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #e74c3c;
+        }
+        .error-message .icon { font-size: 48px; margin-bottom: 16px; }
 
         .report-card {
             background: white;
@@ -66,7 +94,7 @@
             margin-right: 12px;
         }
 
-        .report-header .status-badge {
+        .status-badge {
             display: inline-block;
             padding: 4px 16px;
             border-radius: 20px;
@@ -74,6 +102,11 @@
             font-weight: 600;
             margin-top: 8px;
         }
+        .status-pending { background: #fde8d0; color: #d35400; }
+        .status-requirements { background: #f4ecf7; color: #8e44ad; }
+        .status-report { background: #fdf2e9; color: #e67e22; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
 
         .report-section {
             margin-bottom: 28px;
@@ -94,7 +127,7 @@
             line-height: 1.7;
             color: #2d2a3a;
             white-space: pre-wrap;
-            min-height: 100px;
+            min-height: 60px;
         }
 
         .report-section .requirements-text {
@@ -111,6 +144,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 16px;
+            margin-top: 12px;
         }
 
         .image-item {
@@ -120,20 +154,18 @@
             overflow: hidden;
             border: 2px solid #e8e0f0;
             cursor: pointer;
+            transition: transform 0.2s;
         }
-
+        .image-item:hover {
+            transform: scale(1.02);
+        }
         .image-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.2s;
         }
 
-        .image-item img:hover {
-            transform: scale(1.03);
-        }
-
-        .no-images {
+        .no-content {
             color: #6b5f7a;
             font-style: italic;
             padding: 20px;
@@ -150,11 +182,161 @@
             border-top: 1px solid #e8e0f0;
         }
 
-        .status-pending { background: #fde8d0; color: #d35400; }
-        .status-requirements { background: #f4ecf7; color: #8e44ad; }
-        .status-report { background: #fdf2e9; color: #e67e22; }
-        .status-approved { background: #d4edda; color: #155724; }
-        .status-rejected { background: #f8d7da; color: #721c24; }
+        /* ─── ACTION AREA ─── */
+        .action-area {
+            background: #f8f5fa;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 20px;
+            border: 2px solid #e0d6ec;
+        }
+
+        .action-area label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: #3d2b1f;
+            margin-bottom: 6px;
+        }
+
+        .action-area textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #b8a080;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background: #f8f0e0;
+        }
+        .action-area textarea:focus {
+            outline: none;
+            border-color: #b8860b;
+        }
+
+        .action-area .file-upload-area {
+            border: 2px dashed #b8a080;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8f0e0;
+            margin-bottom: 12px;
+        }
+        .action-area .file-upload-area:hover {
+            border-color: #b8860b;
+            background: #f0e8d8;
+        }
+
+        .action-area .file-upload-area input {
+            display: none;
+        }
+
+        .action-area .file-name {
+            font-size: 13px;
+            color: #6b5f4a;
+            margin-top: 4px;
+        }
+
+        .action-area .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .btn-save-req {
+            background: #8e44ad;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-save-req:hover {
+            background: #732d91;
+            transform: translateY(-2px);
+        }
+
+        .btn-approve {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-approve:hover {
+            background: #1e8449;
+            transform: translateY(-2px);
+        }
+
+        .btn-reject {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reject:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+
+        .action-message {
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        .action-message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+        }
+        .action-message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .requirements-preview {
+            background: #d4c4a8;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border-left: 4px solid #8e44ad;
+            margin-top: 12px;
+        }
 
         /* ─── Lightbox ─── */
         .lightbox {
@@ -171,18 +353,13 @@
             padding: 20px;
             cursor: pointer;
         }
-
-        .lightbox.active {
-            display: flex;
-        }
-
+        .lightbox.active { display: flex; }
         .lightbox img {
             max-width: 90%;
             max-height: 90%;
             border-radius: 8px;
             object-fit: contain;
         }
-
         .lightbox .close-btn {
             position: absolute;
             top: 20px;
@@ -199,6 +376,8 @@
             .report-card { padding: 20px; }
             .image-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
             .report-header h1 { font-size: 22px; }
+            .action-area .button-group { flex-direction: column; }
+            .action-area .button-group button { width: 100%; }
         }
     </style>
 </head>
@@ -222,7 +401,7 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { doc, getDoc, updateDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // ─── USER ─────────────────────────────────────────────
         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -236,8 +415,6 @@
         // ─── URL PARAMS ──────────────────────────────────────
         const urlParams = new URLSearchParams(window.location.search);
         const ticketId = urlParams.get('ticketId');
-        const scoutUsername = urlParams.get('scout');
-        const badgeId = urlParams.get('badge');
 
         const container = document.getElementById('report-content');
 
@@ -279,55 +456,90 @@
             cancelled: { label: '🚫 Cancelled', class: '' }
         };
 
+        // ─── GET USER DISPLAY NAME ────────────────────────────
+        function getUserDisplayName() {
+            if (currentUser.fullName && currentUser.fullName.trim()) {
+                return currentUser.fullName;
+            }
+            return currentUser.username || 'Leader';
+        }
+
+        // ─── SAVE REQUIREMENTS ─────────────────────────────────
+        async function saveRequirements(ticketId, requirements, imageBase64) {
+            const docRef = doc(db, 'tickets', ticketId);
+            const leaderName = getUserDisplayName();
+            
+            await updateDoc(docRef, {
+                requirements: requirements,
+                requirementsImage: imageBase64 || null,
+                leaderName: leaderName,
+                leaderId: currentUser.uid || 'leader',
+                requirementsAddedAt: Timestamp.now(),
+                status: 'requirements_added'
+            });
+        }
+
+        // ─── APPROVE TICKET ────────────────────────────────────
+        async function approveTicket(ticketId, note = '') {
+            const docRef = doc(db, 'tickets', ticketId);
+            const leaderName = getUserDisplayName();
+            
+            await updateDoc(docRef, {
+                status: 'approved',
+                decision: 'approved',
+                decisionNote: note || 'Approved! Well done!',
+                decidedAt: Timestamp.now(),
+                decidedBy: leaderName,
+                leaderName: leaderName
+            });
+        }
+
+        // ─── REJECT TICKET ─────────────────────────────────────
+        async function rejectTicket(ticketId, reason = '') {
+            const docRef = doc(db, 'tickets', ticketId);
+            const leaderName = getUserDisplayName();
+            
+            await updateDoc(docRef, {
+                status: 'rejected',
+                decision: 'rejected',
+                decisionNote: reason || 'No reason provided',
+                decidedAt: Timestamp.now(),
+                decidedBy: leaderName,
+                leaderName: leaderName
+            });
+        }
+
         // ─── LOAD REPORT ──────────────────────────────────────
         async function loadReport() {
+            if (!ticketId) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <div class="icon">❌</div>
+                        <h3>No ticket ID provided</h3>
+                        <p>Please provide a ticket ID to view the report.</p>
+                    </div>
+                `;
+                return;
+            }
+
             try {
-                let ticket = null;
-                let scoutName = scoutUsername || 'Unknown Scout';
-                let badgeName = 'Badge';
-                let badgeIcon = '🏅';
-
-                // If we have a ticketId, load from tickets collection
-                if (ticketId) {
-                    const ticketDoc = await getDoc(doc(db, 'tickets', ticketId));
-                    if (ticketDoc.exists()) {
-                        ticket = { id: ticketDoc.id, ...ticketDoc.data() };
-                        scoutName = ticket.scoutName || 'Unknown Scout';
-                        badgeName = ticket.badgeName || 'Badge';
-                        badgeIcon = ticket.badgeIcon || '🏅';
-                    } else {
-                        container.innerHTML = `
-                            <div class="error-message">
-                                <div class="icon">❌</div>
-                                <h3>Ticket not found</h3>
-                                <p>The requested ticket does not exist.</p>
-                            </div>
-                        `;
-                        return;
-                    }
-                } else if (scoutUsername && badgeId) {
-                    // Fallback: try to find ticket by scout + badge
-                    // This would need a query - for now show error
+                const ticketDoc = await getDoc(doc(db, 'tickets', ticketId));
+                
+                if (!ticketDoc.exists()) {
                     container.innerHTML = `
                         <div class="error-message">
                             <div class="icon">❌</div>
-                            <h3>No ticket ID provided</h3>
-                            <p>Please provide a ticket ID to view the report.</p>
+                            <h3>Ticket not found</h3>
+                            <p>The requested ticket does not exist.</p>
                         </div>
                     `;
                     return;
                 }
 
-                if (!ticket) {
-                    container.innerHTML = `
-                        <div class="error-message">
-                            <div class="icon">❌</div>
-                            <h3>Report not found</h3>
-                            <p>No report found for this ticket.</p>
-                        </div>
-                    `;
-                    return;
-                }
+                const ticket = { id: ticketDoc.id, ...ticketDoc.data() };
+                const scoutName = ticket.scoutName || 'Unknown Scout';
+                const badgeName = ticket.badgeName || 'Badge';
+                const badgeIcon = ticket.badgeIcon || '🏅';
 
                 // ─── Parse request note ──────────────────────────
                 let requestDate = 'Unknown';
@@ -353,6 +565,49 @@
                 const hasReport = ticket.reportText || (ticket.reportImages && ticket.reportImages.length > 0);
                 const hasRequirements = ticket.requirements;
 
+                // ─── Build action area for leaders ────────────────
+                let actionHtml = '';
+
+                if (isLeader) {
+                    if (ticket.status === 'pending') {
+                        actionHtml = `
+                            <div class="action-area">
+                                <h3 style="color:#3d2b1f;margin-bottom:12px;">📋 Add Requirements</h3>
+                                
+                                <label for="req-text">Requirements</label>
+                                <textarea id="req-text" placeholder="Describe what the scout needs to do to earn this badge..."></textarea>
+                                
+                                <div class="file-upload-area" id="req-upload-area">
+                                    <p>📷 Click to upload an image for requirements (optional)</p>
+                                    <input type="file" id="req-image-input" accept="image/*">
+                                </div>
+                                <div class="file-name" id="req-file-name"></div>
+                                
+                                <div class="button-group">
+                                    <button class="btn-save-req" id="save-req-btn">📋 Save Requirements</button>
+                                    <button class="btn-reject" id="reject-btn">❌ Reject</button>
+                                </div>
+                                <div id="action-message" class="action-message"></div>
+                            </div>
+                        `;
+                    } else if (ticket.status === 'requirements_added' || ticket.status === 'report_submitted') {
+                        actionHtml = `
+                            <div class="action-area">
+                                <h3 style="color:#3d2b1f;margin-bottom:12px;">📋 Review & Decide</h3>
+                                
+                                <label for="decision-note">Leader's Note (optional)</label>
+                                <textarea id="decision-note" placeholder="Add a note to the scout..."></textarea>
+                                
+                                <div class="button-group">
+                                    <button class="btn-approve" id="approve-btn">✅ Approve Badge</button>
+                                    <button class="btn-reject" id="reject-final-btn">❌ Reject</button>
+                                </div>
+                                <div id="action-message" class="action-message"></div>
+                            </div>
+                        `;
+                    }
+                }
+
                 let html = `
                     <div class="report-card">
                         <div class="report-header">
@@ -375,7 +630,7 @@
 
                         ${hasRequirements ? `
                             <div class="report-section">
-                                <h3>📋 Requirements (from ${ticket.leaderName || 'Leader'})</h3>
+                                <h3>📋 Requirements ${ticket.leaderName ? `(from ${ticket.leaderName})` : ''}</h3>
                                 <div class="requirements-text">
                                     ${ticket.requirements}
                                     ${ticket.requirementsImage ? `
@@ -419,7 +674,7 @@
                         ` : `
                             <div class="report-section">
                                 <h3>📤 Report</h3>
-                                <div class="no-images">No report submitted yet.</div>
+                                <div class="no-content">No report submitted yet.</div>
                             </div>
                         `}
 
@@ -428,14 +683,16 @@
                                 <h3>${ticket.status === 'approved' ? '✅' : '❌'} Leader's Decision</h3>
                                 <div class="note-text" style="background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};color:${ticket.status === 'approved' ? '#155724' : '#721c24'};">
                                     ${ticket.decisionNote}
-                                    ${ticket.decidedAt ? `
+                                    ${ticket.decidedBy ? `
                                         <div style="font-size:12px;color:inherit;opacity:0.8;margin-top:8px;">
-                                            Decided: ${new Date(ticket.decidedAt.seconds * 1000).toLocaleString()}
+                                            Decided by: ${ticket.decidedBy} · ${new Date(ticket.decidedAt.seconds * 1000).toLocaleString()}
                                         </div>
                                     ` : ''}
                                 </div>
                             </div>
                         ` : ''}
+
+                        ${actionHtml}
 
                         <div class="timestamp">
                             Ticket ID: ${ticket.id?.slice(0, 12) || 'N/A'} · Status: ${ticket.status}
@@ -444,6 +701,120 @@
                 `;
 
                 container.innerHTML = html;
+
+                // ─── Event Listeners ──────────────────────────────
+
+                // ─── Save Requirements ──────────────────────────────
+                const saveReqBtn = document.getElementById('save-req-btn');
+                if (saveReqBtn) {
+                    saveReqBtn.addEventListener('click', async function() {
+                        const textarea = document.getElementById('req-text');
+                        const requirements = textarea.value.trim();
+                        const messageEl = document.getElementById('action-message');
+                        
+                        if (!requirements) {
+                            messageEl.className = 'action-message error';
+                            messageEl.textContent = '⚠️ Please enter requirements.';
+                            return;
+                        }
+                        
+                        // Get image if uploaded
+                        const fileInput = document.getElementById('req-image-input');
+                        let imageBase64 = null;
+                        if (fileInput.files && fileInput.files[0]) {
+                            const file = fileInput.files[0];
+                            imageBase64 = await new Promise((resolve) => {
+                                const reader = new FileReader();
+                                reader.onload = (e) => resolve(e.target.result);
+                                reader.readAsDataURL(file);
+                            });
+                        }
+                        
+                        try {
+                            await saveRequirements(ticketId, requirements, imageBase64);
+                            messageEl.className = 'action-message success';
+                            messageEl.textContent = '✅ Requirements saved! Scout has been notified.';
+                            
+                            // Reload after 1.5 seconds
+                            setTimeout(() => loadReport(), 1500);
+                        } catch (error) {
+                            messageEl.className = 'action-message error';
+                            messageEl.textContent = '❌ Error: ' + error.message;
+                        }
+                    });
+                }
+
+                // ─── Upload image ──────────────────────────────────
+                const uploadArea = document.getElementById('req-upload-area');
+                const fileInput = document.getElementById('req-image-input');
+                const fileNameEl = document.getElementById('req-file-name');
+
+                if (uploadArea && fileInput) {
+                    uploadArea.addEventListener('click', () => fileInput.click());
+                    fileInput.addEventListener('change', function() {
+                        if (this.files && this.files[0]) {
+                            fileNameEl.textContent = `📎 ${this.files[0].name}`;
+                        }
+                    });
+                }
+
+                // ─── Approve ──────────────────────────────────────
+                const approveBtn = document.getElementById('approve-btn');
+                if (approveBtn) {
+                    approveBtn.addEventListener('click', async function() {
+                        const noteEl = document.getElementById('decision-note');
+                        const note = noteEl ? noteEl.value.trim() : '';
+                        const messageEl = document.getElementById('action-message');
+                        
+                        if (!confirm('Approve this ticket? The badge will be unlocked for the scout.')) return;
+                        
+                        try {
+                            await approveTicket(ticketId, note || 'Approved! Well done!');
+                            
+                            // Try to unlock the badge in local storage
+                            try {
+                                const pouch = JSON.parse(localStorage.getItem('badgePouch') || '[]');
+                                const badge = pouch.find(b => b.id === ticket.badgeId);
+                                if (badge) {
+                                    badge.unlocked = true;
+                                    localStorage.setItem('badgePouch', JSON.stringify(pouch));
+                                }
+                            } catch (e) { console.warn('Could not update local badge state:', e); }
+                            
+                            messageEl.className = 'action-message success';
+                            messageEl.textContent = '✅ Badge approved and unlocked for scout!';
+                            
+                            setTimeout(() => loadReport(), 1500);
+                        } catch (error) {
+                            messageEl.className = 'action-message error';
+                            messageEl.textContent = '❌ Error: ' + error.message;
+                        }
+                    });
+                }
+
+                // ─── Reject ──────────────────────────────────────
+                const rejectBtn = document.getElementById('reject-btn') || document.getElementById('reject-final-btn');
+                if (rejectBtn) {
+                    rejectBtn.addEventListener('click', async function() {
+                        const noteEl = document.getElementById('decision-note');
+                        const note = noteEl ? noteEl.value.trim() : '';
+                        const messageEl = document.getElementById('action-message');
+                        const reason = prompt('Why are you rejecting this ticket? (Optional)');
+                        
+                        if (!confirm('Reject this ticket?')) return;
+                        
+                        try {
+                            await rejectTicket(ticketId, reason || note || 'Rejected by leader');
+                            messageEl.className = 'action-message success';
+                            messageEl.textContent = '❌ Ticket rejected.';
+                            
+                            setTimeout(() => loadReport(), 1500);
+                        } catch (error) {
+                            messageEl.className = 'action-message error';
+                            messageEl.textContent = '❌ Error: ' + error.message;
+                        }
+                    });
+                }
 
             } catch (error) {
                 console.error('Error loading report:', error);
