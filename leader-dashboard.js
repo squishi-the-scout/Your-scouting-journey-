@@ -303,35 +303,30 @@ function updatePendingBadge() {
         const status = allStatus[scout.username] || {};
         for (const key in status) {
             if (status[key].status === 'pending') {
-                // Skip ticket items
                 if (key.startsWith('ticket_')) continue;
                 pendingCount++;
             }
         }
     }
     
-    // Count active tickets (for ticket badge)
     const activeTickets = allTickets.filter(t => 
         t.status === 'pending' || 
         t.status === 'requirements_added' || 
         t.status === 'report_submitted'
     );
     
-    // ─── Update pending badge ──────────────────────────────
     const pendingBadge = document.getElementById('pending-badge');
     if (pendingBadge) {
         pendingBadge.textContent = pendingCount;
         pendingBadge.classList.toggle('visible', pendingCount > 0);
     }
     
-    // ─── Update ticket badge ────────────────────────────────
     const ticketBadge = document.getElementById('leader-ticket-badge');
     if (ticketBadge) {
         ticketBadge.textContent = activeTickets.length;
         ticketBadge.classList.toggle('visible', activeTickets.length > 0);
     }
     
-    // ─── Also update mobile badges ──────────────────────────
     const mobilePending = document.getElementById('mobile-pending-badge');
     if (mobilePending) {
         mobilePending.textContent = pendingCount;
@@ -411,7 +406,6 @@ function listenToSessions() {
     });
 }
 
-// ─── LISTEN TO TICKETS ──────────────────────────────────
 function listenToTickets() {
     if (ticketsUnsubscribe) {
         ticketsUnsubscribe();
@@ -483,7 +477,6 @@ function renderView() {
 
 // ─── Dashboard ──────────────────────────────────────────
 function renderDashboard() {
-    // ─── Calculate stats ──────────────────────────────────────
     const totalScouts = allScouts.length;
     let totalPending = 0;
     let totalServiceHours = 0;
@@ -841,7 +834,6 @@ async function renderLeaderTickets() {
             t.status === 'report_submitted'
         );
         
-        // ─── Status config ──────────────────────────────────────
         const statusConfig = {
             pending: { label: '⏳ Pending', color: '#f39c12', bg: '#fef9e7' },
             requirements_added: { label: '📋 Requirements Added', color: '#8e44ad', bg: '#f4ecf7' },
@@ -877,7 +869,6 @@ async function renderLeaderTickets() {
                 new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 
                 'Recently';
             
-            // Parse request note
             let requestDate = 'Unknown';
             let requestTime = 'Unknown';
             let requestNote = '';
@@ -897,7 +888,6 @@ async function renderLeaderTickets() {
                 }
             }
             
-            // ─── Determine action area based on status ──────
             let actionsHtml = '';
             
             if (ticket.status === 'pending') {
@@ -969,6 +959,10 @@ async function renderLeaderTickets() {
                 `;
             }
             
+            // ─── Display leader name as "Username (Leader)" ───
+            const leaderDisplay = ticket.leaderName ? ` (${ticket.leaderName})` : '';
+            const decidedByDisplay = ticket.decidedBy ? ` (${ticket.decidedBy})` : '';
+            
             html += `
                 <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${status.color};">
                     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
@@ -1012,7 +1006,6 @@ async function renderLeaderTickets() {
         pageContent.innerHTML = html;
         
         // ─── Event listeners ──────────────────────────────────────
-        // Upload image button
         document.querySelectorAll('.upload-req-image-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -1021,7 +1014,6 @@ async function renderLeaderTickets() {
             });
         });
         
-        // File input change
         document.querySelectorAll('input[type="file"]').forEach(input => {
             input.addEventListener('change', function() {
                 const file = this.files[0];
@@ -1034,7 +1026,6 @@ async function renderLeaderTickets() {
             });
         });
         
-        // Save Requirements
         document.querySelectorAll('.save-req-btn').forEach(btn => {
             btn.addEventListener('click', async function(e) {
                 e.stopPropagation();
@@ -1057,13 +1048,9 @@ async function renderLeaderTickets() {
                 if (result.success) {
                     messageEl.textContent = '✅ Requirements saved! Scout has been notified.';
                     messageEl.style.color = '#27ae60';
-                    
-                    // Clear the input and image
                     input.value = '';
                     if (window._reqImageFiles) delete window._reqImageFiles[ticketId];
                     document.getElementById(`req-image-name-${ticketId}`).textContent = '';
-                    
-                    // Re-render tickets
                     renderLeaderTickets();
                 } else {
                     messageEl.textContent = '❌ Error: ' + result.error;
@@ -1072,7 +1059,6 @@ async function renderLeaderTickets() {
             });
         });
         
-        // View Report
         document.querySelectorAll('.view-report-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -1081,7 +1067,6 @@ async function renderLeaderTickets() {
             });
         });
         
-        // Approve Ticket
         document.querySelectorAll('.approve-ticket-btn').forEach(btn => {
             btn.addEventListener('click', async function(e) {
                 e.stopPropagation();
@@ -1091,7 +1076,6 @@ async function renderLeaderTickets() {
                 const module = await import('./tickets.js');
                 const result = await module.approveTicket(ticketId);
                 if (result.success) {
-                    // Try to unlock the badge in local storage
                     try {
                         const ticket = (await module.getTicketById(ticketId)).data;
                         if (ticket) {
@@ -1111,7 +1095,6 @@ async function renderLeaderTickets() {
             });
         });
         
-        // Reject Ticket
         document.querySelectorAll('.reject-ticket-btn').forEach(btn => {
             btn.addEventListener('click', async function(e) {
                 e.stopPropagation();
