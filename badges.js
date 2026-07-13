@@ -298,7 +298,7 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report ──────────────────────────────────────
+    // ─── Submit report (FIXED — uses submitReport) ──────
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -320,7 +320,8 @@ function openReportModal(ticket, badge) {
 
             console.log(`📤 Submitting report with ${imageBase64.length} images...`);
 
-            const result = await module.submitReportWithBase64(
+            // ─── FIXED: Use submitReport (not submitReportWithBase64) ───
+            const result = await module.submitReport(
                 ticket.id,
                 note || '',
                 imageBase64
