@@ -23,12 +23,12 @@ function getCurrentUser() {
     return user;
 }
 
-// ─── Get display name (fullName or username) ──────────────
+// ─── Get display name: "Username (Leader)" ──────────────
 function getUserDisplayName(user) {
-    if (user.fullName && user.fullName.trim()) {
-        return user.fullName;
-    }
-    return user.username || 'Leader';
+    const username = user.username || 'Leader';
+    const role = user.role || 'Leader';
+    // Format: "Username (Leader)" — e.g., "Hazfar (Leader)"
+    return `${username} (${role})`;
 }
 
 function generateTicketId() {
@@ -217,7 +217,7 @@ export async function rejectTicket(ticketId, reason = '') {
     }
 }
 
-// ─── SCOUT: SUBMIT REPORT WITH BASE64 ──────────────────────
+// ─── SCOUT: SUBMIT REPORT ──────────────────────────────────
 
 export async function submitReport(ticketId, reportText, imageBase64 = []) {
     try {
