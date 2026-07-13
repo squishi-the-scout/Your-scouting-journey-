@@ -608,6 +608,10 @@
                     }
                 }
 
+                // ─── Display leader name as "Username (Leader)" ───
+                const leaderDisplay = ticket.leaderName ? ` (${ticket.leaderName})` : '';
+                const decidedByDisplay = ticket.decidedBy ? ` (${ticket.decidedBy})` : '';
+
                 let html = `
                     <div class="report-card">
                         <div class="report-header">
@@ -718,7 +722,6 @@
                             return;
                         }
                         
-                        // Get image if uploaded
                         const fileInput = document.getElementById('req-image-input');
                         let imageBase64 = null;
                         if (fileInput.files && fileInput.files[0]) {
@@ -735,7 +738,6 @@
                             messageEl.className = 'action-message success';
                             messageEl.textContent = '✅ Requirements saved! Scout has been notified.';
                             
-                            // Reload after 1.5 seconds
                             setTimeout(() => loadReport(), 1500);
                         } catch (error) {
                             messageEl.className = 'action-message error';
@@ -771,7 +773,6 @@
                         try {
                             await approveTicket(ticketId, note || 'Approved! Well done!');
                             
-                            // Try to unlock the badge in local storage
                             try {
                                 const pouch = JSON.parse(localStorage.getItem('badgePouch') || '[]');
                                 const badge = pouch.find(b => b.id === ticket.badgeId);
