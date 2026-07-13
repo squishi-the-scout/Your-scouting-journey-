@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
@@ -31,51 +31,81 @@
             text-decoration: none;
             font-weight: 500;
             cursor: pointer;
+            font-size: 16px;
         }
         .back-link:hover {
-            color: var(--purple-dark);
+            color: #6b8a7a;
         }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .loading-spinner .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e8e0f0;
+            border-top-color: var(--purple);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-spinner p {
+            color: #6b5f7a;
+            margin-top: 12px;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #e74c3c;
+        }
+        .error-message .icon { font-size: 48px; margin-bottom: 16px; }
 
         .report-card {
             background: white;
             border-radius: 24px;
-            padding: 32px;
+            padding: 40px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
 
         .report-header {
-            border-bottom: 1px solid #e8e0f0;
-            padding-bottom: 16px;
-            margin-bottom: 20px;
+            border-bottom: 2px solid #e8e0f0;
+            padding-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .report-header h1 {
             color: var(--purple-dark);
             margin: 0 0 4px 0;
-            font-size: 24px;
+            font-size: 28px;
         }
 
         .report-header .subtitle {
             color: #6b5f7a;
-            font-size: 14px;
+            font-size: 15px;
         }
 
         .report-section {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .report-section h3 {
             color: #2d2a3a;
-            margin-bottom: 8px;
-            font-size: 16px;
+            margin-bottom: 10px;
+            font-size: 17px;
+            font-weight: 600;
         }
 
         .report-section .note-text {
             background: #f8f5fa;
-            padding: 16px;
+            padding: 20px;
             border-radius: 12px;
-            font-size: 15px;
-            line-height: 1.6;
+            font-size: 16px;
+            line-height: 1.7;
             color: #2d2a3a;
             white-space: pre-wrap;
             min-height: 80px;
@@ -88,7 +118,6 @@
             font-family: inherit;
             width: 100%;
         }
-
         .report-section .note-text.editable:focus {
             border-color: var(--purple);
             outline: none;
@@ -103,6 +132,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 12px;
+            margin-top: 12px;
         }
 
         .image-item {
@@ -111,18 +141,16 @@
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid #e8e0f0;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-
+        .image-item:hover {
+            transform: scale(1.02);
+        }
         .image-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .image-item img:hover {
-            transform: scale(1.03);
         }
 
         .image-item .delete-image {
@@ -143,7 +171,6 @@
             transition: all 0.2s;
             z-index: 2;
         }
-
         .image-item .delete-image:hover {
             background: #dc3545;
             transform: scale(1.1);
@@ -162,39 +189,111 @@
             border-top: 1px solid #e8e0f0;
         }
 
-        .loading-spinner {
-            text-align: center;
-            padding: 60px 20px;
+        /* ─── ACTION AREA ─── */
+        .action-area {
+            background: #f8f5fa;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 20px;
+            border: 2px solid #e0d6ec;
         }
 
-        .loading-spinner .spinner {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e8e0f0;
-            border-top-color: var(--purple);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        .action-area label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: #3d2b1f;
+            margin-bottom: 6px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .action-area textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #b8a080;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background: #f8f0e0;
+        }
+        .action-area textarea:focus {
+            outline: none;
+            border-color: #b8860b;
         }
 
-        .loading-spinner p {
-            color: #6b5f7a;
+        .action-area .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
             margin-top: 12px;
         }
 
-        .error-message {
-            text-align: center;
-            padding: 60px 20px;
-            color: #e74c3c;
+        .btn-approve {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-approve:hover {
+            background: #1e8449;
+            transform: translateY(-2px);
         }
 
-        .error-message .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+        .btn-reject {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reject:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #e8e0f0;
+            color: var(--text-dark);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #d5cae0;
+        }
+
+        .action-message {
+            margin-top: 12px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+        .action-message.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+        }
+        .action-message.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
         }
 
         /* ─── Lightbox ─── */
@@ -212,18 +311,13 @@
             padding: 20px;
             cursor: pointer;
         }
-
-        .lightbox.active {
-            display: flex;
-        }
-
+        .lightbox.active { display: flex; }
         .lightbox img {
             max-width: 90%;
             max-height: 90%;
             border-radius: 8px;
             object-fit: contain;
         }
-
         .lightbox .close-btn {
             position: absolute;
             top: 20px;
@@ -235,169 +329,13 @@
             border: none;
         }
 
-        /* ─── Comments ─── */
-        .comment-item {
-            background: #f8f5fa;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-
-        .comment-item .comment-author {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--purple-dark);
-        }
-
-        .comment-item .comment-time {
-            font-size: 12px;
-            color: #6b5f7a;
-            margin-left: 8px;
-        }
-
-        .comment-item .comment-text {
-            font-size: 14px;
-            color: #2d2a3a;
-            margin-top: 4px;
-        }
-
-        .comment-input-area {
-            display: flex;
-            gap: 12px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-
-        .comment-input-area input {
-            flex: 1;
-            padding: 10px 16px;
-            border-radius: 12px;
-            border: 1px solid #e0d6ec;
-            font-size: 14px;
-            min-width: 150px;
-            background: white;
-        }
-
-        .comment-input-area input:focus {
-            border-color: var(--purple);
-            outline: none;
-        }
-
-        /* ─── BUTTONS ─── */
-        .btn-primary {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 12px rgba(40, 167, 69, 0.35);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-primary:hover {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.45);
-        }
-
-        .btn-success {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 2px 12px rgba(40, 167, 69, 0.35);
-        }
-        .btn-success:hover {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.45);
-        }
-
-        .btn-secondary {
-            background: #e8e0f0;
-            color: var(--text-dark);
-            border: none;
-            padding: 10px 24px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-secondary:hover {
-            background: #d5cae0;
-        }
-
-        .action-bar {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e8e0f0;
-        }
-
-        .message {
-            margin-top: 12px;
-            font-size: 14px;
-            color: #6b5f7a;
-        }
-
-        .message.success {
-            color: #28a745;
-        }
-
-        .message.error {
-            color: #dc3545;
-        }
-
-        .upload-area {
-            margin-top: 12px;
-            padding: 20px;
-            border: 2px dashed #e0d6ec;
-            border-radius: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .upload-area:hover {
-            border-color: var(--purple);
-            background: #f8f5fa;
-        }
-
-        .upload-area input {
-            display: none;
-        }
-
         @media (max-width: 768px) {
-            body {
-                padding: 16px;
-            }
-            .report-card {
-                padding: 20px;
-            }
-            .image-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-            .comment-input-area {
-                flex-direction: column;
-            }
-            .action-bar {
-                flex-direction: column;
-            }
-            .action-bar button {
-                width: 100%;
-            }
+            body { padding: 16px; }
+            .report-card { padding: 20px; }
+            .image-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+            .report-header h1 { font-size: 22px; }
+            .action-area .button-group { flex-direction: column; }
+            .action-area .button-group button { width: 100%; }
         }
     </style>
 </head>
@@ -421,7 +359,7 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { resizeImage } from './resize-image.js';
 
         // ─── USER ─────────────────────────────────────────────
@@ -430,7 +368,6 @@
             window.location.href = 'index.html';
         }
 
-        // ─── FIXED ROLE CHECK ────────────────────────────────
         const leaderRoles = ['leader', 'Rover Leader', 'GSL', 'AGSL', 'Advisor', 'Section Head'];
         const isLeader = leaderRoles.includes(currentUser.role);
 
@@ -465,24 +402,43 @@
             }
         });
 
-        function openLightbox(src) {
+        window.openLightbox = function(src) {
             lightboxImg.src = src;
             lightbox.classList.add('active');
+        };
+
+        // ─── GET USER DISPLAY NAME ────────────────────────────
+        function getUserDisplayName() {
+            if (currentUser.fullName && currentUser.fullName.trim()) {
+                return currentUser.fullName;
+            }
+            return currentUser.username || 'Leader';
         }
 
         // ─── RENDER REPORT ────────────────────────────────────
-        function renderReport(report, scoutName) {
+        function renderReport(report, scoutName, scoutUsername) {
             const isScoutOwner = !isLeader && currentUser.username === scoutUsername;
-            const images = report.images || [];
-            const note = report.note || '';
-            const updatedAt = report.updatedAt ? new Date(report.updatedAt).toLocaleString() : 'Unknown';
-            const comments = report.comments || [];
+            const isRequirementPending = report && report.status === 'pending';
+            const isRequirementApproved = report && report.status === 'approved';
+            const images = report?.images || [];
+            const note = report?.note || '';
+            const updatedAt = report?.updatedAt ? new Date(report.updatedAt).toLocaleString() : 'Unknown';
+
+            // ─── Check if this is already approved ──────────────
+            const isAlreadyApproved = report && report.status === 'approved';
 
             let html = `
                 <div class="report-card">
                     <div class="report-header">
                         <h1>📄 Report: ${req}</h1>
                         <div class="subtitle">${scoutName} · ${tab.charAt(0).toUpperCase() + tab.slice(1)} Badge</div>
+                        ${report?.status ? `
+                            <div style="margin-top:8px;">
+                                <span style="display:inline-block;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:600;background:${report.status === 'approved' ? '#d4edda' : report.status === 'pending' ? '#fde8d0' : '#f8d7da'};color:${report.status === 'approved' ? '#155724' : report.status === 'pending' ? '#d35400' : '#721c24'};">
+                                    ${report.status === 'approved' ? '✅ Approved' : report.status === 'pending' ? '⏳ Pending' : '❌ Rejected'}
+                                </span>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="report-section">
@@ -500,48 +456,39 @@
                             <div class="image-grid">
                                 ${images.map((img, index) => `
                                     <div class="image-item">
-                                        <img src="${img}" alt="Report image" loading="lazy" onclick="openLightbox('${img}')">
+                                        <img src="${img}" alt="Report image" loading="lazy" onclick="window.openLightbox('${img}')">
                                         ${isScoutOwner ? `<button class="delete-image" data-index="${index}" title="Delete image">✕</button>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
                         ` : `<div class="no-images">No images uploaded.</div>`}
                         ${isScoutOwner ? `
-                            <div class="upload-area" id="upload-area">
+                            <div class="upload-area" id="upload-area" style="margin-top:12px;padding:16px;border:2px dashed #e0d6ec;border-radius:12px;text-align:center;cursor:pointer;transition:all 0.2s;">
                                 <p>📸 Click to upload new images</p>
-                                <input type="file" id="image-upload" multiple accept="image/*">
+                                <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
                             </div>
                         ` : ''}
                     </div>
 
-                    <div class="report-section">
-                        <h3>💬 Comments</h3>
-                        ${comments.length === 0 ? '<p style="color:var(--text-muted);">No comments yet.</p>' : ''}
-                        ${comments.map(c => `
-                            <div class="comment-item">
-                                <span class="comment-author">${c.authorName || c.author}</span>
-                                <span class="comment-time">· ${new Date(c.timestamp).toLocaleString()}</span>
-                                <div class="comment-text">${c.text}</div>
+                    ${isLeader && !isAlreadyApproved && report ? `
+                        <div class="action-area">
+                            <h3 style="color:#3d2b1f;margin-bottom:12px;">📋 Review & Decide</h3>
+                            
+                            <label for="leader-note">Leader's Note (optional)</label>
+                            <textarea id="leader-note" placeholder="Add a note to the scout..."></textarea>
+                            
+                            <div class="button-group">
+                                <button class="btn-approve" id="approve-btn">✅ Approve Requirement</button>
+                                <button class="btn-reject" id="reject-btn">❌ Reject</button>
                             </div>
-                        `).join('')}
-                    </div>
-
-                    ${isLeader ? `
-                        <div class="report-section">
-                            <h3>✏️ Add Comment</h3>
-                            <div class="comment-input-area">
-                                <input type="text" id="comment-input" placeholder="Write a comment...">
-                                <button id="submit-comment" class="btn-primary">💬 Post Comment</button>
-                            </div>
-                            <div id="comment-message" class="message"></div>
+                            <div id="action-message" class="action-message"></div>
                         </div>
                     ` : ''}
 
-                    ${isScoutOwner ? `
-                        <div class="action-bar">
-                            <button id="save-report" class="btn-success">💾 Save Changes</button>
+                    ${isLeader && isAlreadyApproved ? `
+                        <div style="background:#d4edda;border-radius:12px;padding:16px;margin-top:20px;border-left:4px solid #27ae60;">
+                            <p style="color:#155724;font-weight:600;">✅ This requirement has already been approved.</p>
                         </div>
-                        <div id="save-message" class="message"></div>
                     ` : ''}
 
                     <div class="timestamp">📅 Last saved: ${updatedAt}</div>
@@ -553,7 +500,7 @@
             // ─── Expose lightbox ──────────────────────────────
             window.openLightbox = openLightbox;
 
-            // ─── Delete image ──────────────────────────────────
+            // ─── Scout: Delete image ────────────────────────────
             if (isScoutOwner) {
                 document.querySelectorAll('.delete-image').forEach(btn => {
                     btn.addEventListener('click', function() {
@@ -577,119 +524,165 @@
                     });
                 });
 
-                // ─── Upload images ──────────────────────────────
+                // ─── Scout: Upload images ──────────────────────────
                 const uploadArea = document.getElementById('upload-area');
                 const fileInput = document.getElementById('image-upload');
 
-                uploadArea.addEventListener('click', () => fileInput.click());
-                
-                fileInput.addEventListener('change', async function() {
-                    const files = this.files;
-                    if (files.length === 0) return;
+                if (uploadArea) {
+                    uploadArea.addEventListener('click', () => fileInput.click());
+                    
+                    fileInput.addEventListener('change', async function() {
+                        const files = this.files;
+                        if (files.length === 0) return;
 
-                    const reportKey = `${tab}_${req}_report`;
-                    const docRef = doc(db, 'scoutStatus', scoutUsername);
-                    const docSnap = await getDoc(docRef);
-                    const data = docSnap.data() || {};
-                    const reportData = data[reportKey] || {};
-                    const currentImages = reportData.images || [];
+                        const reportKey = `${tab}_${req}_report`;
+                        const docRef = doc(db, 'scoutStatus', scoutUsername);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data() || {};
+                        const reportData = data[reportKey] || {};
+                        const currentImages = reportData.images || [];
 
-                    let newImages = [...currentImages];
+                        let newImages = [...currentImages];
 
-                    for (const file of files) {
-                        try {
-                            const base64 = await resizeImage(file, 600, 0.7);
-                            newImages.push(base64);
-                        } catch (error) {
-                            console.error('Upload error:', error);
+                        for (const file of files) {
+                            try {
+                                const base64 = await resizeImage(file, 600, 0.7);
+                                newImages.push(base64);
+                            } catch (error) {
+                                console.error('Upload error:', error);
+                            }
                         }
-                    }
 
-                    reportData.images = newImages;
-                    reportData.updatedAt = new Date().toISOString();
-                    data[reportKey] = reportData;
-                    await setDoc(docRef, data);
-                    loadReport();
-                });
-            }
-
-            // ─── Scout: Save Report ────────────────────────────
-            if (isScoutOwner) {
-                document.getElementById('save-report').addEventListener('click', async function() {
-                    const note = document.getElementById('report-note').value.trim();
-                    const reportKey = `${tab}_${req}_report`;
-                    const message = document.getElementById('save-message');
-
-                    try {
-                        const docRef = doc(db, 'scoutStatus', scoutUsername);
-                        const docSnap = await getDoc(docRef);
-                        const data = docSnap.data() || {};
-                        const reportData = data[reportKey] || {};
-
-                        reportData.note = note;
+                        reportData.images = newImages;
                         reportData.updatedAt = new Date().toISOString();
-
                         data[reportKey] = reportData;
                         await setDoc(docRef, data);
+                        loadReport();
+                    });
+                }
 
-                        message.textContent = '✅ Report saved successfully!';
-                        message.className = 'message success';
+                // ─── Scout: Save Report ────────────────────────────
+                const saveBtn = document.getElementById('save-report');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', async function() {
+                        const note = document.getElementById('report-note').value.trim();
+                        const reportKey = `${tab}_${req}_report`;
+                        const message = document.getElementById('save-message');
+
+                        try {
+                            const docRef = doc(db, 'scoutStatus', scoutUsername);
+                            const docSnap = await getDoc(docRef);
+                            const data = docSnap.data() || {};
+                            const reportData = data[reportKey] || {};
+
+                            reportData.note = note;
+                            reportData.updatedAt = new Date().toISOString();
+
+                            data[reportKey] = reportData;
+                            await setDoc(docRef, data);
+
+                            message.textContent = '✅ Report saved successfully!';
+                            message.className = 'message success';
+                        } catch (error) {
+                            message.textContent = '❌ Error: ' + error.message;
+                            message.className = 'message error';
+                            console.error(error);
+                        }
+                    });
+                }
+            }
+
+            // ─── Leader: Approve ────────────────────────────────────
+            const approveBtn = document.getElementById('approve-btn');
+            if (approveBtn) {
+                approveBtn.addEventListener('click', async function() {
+                    const noteEl = document.getElementById('leader-note');
+                    const note = noteEl ? noteEl.value.trim() : '';
+                    const messageEl = document.getElementById('action-message');
+                    const leaderName = getUserDisplayName();
+                    
+                    if (!confirm(`Approve this requirement for ${scoutName}?`)) return;
+                    
+                    try {
+                        const reportKey = `${tab}_${req}_report`;
+                        const docRef = doc(db, 'scoutStatus', scoutUsername);
+                        const docSnap = await getDoc(docRef);
+                        const data = docSnap.data() || {};
+                        
+                        // Update the report status
+                        const reportData = data[reportKey] || {};
+                        reportData.status = 'approved';
+                        reportData.approvedBy = leaderName;
+                        reportData.approvedAt = new Date().toISOString();
+                        reportData.updatedAt = new Date().toISOString();
+                        reportData.leaderNote = note || null;
+                        data[reportKey] = reportData;
+                        
+                        // Also update the requirement field
+                        const requirementKey = `${tab}_${req}`;
+                        data[requirementKey] = {
+                            status: 'approved',
+                            approvedBy: leaderName,
+                            approvedAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        };
+                        
+                        await setDoc(docRef, data);
+                        
+                        messageEl.className = 'action-message success';
+                        messageEl.textContent = `✅ Requirement approved for ${scoutName}!`;
+                        
+                        setTimeout(() => loadReport(), 1500);
                     } catch (error) {
-                        message.textContent = '❌ Error: ' + error.message;
-                        message.className = 'message error';
-                        console.error(error);
+                        messageEl.className = 'action-message error';
+                        messageEl.textContent = '❌ Error: ' + error.message;
                     }
                 });
             }
 
-            // ─── Leader: Add Comment ────────────────────────────
-            if (isLeader) {
-                document.getElementById('submit-comment').addEventListener('click', async function() {
-                    const input = document.getElementById('comment-input');
-                    const text = input.value.trim();
-                    const message = document.getElementById('comment-message');
-
-                    if (!text) {
-                        message.textContent = '⚠️ Please write a comment.';
-                        message.className = 'message error';
-                        return;
-                    }
-
-                    const reportKey = `${tab}_${req}_report`;
-
+            // ─── Leader: Reject ────────────────────────────────────
+            const rejectBtn = document.getElementById('reject-btn');
+            if (rejectBtn) {
+                rejectBtn.addEventListener('click', async function() {
+                    const noteEl = document.getElementById('leader-note');
+                    const note = noteEl ? noteEl.value.trim() : '';
+                    const messageEl = document.getElementById('action-message');
+                    const leaderName = getUserDisplayName();
+                    const reason = prompt('Why are you rejecting this? (Optional)');
+                    
+                    if (!confirm(`Reject this requirement for ${scoutName}?`)) return;
+                    
                     try {
+                        const reportKey = `${tab}_${req}_report`;
                         const docRef = doc(db, 'scoutStatus', scoutUsername);
                         const docSnap = await getDoc(docRef);
                         const data = docSnap.data() || {};
+                        
+                        // Update the report status
                         const reportData = data[reportKey] || {};
-
-                        const comments = reportData.comments || [];
-                        comments.push({
-                            author: currentUser.username,
-                            authorName: `${currentUser.username} (${currentUser.role})`,
-                            text: text,
-                            timestamp: new Date().toISOString()
-                        });
-
-                        reportData.comments = comments;
+                        reportData.status = 'rejected';
+                        reportData.rejectedBy = leaderName;
+                        reportData.rejectedAt = new Date().toISOString();
+                        reportData.updatedAt = new Date().toISOString();
+                        reportData.leaderNote = note || reason || null;
                         data[reportKey] = reportData;
+                        
+                        // Also update the requirement field
+                        const requirementKey = `${tab}_${req}`;
+                        data[requirementKey] = {
+                            status: 'todo',
+                            updatedAt: new Date().toISOString()
+                        };
+                        
                         await setDoc(docRef, data);
-
-                        input.value = '';
-                        message.textContent = '✅ Comment added!';
-                        message.className = 'message success';
-
-                        loadReport();
+                        
+                        messageEl.className = 'action-message success';
+                        messageEl.textContent = `❌ Requirement rejected for ${scoutName}.`;
+                        
+                        setTimeout(() => loadReport(), 1500);
                     } catch (error) {
-                        message.textContent = '❌ Error: ' + error.message;
-                        message.className = 'message error';
-                        console.error(error);
-                    }
-                });
-
-                document.getElementById('comment-input').addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        document.getElementById('submit-comment').click();
+                        messageEl.className = 'action-message error';
+                        messageEl.textContent = '❌ Error: ' + error.message;
                     }
                 });
             }
@@ -730,7 +723,7 @@
                     return;
                 }
 
-                renderReport(report, scoutName);
+                renderReport(report, scoutName, scoutUsername);
 
             } catch (error) {
                 console.error('Error loading report:', error);
