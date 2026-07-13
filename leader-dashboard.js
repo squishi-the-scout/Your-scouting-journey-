@@ -440,7 +440,7 @@ function updatePageHeading() {
         if (pageSubtitle) pageSubtitle.textContent = 'View and manage all scouts';
     } else if (currentView === 'pending') {
         pageHeading.textContent = 'Pending Approvals';
-        if (pageSubtitle) pageSubtitle.textContent = 'Review and approve scout requirements';
+        if (pageSubtitle) pageSubtitle.textContent = 'Review and approve scout reports';
     } else if (currentView === 'sessions') {
         pageHeading.textContent = 'Sessions';
         if (pageSubtitle) pageSubtitle.textContent = 'Manage scout sessions';
@@ -958,10 +958,6 @@ async function renderLeaderTickets() {
                     </div>
                 `;
             }
-            
-            // ─── Display leader name as "Username (Leader)" ───
-            const leaderDisplay = ticket.leaderName ? ` (${ticket.leaderName})` : '';
-            const decidedByDisplay = ticket.decidedBy ? ` (${ticket.decidedBy})` : '';
             
             html += `
                 <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-left:4px solid ${status.color};">
@@ -1491,12 +1487,19 @@ function renderPendingApprovals() {
                     badgeType = 'badge';
                 }
 
+                // ─── Check if there's a report ──────────────────
+                const reportKey = `${badgeType}_${reqName}_report`;
+                const report = status[reportKey];
+                const hasReport = report && (report.note || (report.images && report.images.length > 0));
+
                 pendingItems.push({
                     scout: scout,
                     field: key,
                     reqName: reqName,
                     badgeType: badgeType,
-                    status: status[key]
+                    status: status[key],
+                    hasReport: hasReport,
+                    report: report
                 });
             }
         }
@@ -1546,6 +1549,20 @@ function renderPendingApprovals() {
         const label = getBadgeLabel(item.field);
         const name = item.scout?.fullName || item.scout?.username || 'Unknown';
 
+        // ─── Show "View Report" button if report exists ──────────
+        let reportButton = '';
+        if (item.hasReport) {
+            reportButton = `
+                <button class="view-report-btn" 
+                        data-username="${item.scout.username}" 
+                        data-tab="${item.badgeType}" 
+                        data-req="${item.reqName}"
+                        style="background:#3498db;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">
+                    📄 View Report
+                </button>
+            `;
+        }
+
         html += `
             <div style="background:white;border-radius:16px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-left:4px solid ${color.border};">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -1554,9 +1571,10 @@ function renderPendingApprovals() {
                     <span style="font-weight:500;">${item.reqName}</span>
                     <span style="color:var(--text-muted);font-size:14px;">— ${name}</span>
                 </div>
-                <div style="display:flex;gap:8px;">
-                    <button class="approve-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Approve</button>
-                    <button class="reject-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;">Reject</button>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    ${reportButton}
+                    <button class="approve-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#4caf50;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Approve</button>
+                    <button class="reject-btn" data-username="${item.scout?.username}" data-field="${item.field}" style="background:#e74c3c;color:white;border:none;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;">Reject</button>
                 </div>
             </div>
         `;
@@ -1582,6 +1600,19 @@ function renderPendingApprovals() {
     html += '</div>';
     pageContent.innerHTML = html;
 
+    // ─── View Report button ──────────────────────────────────
+    document.querySelectorAll('.view-report-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const username = this.dataset.username;
+            const tab = this.dataset.tab;
+            const req = this.dataset.req;
+            
+            // Open the report viewer page with the scout's report
+            window.location.href = `report-viewer.html?email=${username}&tab=${tab}&req=${encodeURIComponent(req)}`;
+        });
+    });
+
+    // ─── Approve button ──────────────────────────────────────
     document.querySelectorAll('.approve-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const username = this.dataset.username;
@@ -1608,6 +1639,7 @@ function renderPendingApprovals() {
         });
     });
 
+    // ─── Reject button ──────────────────────────────────────
     document.querySelectorAll('.reject-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
             const username = this.dataset.username;
