@@ -30,9 +30,6 @@ function updateDisplayName(name) {
     displayName = name;
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
-    if (currentView === 'dashboard' && pageHeading) {
-        pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;
-    }
 }
 
 // ─── Avatar colors ──────────────────────────────────────
@@ -248,29 +245,40 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     
-    if (pageHeading) {
-        if (currentView === 'dashboard') {
-            pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;
-            if (scoutSubtitle) scoutSubtitle.textContent = '';
-        } else if (currentView === 'membership') {
-            pageHeading.textContent = 'Membership';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
-        } else if (currentView === 'second') {
-            pageHeading.textContent = 'Second Class';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
-        } else if (currentView === 'first') {
-            pageHeading.textContent = 'First Class';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
-        } else if (currentView === 'badges') {
-            pageHeading.textContent = 'Badges';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
-        } else if (currentView === 'sessions') {
-            pageHeading.textContent = 'Sessions';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
-        } else if (currentView === 'profile') {
-            pageHeading.textContent = 'Profile';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
-        }
+    if (currentView === 'dashboard') {
+        // ─── Welcome bar replaces heading ──────────────────
+        pageHeading.innerHTML = `
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <span style="font-size:22px;font-weight:300;color:#3d2b1f;font-family:'Georgia',serif;">
+                    ⛺ Welcome back, <span style="color:#6c3b8c;font-weight:600;">${displayName}</span>
+                </span>
+                <span style="font-size:13px;color:#8b7a6a;font-family:'Georgia',serif;background:#fcf8f0;padding:4px 16px;border-radius:40px;border:1px solid #e8dcc8;">
+                    ⚜️ ${scoutData.rank || 'Membership'}
+                </span>
+                <span style="font-size:13px;color:#8b7a6a;font-family:'Georgia',serif;background:#fcf8f0;padding:4px 16px;border-radius:40px;border:1px solid #e8dcc8;">
+                    🦅 ${scoutData.patrol || 'No Patrol'}
+                </span>
+            </div>
+        `;
+        if (scoutSubtitle) scoutSubtitle.textContent = '';
+    } else if (currentView === 'membership') {
+        pageHeading.textContent = 'Membership';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
+    } else if (currentView === 'second') {
+        pageHeading.textContent = 'Second Class';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
+    } else if (currentView === 'first') {
+        pageHeading.textContent = 'First Class';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
+    } else if (currentView === 'badges') {
+        pageHeading.textContent = 'Badges';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
+    } else if (currentView === 'sessions') {
+        pageHeading.textContent = 'Sessions';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
+    } else if (currentView === 'profile') {
+        pageHeading.textContent = 'Profile';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
     }
     
     if (currentView === 'dashboard') renderDashboard();
@@ -415,100 +423,11 @@ function renderDashboard() {
                 background: #f5ede0;
             }
 
-            /* ─── WELCOME BAR ─── */
-            .welcome-bar {
-                background: #fcf8f0;
-                border-radius: 20px;
-                padding: 24px 28px;
-                margin-bottom: 24px;
-                border: 1px solid #e8dcc8;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            }
-            .welcome-bar .greeting {
-                font-size: 24px;
-                color: #3d2b1f;
-                margin-bottom: 12px;
-                font-weight: 300;
-                font-family: 'Georgia', 'Times New Roman', serif;
-                letter-spacing: 0.5px;
-            }
-            .welcome-bar .greeting span {
-                color: #6c3b8c;
-                font-weight: 600;
-            }
-            .welcome-bar .stats-row {
-                display: flex;
-                gap: 12px;
-                flex-wrap: wrap;
-            }
-            .welcome-bar .stat-pill {
-                background: #f5ede0;
-                padding: 8px 20px;
-                border-radius: 40px;
-                text-align: center;
-                border: 1px solid #e8dcc8;
-            }
-            .welcome-bar .stat-pill .label {
-                font-size: 10px;
-                color: #8b7a6a;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .welcome-bar .stat-pill .value {
-                font-size: 14px;
-                font-weight: 700;
-                color: #3d2b1f;
-                margin-top: 2px;
-            }
-            .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
-            .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
-
-            /* ─── PROGRESS RING ─── */
-            .ring-wrapper {
-                position: relative;
-                width: 100px;
-                height: 100px;
-            }
-            .ring-wrapper svg {
-                transform: rotate(-90deg);
-            }
-            .ring-wrapper .ring-bg {
-                fill: none;
-                stroke: #e8dcc8;
-                stroke-width: 8;
-            }
-            .ring-wrapper .ring-fill {
-                fill: none;
-                stroke: url(#progressGradient);
-                stroke-width: 8;
-                stroke-linecap: round;
-                stroke-dasharray: ${circumference};
-                stroke-dashoffset: ${offset};
-                transition: stroke-dashoffset 0.8s ease;
-            }
-            .ring-wrapper .center-text {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                text-align: center;
-                font-family: 'Georgia', serif;
-            }
-            .ring-wrapper .center-text .number {
-                font-size: 22px;
-                font-weight: 700;
-                color: #3d2b1f;
-            }
-            .ring-wrapper .center-text .label {
-                font-size: 10px;
-                color: #8b7a6a;
-            }
-
             /* ─── STATS CARDS ─── */
             .stats-grid {
                 display: grid;
                 grid-template-columns: 1fr 2fr 1fr;
-                gap: 16px;
+                gap: 20px;
                 margin-bottom: 24px;
             }
             .stat-card {
@@ -551,6 +470,47 @@ function renderDashboard() {
             }
             .stat-card.hours .icon-svg { stroke: #2d5a4a; }
             .stat-card.badges .icon-svg { stroke: #e67e22; }
+
+            /* ─── PROGRESS RING ─── */
+            .ring-wrapper {
+                position: relative;
+                width: 100px;
+                height: 100px;
+            }
+            .ring-wrapper svg {
+                transform: rotate(-90deg);
+            }
+            .ring-wrapper .ring-bg {
+                fill: none;
+                stroke: #e8dcc8;
+                stroke-width: 8;
+            }
+            .ring-wrapper .ring-fill {
+                fill: none;
+                stroke: url(#progressGradient);
+                stroke-width: 8;
+                stroke-linecap: round;
+                stroke-dasharray: ${circumference};
+                stroke-dashoffset: ${offset};
+                transition: stroke-dashoffset 0.8s ease;
+            }
+            .ring-wrapper .center-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                font-family: 'Georgia', serif;
+            }
+            .ring-wrapper .center-text .number {
+                font-size: 22px;
+                font-weight: 700;
+                color: #3d2b1f;
+            }
+            .ring-wrapper .center-text .label {
+                font-size: 10px;
+                color: #8b7a6a;
+            }
 
             /* ─── NOTIFICATIONS ─── */
             .notification-board {
@@ -842,33 +802,7 @@ function renderDashboard() {
                     grid-template-columns: repeat(2, 1fr);
                 }
             }
-            @media (max-width: 768px) {
-                .welcome-bar .stats-row {
-                    flex-wrap: wrap;
-                }
-                .welcome-bar .stat-pill {
-                    padding: 6px 16px;
-                }
-                .welcome-bar .stat-pill .value {
-                    font-size: 13px;
-                }
-            }
             @media (max-width: 480px) {
-                .welcome-bar {
-                    padding: 16px;
-                }
-                .welcome-bar .greeting {
-                    font-size: 18px;
-                }
-                .welcome-bar .stats-row {
-                    gap: 8px;
-                }
-                .welcome-bar .stat-pill {
-                    padding: 6px 14px;
-                }
-                .welcome-bar .stat-pill .value {
-                    font-size: 12px;
-                }
                 .card {
                     padding: 16px;
                 }
@@ -881,6 +815,21 @@ function renderDashboard() {
                 }
                 .ring-wrapper .center-text .number {
                     font-size: 16px;
+                }
+                .stats-grid {
+                    gap: 12px;
+                }
+                .stat-card {
+                    padding: 16px;
+                }
+                .stat-card .number {
+                    font-size: 22px;
+                }
+                .two-col {
+                    gap: 12px;
+                }
+                .notification-board {
+                    padding: 12px 16px;
                 }
             }
         </style>
@@ -895,21 +844,6 @@ function renderDashboard() {
                     </linearGradient>
                 </defs>
             </svg>
-
-            <!-- ─── WELCOME BAR ─── -->
-            <div class="welcome-bar">
-                <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
-                <div class="stats-row">
-                    <div class="stat-pill">
-                        <div class="label">Rank</div>
-                        <div class="value rank">${rank}</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Patrol</div>
-                        <div class="value patrol">${patrol}</div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ─── STATS CARDS ─── -->
             <div class="stats-grid">
@@ -935,7 +869,7 @@ function renderDashboard() {
                     </svg>
                     <div class="number">${totalHours}</div>
                     <div class="label">Scouting Hours</div>
-                    <div class="sub">${allSessions.length} sessions attended</div>
+                    <div class="sub">${allSessions.length} sessions</div>
                 </div>
 
                 <!-- Badges Earned -->
@@ -1001,7 +935,7 @@ function renderDashboard() {
                         }).join('')}
                         ${activeTickets.length > 4 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${activeTickets.length - 4} more</div>` : ''}
                     ` : `
-                        <div class="empty">No active tickets — all clear!</div>
+                        <div class="empty">No active tickets</div>
                     `}
                 </div>
 
@@ -1093,7 +1027,7 @@ function renderDashboard() {
                     `).join('')}
                 </div>
                 <div class="achieve-footer">
-                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} achievements unlocked
+                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} unlocked
                 </div>
             </div>
         </div>
