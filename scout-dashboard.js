@@ -31,7 +31,7 @@ function updateDisplayName(name) {
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
     if (currentView === 'dashboard' && pageHeading) {
-        pageHeading.innerHTML = <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
+      pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;  
     }
 }
 
