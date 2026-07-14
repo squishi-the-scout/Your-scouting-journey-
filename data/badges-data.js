@@ -366,16 +366,39 @@ export const allBadges = [
         type: 'international',
         description: 'Build international friendships'
     },
+    ];
 
-    // ─── SPECIAL BADGES ──────────────────────────────────────
+    // ─── place holders ──────────────────────────────────────
+      {
+        id: 'pioneering',
+        name: 'Pioneering',
+        icon: '🪵',
+        type: 'camp',
+        description: 'Learn pioneering skills'
+    },
     {
-        id: 'special-badge',
+        id: 'special-placeholder',
         name: 'Special Badge',
         icon: '⭐',
         type: 'special',
         description: 'Special achievement badge'
-    }
-];
+    },
+    {
+        id: 'National-placeholder',
+        name: 'National Flag',
+        icon: '🇿🇦',
+        type: 'national',
+        description: 'Learn about the national flag'
+    },
+    {
+        id: 'international-Placeholder',
+        name: 'International Friendship',
+        icon: '🤝',
+        type: 'international',
+        description: 'Build international friendships'
+    },
+    
+
 
 // ─── TYPE LABELS ──────────────────────────────────────────
 export const typeLabels = {
