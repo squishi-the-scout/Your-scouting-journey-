@@ -31,7 +31,7 @@ function updateDisplayName(name) {
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
     if (currentView === 'dashboard' && pageHeading) {
-      pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;  
+        pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;
     }
 }
 
@@ -250,8 +250,8 @@ function renderView() {
     
     if (pageHeading) {
         if (currentView === 'dashboard') {
-            pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
+            pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;
+            if (scoutSubtitle) scoutSubtitle.textContent = '';
         } else if (currentView === 'membership') {
             pageHeading.textContent = 'Membership';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
@@ -399,10 +399,10 @@ function renderDashboard() {
 
     // ─── Achievements ──────────────────────────────────────
     const achievements = [
-        { key: 'membership', label: 'Membership', icon: '🏅', earned: rank !== 'Membership' },
-        { key: 'second', label: 'Second Class', icon: '⭐', earned: rank === 'Second Class' || rank === 'First Class' },
-        { key: 'first', label: 'First Class', icon: '🌟', earned: rank === 'First Class' },
-        { key: 'badges', label: 'Badge Collector', icon: '🎯', earned: badgeCount >= 1 }
+        { key: 'membership', label: 'Membership', earned: rank !== 'Membership' },
+        { key: 'second', label: 'Second Class', earned: rank === 'Second Class' || rank === 'First Class' },
+        { key: 'first', label: 'First Class', earned: rank === 'First Class' },
+        { key: 'badges', label: 'Badge Collector', earned: badgeCount >= 1 }
     ];
 
     // ─── Build HTML ──────────────────────────────────────────
@@ -425,52 +425,45 @@ function renderDashboard() {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             .welcome-bar .greeting {
-                font-size: 22px;
+                font-size: 24px;
                 color: #3d2b1f;
                 margin-bottom: 12px;
-                font-weight: 400;
+                font-weight: 300;
+                font-family: 'Georgia', 'Times New Roman', serif;
+                letter-spacing: 0.5px;
             }
             .welcome-bar .greeting span {
                 color: #6c3b8c;
                 font-weight: 600;
             }
             .welcome-bar .stats-row {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
+                display: flex;
                 gap: 12px;
+                flex-wrap: wrap;
             }
             .welcome-bar .stat-pill {
                 background: #f5ede0;
-                padding: 10px 16px;
+                padding: 8px 20px;
                 border-radius: 40px;
                 text-align: center;
                 border: 1px solid #e8dcc8;
             }
             .welcome-bar .stat-pill .label {
-                font-size: 11px;
+                font-size: 10px;
                 color: #8b7a6a;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
             .welcome-bar .stat-pill .value {
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 700;
                 color: #3d2b1f;
                 margin-top: 2px;
             }
             .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
             .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
-            .welcome-bar .stat-pill .value.progress { color: #e67e22; }
-            .welcome-bar .stat-pill .value.badges { color: #2d5a4a; }
 
             /* ─── PROGRESS RING ─── */
-            .ring-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 20px;
-                margin: 0 auto;
-            }
             .ring-wrapper {
                 position: relative;
                 width: 100px;
@@ -561,7 +554,7 @@ function renderDashboard() {
 
             /* ─── NOTIFICATIONS ─── */
             .notification-board {
-                background: ${hasNotifications ? '#fcf8f0' : '#fcf8f0'};
+                background: #fcf8f0;
                 border-radius: 16px;
                 padding: 16px 20px;
                 margin-bottom: 24px;
@@ -791,19 +784,32 @@ function renderDashboard() {
             .achieve-item.locked {
                 opacity: 0.5;
             }
-            .achieve-item .icon {
-                font-size: 28px;
+            .achieve-item .icon-svg-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 4px;
+            }
+            .achieve-item .achieve-svg {
+                width: 32px;
+                height: 32px;
+                stroke: #8b7a6a;
+                stroke-width: 2;
+                fill: none;
+            }
+            .achieve-item.earned .achieve-svg {
+                stroke: #6c3b8c;
             }
             .achieve-item .label {
                 font-size: 11px;
                 color: #3d2b1f;
-                margin-top: 6px;
+                margin-top: 4px;
                 font-weight: 500;
             }
             .achieve-item .status {
                 font-size: 10px;
                 font-weight: 600;
-                margin-top: 4px;
+                margin-top: 2px;
             }
             .achieve-item .status.earned {
                 color: #6c3b8c;
@@ -835,8 +841,16 @@ function renderDashboard() {
                 .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
+            }
+            @media (max-width: 768px) {
                 .welcome-bar .stats-row {
-                    grid-template-columns: repeat(2, 1fr);
+                    flex-wrap: wrap;
+                }
+                .welcome-bar .stat-pill {
+                    padding: 6px 16px;
+                }
+                .welcome-bar .stat-pill .value {
+                    font-size: 13px;
                 }
             }
             @media (max-width: 480px) {
@@ -847,14 +861,13 @@ function renderDashboard() {
                     font-size: 18px;
                 }
                 .welcome-bar .stats-row {
-                    grid-template-columns: 1fr 1fr;
                     gap: 8px;
                 }
                 .welcome-bar .stat-pill {
-                    padding: 8px 12px;
+                    padding: 6px 14px;
                 }
                 .welcome-bar .stat-pill .value {
-                    font-size: 13px;
+                    font-size: 12px;
                 }
                 .card {
                     padding: 16px;
@@ -885,7 +898,7 @@ function renderDashboard() {
 
             <!-- ─── WELCOME BAR ─── -->
             <div class="welcome-bar">
-                
+                <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
                 <div class="stats-row">
                     <div class="stat-pill">
                         <div class="label">Rank</div>
@@ -894,14 +907,6 @@ function renderDashboard() {
                     <div class="stat-pill">
                         <div class="label">Patrol</div>
                         <div class="value patrol">${patrol}</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Progress</div>
-                        <div class="value progress">${progress}%</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Badges</div>
-                        <div class="value badges">${badgeCount}</div>
                     </div>
                 </div>
             </div>
@@ -1055,7 +1060,33 @@ function renderDashboard() {
                 <div class="achieve-grid">
                     ${achievements.map(a => `
                         <div class="achieve-item ${a.earned ? 'earned' : 'locked'}">
-                            <div class="icon">${a.icon}</div>
+                            <div class="icon-svg-wrapper">
+                                ${a.key === 'membership' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                        <path d="M2 17l10 5 10-5"/>
+                                        <path d="M2 12l10 5 10-5"/>
+                                        <path d="M12 22v-10"/>
+                                        <path d="M8 7l4 2 4-2"/>
+                                    </svg>
+                                ` : a.key === 'second' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                    </svg>
+                                ` : a.key === 'first' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                ` : a.key === 'badges' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="8" r="4"/>
+                                        <path d="M12 12v4"/>
+                                        <path d="M8 16h8"/>
+                                        <path d="M4 20h16"/>
+                                    </svg>
+                                ` : ''}
+                            </div>
                             <div class="label">${a.label}</div>
                             <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? 'Earned' : 'Locked'}</div>
                         </div>
