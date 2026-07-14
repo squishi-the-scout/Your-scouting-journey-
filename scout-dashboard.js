@@ -31,7 +31,7 @@ function updateDisplayName(name) {
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
     if (currentView === 'dashboard' && pageHeading) {
-        pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${name}</span>`;
+        pageHeading.innerHTML = <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
     }
 }
 
@@ -885,7 +885,7 @@ function renderDashboard() {
 
             <!-- ─── WELCOME BAR ─── -->
             <div class="welcome-bar">
-                <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
+                
                 <div class="stats-row">
                     <div class="stat-pill">
                         <div class="label">Rank</div>
