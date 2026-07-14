@@ -24,12 +24,15 @@ const sidebarAvatar = document.getElementById('sidebar-avatar');
 const pageHeading = document.getElementById('page-heading');
 
 // ─── Set user info ──────────────────────────────────────
-let displayName = currentUser.fullName || currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 
 function updateDisplayName(name) {
     displayName = name;
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
+    if (currentView === 'dashboard' && pageHeading) {
+        pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${name}</span>`;
+    }
 }
 
 // ─── Avatar colors ──────────────────────────────────────
@@ -247,8 +250,8 @@ function renderView() {
     
     if (pageHeading) {
         if (currentView === 'dashboard') {
-            pageHeading.textContent = '';
-            if (scoutSubtitle) scoutSubtitle.textContent = '';
+            pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
         } else if (currentView === 'membership') {
             pageHeading.textContent = 'Membership';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
@@ -415,78 +418,63 @@ function renderDashboard() {
             /* ─── WELCOME BAR ─── */
             .welcome-bar {
                 background: #fcf8f0;
-                border-radius: 16px;
-                padding: 16px 20px;
-                margin-bottom: 16px;
+                border-radius: 20px;
+                padding: 24px 28px;
+                margin-bottom: 24px;
                 border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             .welcome-bar .greeting {
-                font-size: 20px;
+                font-size: 22px;
                 color: #3d2b1f;
+                margin-bottom: 12px;
                 font-weight: 400;
-                margin-bottom: 6px;
             }
             .welcome-bar .greeting span {
                 color: #6c3b8c;
                 font-weight: 600;
             }
             .welcome-bar .stats-row {
-                display: flex;
-                gap: 16px;
-                flex-wrap: wrap;
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
             }
             .welcome-bar .stat-pill {
-                font-size: 13px;
-                color: #6b5f4a;
+                background: #f5ede0;
+                padding: 10px 16px;
+                border-radius: 40px;
+                text-align: center;
+                border: 1px solid #e8dcc8;
+            }
+            .welcome-bar .stat-pill .label {
+                font-size: 11px;
+                color: #8b7a6a;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
             .welcome-bar .stat-pill .value {
-                font-weight: 600;
+                font-size: 15px;
+                font-weight: 700;
                 color: #3d2b1f;
+                margin-top: 2px;
             }
             .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
             .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
             .welcome-bar .stat-pill .value.progress { color: #e67e22; }
             .welcome-bar .stat-pill .value.badges { color: #2d5a4a; }
 
-            /* ─── STATS CARDS ─── */
-            .stats-grid {
-                display: grid;
-                grid-template-columns: 1fr 2fr 1fr;
-                gap: 12px;
-                margin-bottom: 16px;
-            }
-            .stat-card {
-                background: #fcf8f0;
-                border-radius: 14px;
-                padding: 16px 20px;
-                text-align: center;
-                border: 1px solid #e8dcc8;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            }
-            .stat-card .number {
-                font-size: 24px;
-                font-weight: 700;
-                color: #3d2b1f;
-            }
-            .stat-card .label {
-                font-size: 12px;
-                color: #8b7a6a;
-                margin-top: 2px;
-            }
-            .stat-card .sub {
-                font-size: 11px;
-                color: #b8a080;
-                margin-top: 2px;
-            }
-
             /* ─── PROGRESS RING ─── */
+            .ring-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                margin: 0 auto;
+            }
             .ring-wrapper {
                 position: relative;
-                width: 80px;
-                height: 80px;
+                width: 100px;
+                height: 100px;
             }
             .ring-wrapper svg {
                 transform: rotate(-90deg);
@@ -494,12 +482,12 @@ function renderDashboard() {
             .ring-wrapper .ring-bg {
                 fill: none;
                 stroke: #e8dcc8;
-                stroke-width: 6;
+                stroke-width: 8;
             }
             .ring-wrapper .ring-fill {
                 fill: none;
                 stroke: url(#progressGradient);
-                stroke-width: 6;
+                stroke-width: 8;
                 stroke-linecap: round;
                 stroke-dasharray: ${circumference};
                 stroke-dashoffset: ${offset};
@@ -511,57 +499,106 @@ function renderDashboard() {
                 left: 50%;
                 transform: translate(-50%, -50%);
                 text-align: center;
+                font-family: 'Georgia', serif;
             }
             .ring-wrapper .center-text .number {
-                font-size: 18px;
+                font-size: 22px;
                 font-weight: 700;
                 color: #3d2b1f;
             }
             .ring-wrapper .center-text .label {
-                font-size: 9px;
+                font-size: 10px;
                 color: #8b7a6a;
             }
 
+            /* ─── STATS CARDS ─── */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 2fr 1fr;
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+            .stat-card {
+                background: #fcf8f0;
+                border-radius: 16px;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .stat-card .number {
+                font-size: 28px;
+                font-weight: 700;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+            }
+            .stat-card .label {
+                font-size: 13px;
+                color: #8b7a6a;
+                font-family: 'Georgia', serif;
+                margin-top: 4px;
+            }
+            .stat-card .sub {
+                font-size: 12px;
+                color: #b8a080;
+                font-family: 'Georgia', serif;
+                margin-top: 2px;
+            }
+            .stat-card .icon-svg {
+                width: 32px;
+                height: 32px;
+                margin-bottom: 8px;
+                stroke: #6c3b8c;
+                stroke-width: 2;
+                fill: none;
+            }
+            .stat-card.hours .icon-svg { stroke: #2d5a4a; }
+            .stat-card.badges .icon-svg { stroke: #e67e22; }
+
             /* ─── NOTIFICATIONS ─── */
             .notification-board {
-                background: #fcf8f0;
-                border-radius: 14px;
-                padding: 14px 18px;
-                margin-bottom: 16px;
+                background: ${hasNotifications ? '#fcf8f0' : '#fcf8f0'};
+                border-radius: 16px;
+                padding: 16px 20px;
+                margin-bottom: 24px;
                 border: 1px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
-                border-left: 3px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                border-left: 4px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
             }
             .notification-board .notif-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 6px;
+                margin-bottom: 8px;
             }
             .notification-board .notif-header .title {
                 font-weight: 600;
-                font-size: 14px;
+                font-size: 15px;
                 color: #3d2b1f;
             }
             .notification-board .notif-header .badge {
                 background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
                 color: ${hasNotifications ? 'white' : '#8b7a6a'};
-                padding: 1px 10px;
+                padding: 2px 12px;
                 border-radius: 20px;
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: 600;
             }
             .notification-board .notif-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 4px 10px;
-                border-radius: 6px;
+                padding: 6px 12px;
+                border-radius: 8px;
                 background: #f5ede0;
                 font-size: 13px;
                 color: #3d2b1f;
                 cursor: pointer;
                 transition: background 0.2s;
-                margin-bottom: 3px;
+                margin-bottom: 4px;
             }
             .notification-board .notif-item:hover {
                 background: #e8dcc8;
@@ -574,9 +611,9 @@ function renderDashboard() {
                 background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
                 color: ${hasNotifications ? 'white' : '#8b7a6a'};
                 border: none;
-                padding: 3px 14px;
+                padding: 4px 16px;
                 border-radius: 20px;
-                font-size: 11px;
+                font-size: 12px;
                 font-weight: 600;
                 cursor: pointer;
                 transition: all 0.2s;
@@ -589,7 +626,7 @@ function renderDashboard() {
             }
             .notification-board .empty {
                 color: #8b7a6a;
-                font-size: 13px;
+                font-size: 14px;
                 padding: 4px 0;
             }
 
@@ -597,30 +634,31 @@ function renderDashboard() {
             .two-col {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 16px;
-                margin-bottom: 16px;
+                gap: 20px;
+                margin-bottom: 24px;
             }
 
             /* ─── CARDS ─── */
             .card {
                 background: #fcf8f0;
-                border-radius: 14px;
-                padding: 16px 20px;
+                border-radius: 16px;
+                padding: 20px 24px;
                 border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             .card .card-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 10px;
+                margin-bottom: 12px;
             }
             .card .card-header .title {
-                font-size: 14px;
+                font-size: 16px;
                 font-weight: 600;
                 color: #3d2b1f;
             }
             .card .card-header .link {
-                font-size: 12px;
+                font-size: 13px;
                 color: #6c3b8c;
                 text-decoration: none;
                 font-weight: 500;
@@ -631,10 +669,10 @@ function renderDashboard() {
             }
             .card .empty {
                 text-align: center;
-                padding: 12px 0;
+                padding: 16px 0;
                 color: #8b7a6a;
                 font-style: italic;
-                font-size: 13px;
+                font-size: 14px;
             }
 
             /* ─── TICKET ITEM ─── */
@@ -642,27 +680,32 @@ function renderDashboard() {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 6px 0;
+                padding: 8px 0;
                 border-bottom: 1px solid #e8dcc8;
                 cursor: pointer;
                 transition: background 0.2s;
             }
             .ticket-item:hover {
                 background: #f5ede0;
-                margin: 0 -6px;
-                padding: 6px 6px;
-                border-radius: 6px;
+                margin: 0 -8px;
+                padding: 8px 8px;
+                border-radius: 8px;
             }
             .ticket-item:last-child {
                 border-bottom: none;
             }
-            .ticket-item .left .name {
-                font-size: 13px;
+            .ticket-item .left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .ticket-item .left .info .name {
+                font-size: 14px;
                 font-weight: 500;
                 color: #3d2b1f;
             }
-            .ticket-item .left .status {
-                font-size: 11px;
+            .ticket-item .left .info .status {
+                font-size: 12px;
                 color: #8b7a6a;
             }
             .ticket-item .status-badge {
@@ -674,24 +717,24 @@ function renderDashboard() {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 5px 0;
+                padding: 6px 0;
                 border-bottom: 1px solid #e8dcc8;
             }
             .session-item:last-child {
                 border-bottom: none;
             }
-            .session-item .name {
+            .session-item .left .name {
                 font-size: 13px;
                 color: #3d2b1f;
             }
-            .session-item .meta {
-                font-size: 11px;
+            .session-item .left .meta {
+                font-size: 12px;
                 color: #8b7a6a;
             }
             .session-item .tag {
-                font-size: 9px;
+                font-size: 10px;
                 font-weight: 600;
-                padding: 2px 8px;
+                padding: 2px 10px;
                 border-radius: 20px;
             }
             .session-item .tag.today {
@@ -702,6 +745,10 @@ function renderDashboard() {
                 background: #d4edda;
                 color: #155724;
             }
+            .session-item .tag.attended {
+                background: #e8dcc8;
+                color: #6c3b8c;
+            }
             .session-item .hours {
                 font-size: 12px;
                 color: #8b7a6a;
@@ -710,12 +757,12 @@ function renderDashboard() {
 
             /* ─── ATTENDED SESSIONS ─── */
             .attended-footer {
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: 12px;
+                padding-top: 12px;
                 border-top: 1px solid #e8dcc8;
                 display: flex;
                 justify-content: space-between;
-                font-size: 12px;
+                font-size: 13px;
                 color: #8b7a6a;
             }
             .attended-footer .total {
@@ -727,12 +774,12 @@ function renderDashboard() {
             .achieve-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
+                gap: 12px;
             }
             .achieve-item {
                 text-align: center;
-                padding: 12px;
-                border-radius: 10px;
+                padding: 16px;
+                border-radius: 12px;
                 border: 2px solid #e8dcc8;
                 transition: all 0.2s;
                 background: #fcf8f0;
@@ -745,18 +792,18 @@ function renderDashboard() {
                 opacity: 0.5;
             }
             .achieve-item .icon {
-                font-size: 24px;
+                font-size: 28px;
             }
             .achieve-item .label {
-                font-size: 10px;
+                font-size: 11px;
                 color: #3d2b1f;
-                margin-top: 4px;
+                margin-top: 6px;
                 font-weight: 500;
             }
             .achieve-item .status {
-                font-size: 9px;
+                font-size: 10px;
                 font-weight: 600;
-                margin-top: 2px;
+                margin-top: 4px;
             }
             .achieve-item .status.earned {
                 color: #6c3b8c;
@@ -766,10 +813,10 @@ function renderDashboard() {
             }
             .achieve-footer {
                 text-align: center;
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: 12px;
+                padding-top: 12px;
                 border-top: 1px solid #e8dcc8;
-                font-size: 12px;
+                font-size: 13px;
                 color: #8b7a6a;
             }
             .achieve-footer .count {
@@ -788,41 +835,39 @@ function renderDashboard() {
                 .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
+                .welcome-bar .stats-row {
+                    grid-template-columns: repeat(2, 1fr);
+                }
             }
             @media (max-width: 480px) {
                 .welcome-bar {
-                    padding: 12px 16px;
+                    padding: 16px;
                 }
                 .welcome-bar .greeting {
-                    font-size: 17px;
+                    font-size: 18px;
                 }
                 .welcome-bar .stats-row {
+                    grid-template-columns: 1fr 1fr;
                     gap: 8px;
                 }
                 .welcome-bar .stat-pill {
-                    font-size: 11px;
+                    padding: 8px 12px;
+                }
+                .welcome-bar .stat-pill .value {
+                    font-size: 13px;
                 }
                 .card {
-                    padding: 12px 16px;
+                    padding: 16px;
                 }
                 .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
                 .ring-wrapper {
-                    width: 60px;
-                    height: 60px;
+                    width: 70px;
+                    height: 70px;
                 }
                 .ring-wrapper .center-text .number {
-                    font-size: 14px;
-                }
-                .stats-grid {
-                    gap: 8px;
-                }
-                .stat-card {
-                    padding: 12px 16px;
-                }
-                .stat-card .number {
-                    font-size: 20px;
+                    font-size: 16px;
                 }
             }
         </style>
@@ -840,12 +885,24 @@ function renderDashboard() {
 
             <!-- ─── WELCOME BAR ─── -->
             <div class="welcome-bar">
-                <div class="greeting">Welcome back, <span>${displayName}</span></div>
+                <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
                 <div class="stats-row">
-                    <span class="stat-pill"><span class="value rank">⚜️ ${rank}</span></span>
-                    <span class="stat-pill"><span class="value patrol">🦅 ${patrol}</span></span>
-                    <span class="stat-pill"><span class="value progress">📊 ${progress}%</span></span>
-                    <span class="stat-pill"><span class="value badges">🏅 ${badgeCount}</span></span>
+                    <div class="stat-pill">
+                        <div class="label">Rank</div>
+                        <div class="value rank">${rank}</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Patrol</div>
+                        <div class="value patrol">${patrol}</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Progress</div>
+                        <div class="value progress">${progress}%</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Badges</div>
+                        <div class="value badges">${badgeCount}</div>
+                    </div>
                 </div>
             </div>
 
@@ -854,9 +911,9 @@ function renderDashboard() {
                 <!-- Progress Ring -->
                 <div class="stat-card">
                     <div class="ring-wrapper">
-                        <svg width="80" height="80" viewBox="0 0 80 80">
-                            <circle class="ring-bg" cx="40" cy="40" r="35"/>
-                            <circle class="ring-fill" cx="40" cy="40" r="35"/>
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle class="ring-bg" cx="50" cy="50" r="45"/>
+                            <circle class="ring-fill" cx="50" cy="50" r="45"/>
                         </svg>
                         <div class="center-text">
                             <div class="number">${progress}%</div>
@@ -866,14 +923,21 @@ function renderDashboard() {
                 </div>
 
                 <!-- Scouting Hours -->
-                <div class="stat-card">
+                <div class="stat-card hours">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
                     <div class="number">${totalHours}</div>
                     <div class="label">Scouting Hours</div>
-                    <div class="sub">${allSessions.length} sessions</div>
+                    <div class="sub">${allSessions.length} sessions attended</div>
                 </div>
 
                 <!-- Badges Earned -->
-                <div class="stat-card">
+                <div class="stat-card badges">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <path d="M12 2L9.5 9.5L2 9.5L8 14.5L5.5 22L12 17.5L18.5 22L16 14.5L22 9.5L14.5 9.5L12 2z"/>
+                    </svg>
                     <div class="number">${badgeCount}</div>
                     <div class="label">Badges Earned</div>
                     <div class="sub">Keep going!</div>
@@ -893,7 +957,7 @@ function renderDashboard() {
                             <span class="time">${n.read ? 'Read' : 'New'}</span>
                         </div>
                     `).join('')}
-                    ${notifications.length > 3 ? `<div style="text-align:center;padding:2px;font-size:11px;color:#8b7a6a;">+${notifications.length - 3} more</div>` : ''}
+                    ${notifications.length > 3 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${notifications.length - 3} more</div>` : ''}
                     ${hasNotifications ? `
                         <button class="clear-btn" id="clearNotifsBtn">Mark All Read</button>
                     ` : ''}
@@ -921,16 +985,18 @@ function renderDashboard() {
                             return `
                                 <div class="ticket-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'">
                                     <div class="left">
-                                        <div class="name">${t.badgeIcon || '🏅'} ${t.badgeName}</div>
-                                        <div class="status">${s.label}</div>
+                                        <div class="info">
+                                            <div class="name">${t.badgeIcon || '🏅'} ${t.badgeName}</div>
+                                            <div class="status">${s.label}</div>
+                                        </div>
                                     </div>
                                     <span class="status-badge">${s.emoji}</span>
                                 </div>
                             `;
                         }).join('')}
-                        ${activeTickets.length > 4 ? `<div style="text-align:center;padding:2px;font-size:11px;color:#8b7a6a;">+${activeTickets.length - 4} more</div>` : ''}
+                        ${activeTickets.length > 4 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${activeTickets.length - 4} more</div>` : ''}
                     ` : `
-                        <div class="empty">No active tickets</div>
+                        <div class="empty">No active tickets — all clear!</div>
                     `}
                 </div>
 
@@ -943,7 +1009,7 @@ function renderDashboard() {
                     ${upcomingSessions.length > 0 ? `
                         ${upcomingSessions.map(s => `
                             <div class="session-item">
-                                <div>
+                                <div class="left">
                                     <div class="name">${s.name}</div>
                                     <div class="meta">${s.date}</div>
                                 </div>
@@ -957,7 +1023,7 @@ function renderDashboard() {
             </div>
 
             <!-- ─── ATTENDED SESSIONS ─── -->
-            <div class="card" style="margin-bottom:16px;">
+            <div class="card" style="margin-bottom:24px;">
                 <div class="card-header">
                     <span class="title">Attended Sessions</span>
                     ${attendedSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
@@ -965,7 +1031,7 @@ function renderDashboard() {
                 ${attendedSessions.length > 0 ? `
                     ${attendedSessions.map(s => `
                         <div class="session-item">
-                            <div>
+                            <div class="left">
                                 <div class="name">${s.name}</div>
                                 <div class="meta">${s.date}</div>
                             </div>
@@ -996,7 +1062,7 @@ function renderDashboard() {
                     `).join('')}
                 </div>
                 <div class="achieve-footer">
-                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} unlocked
+                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} achievements unlocked
                 </div>
             </div>
         </div>
@@ -1037,16 +1103,16 @@ function renderRequirements(tab, reqs) {
     const progress = Math.round((completed / total) * 100);
 
     let html = `
-        <div style="margin-bottom:16px;">
-            <div style="display:flex;justify-content:space-between;font-size:13px;color:#3d2b1f;font-family:'Georgia',serif;margin-bottom:6px;">
+        <div style="margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#3d2b1f;font-family:'Georgia',serif;margin-bottom:8px;">
                 <span>Progress</span>
                 <span>${completed}/${total}</span>
             </div>
-            <div style="background:#e8dcc8;border-radius:20px;height:8px;overflow:hidden;">
+            <div style="background:#e8dcc8;border-radius:20px;height:10px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
                 <div style="background:linear-gradient(90deg,#6c3b8c,#e67e22);height:100%;width:${progress}%;border-radius:20px;transition:width 0.8s ease;"></div>
             </div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             ${reqs.map(req => {
                 const key = `${tab}_${req.name}`;
                 const data = scoutStatus[key];
@@ -1054,18 +1120,18 @@ function renderRequirements(tab, reqs) {
                 
                 let statusPill = '';
                 if (status === 'approved') {
-                    statusPill = `<span style="background:#d4edda;color:#155724;padding:2px 12px;border-radius:40px;font-size:11px;font-weight:500;font-family:'Georgia',serif;">Complete</span>`;
+                    statusPill = `<span style="background:#d4edda;color:#155724;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;font-family:'Georgia',serif;">Complete</span>`;
                 } else if (status === 'pending') {
-                    statusPill = `<span style="background:#fde8d0;color:#d35400;padding:2px 12px;border-radius:40px;font-size:11px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" data-req="${req.name}" data-tab="${tab}">Pending</span>`;
+                    statusPill = `<span style="background:#fde8d0;color:#d35400;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" data-req="${req.name}" data-tab="${tab}">Pending</span>`;
                 } else {
-                    statusPill = `<button style="background:#e67e22;color:white;border:none;padding:2px 12px;border-radius:40px;font-size:11px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
+                    statusPill = `<button style="background:#e67e22;color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
                 }
                 
                 let approvedInfo = '';
                 if (status === 'approved' && data) {
                     const approvedBy = data.approvedBy || 'Unknown';
                     const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
-                    approvedInfo = `<div style="font-size:10px;color:#8b7a6a;margin-top:4px;font-family:'Georgia',serif;">Approved by ${approvedBy} · ${approvedAt}</div>`;
+                    approvedInfo = `<div style="font-size:11px;color:#8b7a6a;margin-top:6px;font-family:'Georgia',serif;">Approved by ${approvedBy} · ${approvedAt}</div>`;
                 }
                 
                 const reportKey = `${tab}_${req.name}_report`;
@@ -1073,19 +1139,19 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#6c3b8c;color:white;border:none;padding:3px 10px;border-radius:40px;font-size:11px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#6c3b8c;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
                 } else {
-                    reportBtn = `<button style="background:#e8dcc8;color:#3d2b1f;border:none;padding:3px 10px;border-radius:40px;font-size:11px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
+                    reportBtn = `<button style="background:#e8dcc8;color:#3d2b1f;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
                 }
                 
                 return `
-                    <div style="background:#fcf8f0;border-radius:14px;padding:12px 16px;border-left:3px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#e67e22' : '#e8dcc8'};">
-                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
-                            <span style="font-weight:600;font-size:13px;color:#3d2b1f;font-family:'Georgia',serif;">${req.id}. ${req.name}</span>
+                    <div style="background:#fcf8f0;border-radius:16px;padding:16px 20px;border-left:4px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#e67e22' : '#e8dcc8'};">
+                        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+                            <span style="font-weight:600;font-size:14px;color:#3d2b1f;font-family:'Georgia',serif;">${req.id}. ${req.name}</span>
                             ${statusPill}
                         </div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" style="font-size:11px;color:#6c3b8c;text-decoration:underline;cursor:pointer;font-family:'Georgia',serif;">Notes</a>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" style="font-size:12px;color:#6c3b8c;text-decoration:underline;cursor:pointer;font-family:'Georgia',serif;">Notes</a>
                             ${reportBtn}
                         </div>
                         ${approvedInfo}
@@ -1140,44 +1206,44 @@ function renderReportModal() {
 
     let html = `
         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
-            <div style="background:#fcf8f0;border-radius:20px;padding:28px;max-width:650px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid #e8dcc8;">
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid #e8dcc8;">
                 
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;font-size:20px;">Report: ${currentReportReq}</h2>
-                    <button id="close-report-modal" style="background:none;border:none;font-size:24px;cursor:pointer;color:#8b7a6a;">×</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Report: ${currentReportReq}</h2>
+                    <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:#8b7a6a;">×</button>
                 </div>
                 
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600;display:block;margin-bottom:4px;font-family:'Georgia',serif;color:#3d2b1f;font-size:13px;">Your Report Note</label>
-                    <textarea id="report-note" style="width:100%;padding:10px;border-radius:10px;border:1px solid #e8dcc8;font-family:inherit;font-size:13px;min-height:80px;resize:vertical;background:#f5ede0;">${report.note || ''}</textarea>
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Your Report Note</label>
+                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e8dcc8;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;background:#f5ede0;">${report.note || ''}</textarea>
                 </div>
                 
-                <div style="margin-bottom:12px;">
-                    <label style="font-weight:600;display:block;margin-bottom:4px;font-family:'Georgia',serif;color:#3d2b1f;font-size:13px;">Upload Images</label>
-                    <div id="drop-zone" style="border:2px dashed #e8dcc8;border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f5ede0;">
-                        <div style="font-size:32px;margin-bottom:4px;">📸</div>
-                        <p style="color:#8b7a6a;font-size:13px;">Drag & drop images here, or click to select</p>
-                        <p style="font-size:11px;color:#8b7a6a;">Images will be compressed to ~100-200KB (max 5 images)</p>
+                <div style="margin-bottom:16px;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Upload Images</label>
+                    <div id="drop-zone" style="border:2px dashed #e8dcc8;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f5ede0;">
+                        <div style="font-size:40px;margin-bottom:8px;">📸</div>
+                        <p style="color:#8b7a6a;">Drag & drop images here, or click to select</p>
+                        <p style="font-size:12px;color:#8b7a6a;">Images will be compressed to ~100-200KB (max 5 images)</p>
                         <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
                     </div>
                 </div>
                 
-                <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+                <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
                     ${allImages.map((base64, index) => `
-                        <div style="position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;border:2px solid #e8dcc8;">
+                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
                             <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
-                            <button class="remove-image" data-index="${index}" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">×</button>
+                            <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                         </div>
                     `).join('')}
                 </div>
                 
-                <div style="display:flex;gap:10px;margin-top:12px;">
-                    <button id="save-report" style="flex:1;background:#6c3b8c;color:white;border:none;padding:10px 20px;border-radius:40px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Save Report</button>
-                    <button id="cancel-report" style="flex:1;background:#e8dcc8;color:#3d2b1f;border:none;padding:10px 20px;border-radius:40px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
+                <div style="display:flex;gap:12px;margin-top:16px;">
+                    <button id="save-report" style="flex:1;background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Save Report</button>
+                    <button id="cancel-report" style="flex:1;background:#e8dcc8;color:#3d2b1f;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
                 </div>
                 
-                <div id="report-message" style="margin-top:10px;font-size:13px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
-                ${report.updatedAt ? `<div style="margin-top:6px;font-size:11px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
+                <div id="report-message" style="margin-top:12px;font-size:14px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
+                ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
             </div>
         </div>
     `;
@@ -1238,10 +1304,10 @@ function renderReportModal() {
                 allImages.push(base64);
                 
                 const imgDiv = document.createElement('div');
-                imgDiv.style.cssText = 'position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;border:2px solid #e8dcc8;';
+                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;';
                 imgDiv.innerHTML = `
                     <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
-                    <button class="remove-image" data-index="${allImages.length - 1}" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">×</button>
+                    <button class="remove-image" data-index="${allImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                 `;
                 container.appendChild(imgDiv);
                 
@@ -1265,9 +1331,9 @@ function renderReportModal() {
         allImages.splice(index, 1);
         const container = document.getElementById('image-preview-container');
         container.innerHTML = allImages.map((base64, i) => `
-            <div style="position:relative;width:80px;height:80px;border-radius:10px;overflow:hidden;border:2px solid #e8dcc8;">
+            <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
                 <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
-                <button class="remove-image" data-index="${i}" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;">×</button>
+                <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
         `).join('');
         
@@ -1325,8 +1391,8 @@ function renderSessions() {
     if (allSessions.length === 0) {
         pageContent.innerHTML = `
             <div style="text-align:center;padding:40px 0;">
-                <div style="font-size:48px;margin-bottom:12px;">📅</div>
-                <h3 style="color:#3d2b1f;margin-bottom:6px;font-family:'Georgia',serif;">No sessions yet</h3>
+                <div style="font-size:64px;margin-bottom:16px;">📅</div>
+                <h3 style="color:#3d2b1f;margin-bottom:8px;font-family:'Georgia',serif;">No sessions yet</h3>
                 <p style="color:#8b7a6a;font-family:'Georgia',serif;">You haven't attended any sessions yet.</p>
             </div>
         `;
@@ -1339,31 +1405,31 @@ function renderSessions() {
     }
 
     let contentHtml = `
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;">
-            <div style="background:#fcf8f0;border-radius:14px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
-                <div style="font-size:22px;font-weight:700;color:#6c3b8c;font-family:'Georgia',serif;">${allSessions.length}</div>
-                <div style="font-size:11px;color:#8b7a6a;font-family:'Georgia',serif;">Sessions Attended</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
+                <div style="font-size:24px;font-weight:700;color:#6c3b8c;font-family:'Georgia',serif;">${allSessions.length}</div>
+                <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Sessions Attended</div>
             </div>
-            <div style="background:#fcf8f0;border-radius:14px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
-                <div style="font-size:22px;font-weight:700;color:#e67e22;font-family:'Georgia',serif;">${totalHours}</div>
-                <div style="font-size:11px;color:#8b7a6a;font-family:'Georgia',serif;">Hours of Scouting</div>
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
+                <div style="font-size:24px;font-weight:700;color:#e67e22;font-family:'Georgia',serif;">${totalHours}</div>
+                <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Hours of Scouting</div>
             </div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
     `;
     
     for (const session of allSessions) {
         contentHtml += `
-            <div style="background:#fcf8f0;border-radius:16px;padding:14px 16px;border:1px solid #e8dcc8;cursor:pointer;transition:transform 0.2s;border-left:3px solid #6c3b8c;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
-                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:6px;">
+            <div style="background:#fcf8f0;border-radius:20px;padding:16px;border:1px solid #e8dcc8;cursor:pointer;transition:transform 0.2s;border-left:4px solid #6c3b8c;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div>
-                        <div style="font-weight:600;font-size:16px;color:#3d2b1f;font-family:'Georgia',serif;">${session.name}</div>
-                        <div style="color:#8b7a6a;font-size:13px;font-family:'Georgia',serif;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
+                        <div style="font-weight:600;font-size:18px;color:#3d2b1f;font-family:'Georgia',serif;">${session.name}</div>
+                        <div style="color:#8b7a6a;font-size:14px;font-family:'Georgia',serif;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:12px;font-size:11px;font-family:'Georgia',serif;">Attended</span>
-                        <span style="font-size:13px;font-weight:600;color:#6c3b8c;font-family:'Georgia',serif;">${session.duration || 0}h</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;font-family:'Georgia',serif;">Attended</span>
+                        <span style="font-size:14px;font-weight:600;color:#6c3b8c;font-family:'Georgia',serif;">${session.duration || 0}h</span>
                     </div>
                 </div>
             </div>
@@ -1398,111 +1464,111 @@ async function renderProfile() {
 
     let html = `
         <div style="max-width:600px;margin:0 auto;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-                <span id="profile-back" style="cursor:pointer;color:#8b7a6a;font-size:16px;font-family:'Georgia',serif;">←</span>
-                <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;font-size:20px;">Profile</h2>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+                <span id="profile-back" style="cursor:pointer;color:#8b7a6a;font-size:18px;font-family:'Georgia',serif;">←</span>
+                <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Profile</h2>
             </div>
 
-            <div style="background:#fcf8f0;border-radius:20px;padding:28px;border:1px solid #e8dcc8;">
-                <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-                    <div style="width:64px;height:64px;background:${avatarColor};border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
-                        <div style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:12px;"></div>
-                        <div style="width:30px;height:18px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:10px;"></div>
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;border:1px solid #e8dcc8;">
+                <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+                    <div style="width:80px;height:80px;background:${avatarColor};border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
+                        <div style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
+                        <div style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
                     </div>
                     <div>
-                        <div style="font-size:20px;font-weight:700;color:#3d2b1f;font-family:'Georgia',serif;">${fullName}</div>
+                        <div style="font-size:24px;font-weight:700;color:#3d2b1f;font-family:'Georgia',serif;">${fullName}</div>
                         <div style="color:#8b7a6a;font-family:'Georgia',serif;">${patrol || 'No patrol'} · ${rank}</div>
                     </div>
                 </div>
 
                 <form id="profile-form">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:12px;">Full Name</label>
-                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Full Name</label>
+                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:12px;">Date of Birth</label>
-                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
-                        </div>
-                    </div>
-
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                        <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:12px;">Patrol</label>
-                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
-                        </div>
-                        <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:12px;">Role</label>
-                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
-                            <span style="font-size:10px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Date of Birth</label>
+                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:12px;">Rank</label>
-                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
-                            <span style="font-size:10px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Patrol</label>
+                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                        </div>
+                        <div>
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Role</label>
+                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8dcc8;padding-top:12px;margin-top:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <div style="font-weight:600;font-size:14px;font-family:'Georgia',serif;color:#3d2b1f;">Health Information</div>
-                            <span style="font-size:11px;color:${healthStatusColor};font-family:'Georgia',serif;">${healthStatus}</span>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                        <div>
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Rank</label>
+                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
+                        </div>
+                    </div>
+
+                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div style="font-weight:600;font-size:16px;font-family:'Georgia',serif;color:#3d2b1f;">Health Information</div>
+                            <span style="font-size:12px;color:${healthStatusColor};font-family:'Georgia',serif;">${healthStatus}</span>
                         </div>
                         
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-size:11px;font-family:'Georgia',serif;">Allergies</label>
-                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Allergies</label>
+                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-size:11px;font-family:'Georgia',serif;">Medical Conditions</label>
-                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
-                            </div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-                            <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-size:11px;font-family:'Georgia',serif;">Medications</label>
-                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
-                            </div>
-                            <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-size:11px;font-family:'Georgia',serif;">Additional Notes</label>
-                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medical Conditions</label>
+                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
-                        <div style="margin-top:6px;font-size:11px;color:#8b7a6a;font-family:'Georgia',serif;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
+                            <div>
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medications</label>
+                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            </div>
+                            <div>
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Additional Notes</label>
+                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            </div>
+                        </div>
+                        <div style="margin-top:8px;font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">
                             Last updated: ${healthLastUpdated}
                             ${healthDaysSince > 90 ? ` ⚠️ Update needed (${healthDaysSince} days ago)` : ''}
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8dcc8;padding-top:12px;margin-top:12px;">
-                        <div style="font-weight:600;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;font-size:14px;">Emergency Contact</div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;font-family:'Georgia',serif;color:#3d2b1f;">Emergency Contact</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:11px;">Name</label>
-                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Name</label>
+                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:11px;">Phone</label>
-                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Phone</label>
+                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
-                        <div style="margin-top:6px;">
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:3px;font-family:'Georgia',serif;font-size:11px;">Relation</label>
-                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father" style="width:100%;padding:8px 12px;border-radius:10px;border:1px solid #e8dcc8;font-size:13px;font-family:'Georgia',serif;background:#f5ede0;">
+                        <div style="margin-top:8px;">
+                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Relation</label>
+                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
-                    <button type="submit" style="background:#6c3b8c;color:white;border:none;padding:10px 20px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:12px;font-family:'Georgia',serif;font-size:14px;">Save Profile</button>
+                    <button type="submit" style="background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;font-family:'Georgia',serif;">Save Profile</button>
                 </form>
 
-                <div id="profile-message" style="margin-top:12px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;font-size:13px;"></div>
+                <div id="profile-message" style="margin-top:16px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
 
-                <div style="margin-top:12px;padding:10px;background:#f5ede0;border-radius:10px;font-size:12px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">
+                <div style="margin-top:16px;padding:12px;background:#f5ede0;border-radius:12px;font-size:13px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">
                     Rank and Role can only be changed by your leader. Health information should be updated every 3 months.
                 </div>
             </div>
