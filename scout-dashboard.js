@@ -250,7 +250,7 @@ function renderView() {
     
     if (pageHeading) {
         if (currentView === 'dashboard') {
-            pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
+            pageHeading.innerHTML = `Welcome back,  <span style="color:#3d2b1f;">${displayName}</span>`;
             if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
         } else if (currentView === 'membership') {
             pageHeading.textContent = 'Membership';
