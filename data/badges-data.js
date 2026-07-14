@@ -22,7 +22,7 @@ export const allBadges = [
     {
         id: 'ambulance',
         name: 'Ambulance',
-        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/><path d="M18 6V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>`,
+        icon: `<data/ambulance.png'`,
         type: 'proficiency',
         color: '#e74c3c', // Red
         description: 'First aid and emergency response'
