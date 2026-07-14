@@ -16,7 +16,7 @@ function isImageIcon(icon) {
 }
 
 // ─── HELPER: Get icon HTML ──────────────────────────────
-function getIconHtml(icon, name, size = '36px') {
+function getIconHtml(icon, name, size = '56px') {
     if (typeof icon === 'string' && isImageIcon(icon)) {
         return `<img src="${icon}" alt="${name}" style="width:${size};height:${size};object-fit:contain;display:block;margin:0 auto;">`;
     }
