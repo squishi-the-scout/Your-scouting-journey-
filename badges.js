@@ -61,6 +61,26 @@ function getScoutTickets() {
     return [];
 }
 
+// ─── HELPER: Check if icon is an image ──────────────────
+function isImageIcon(icon) {
+    if (!icon) return false;
+    return icon.startsWith('data/') || 
+           icon.startsWith('http') || 
+           icon.startsWith('/') ||
+           icon.includes('.png') ||
+           icon.includes('.jpg') ||
+           icon.includes('.svg') ||
+           icon.includes('.gif');
+}
+
+// ─── HELPER: Get icon HTML ──────────────────────────────
+function getIconHtml(icon, name, size = '36px') {
+    if (isImageIcon(icon)) {
+        return `<img src="${icon}" alt="${name}" style="width:${size};height:${size};object-fit:contain;display:block;margin:0 auto;">`;
+    }
+    return `<span style="font-size:${size};">${icon}</span>`;
+}
+
 // ─── TICKET MODAL (Request) ──────────────────────────────
 function openTicketModal(badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
@@ -69,12 +89,14 @@ function openTicketModal(badge) {
     const overlay = document.createElement('div');
     overlay.className = 'ticket-modal-overlay';
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="ticket-modal">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -175,12 +197,14 @@ function openReportModal(ticket, badge) {
     const overlay = document.createElement('div');
     overlay.className = 'report-modal-overlay';
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="report-modal">
             <button class="modal-close" id="reportCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -298,7 +322,7 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report (FIXED — uses submitReport) ──────
+    // ─── Submit report ──────────────────────────────────────
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -320,7 +344,6 @@ function openReportModal(ticket, badge) {
 
             console.log(`📤 Submitting report with ${imageBase64.length} images...`);
 
-            // ─── FIXED: Use submitReport (not submitReportWithBase64) ───
             const result = await module.submitReport(
                 ticket.id,
                 note || '',
@@ -393,12 +416,14 @@ function showTicketDetails(ticket, badge) {
         }
     }
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="ticket-modal ticket-detail">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -582,8 +607,19 @@ function renderGridWithTickets(filtered) {
         const slot = document.createElement('div');
         slot.className = slotClass;
         slot.dataset.index = badge.id;
+
+        // ─── Use badge color if available ──────────────────────
+        const badgeColor = badge.color || '#6b4c3a';
+
+        // ─── Add color to slot ─────────────────────────────────
+        slot.style.borderColor = isUnlocked ? '#b8860b' : badgeColor;
+        slot.style.background = isUnlocked ? '#f0e8d8' : `linear-gradient(135deg, ${badgeColor}15, ${badgeColor}05)`;
+
+        // ─── Icon HTML ─────────────────────────────────────────
+        const iconHtml = getIconHtml(badge.icon, badge.name, '32px');
+
         slot.innerHTML = `
-            <span>${badge.icon}</span>
+            ${iconHtml}
             <span class="slot-name">${badge.name}</span>
             <span class="slot-type">${typeLabels[badge.type] || ''}</span>
             ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
@@ -1013,9 +1049,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 margin-bottom: 20px;
                 padding-bottom: 16px;
                 border-bottom: 2px solid #d4c4a8;
-            }
-            .ticket-modal .badge-preview .icon, .report-modal .badge-preview .icon {
-                font-size: 48px;
             }
             .ticket-modal .badge-preview .info .name, .report-modal .badge-preview .info .name {
                 font-size: 20px;
