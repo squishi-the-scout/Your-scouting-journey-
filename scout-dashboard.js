@@ -78,22 +78,6 @@ async function loadScoutData() {
     }
 }
 
-// ─── Check health status ──────────────────────────────────
-function checkHealthStatus() {
-    const health = scoutData.health || {};
-    if (!health.lastUpdated) return { needsUpdate: true, daysSince: 999 };
-    
-    const lastUpdated = new Date(health.lastUpdated);
-    const now = new Date();
-    const daysSince = Math.floor((now - lastUpdated) / (1000 * 60 * 60 * 24));
-    
-    return {
-        needsUpdate: daysSince > 90,
-        daysSince: daysSince,
-        lastUpdated: lastUpdated
-    };
-}
-
 // ─── Real-time status listener ──────────────────────────
 function listenToStatus() {
     if (statusUnsubscribe) {
@@ -158,7 +142,7 @@ function listenToTickets() {
                 notifications.push({
                     id: ticket.id,
                     type: 'requirements',
-                    message: `📋 Requirements added for "${ticket.badgeName}"`,
+                    message: `Requirements added for "${ticket.badgeName}"`,
                     time: ticket.requirementsAddedAt?.seconds || Date.now(),
                     read: false,
                     ticketId: ticket.id
@@ -169,7 +153,7 @@ function listenToTickets() {
                 notifications.push({
                     id: ticket.id,
                     type: 'report_submitted',
-                    message: `📤 Your report for "${ticket.badgeName}" is submitted`,
+                    message: `Your report for "${ticket.badgeName}" is submitted`,
                     time: ticket.reportSubmittedAt?.seconds || Date.now(),
                     read: false,
                     ticketId: ticket.id
@@ -180,7 +164,7 @@ function listenToTickets() {
                 notifications.push({
                     id: ticket.id,
                     type: 'approved',
-                    message: `🎉 "${ticket.badgeName}" has been approved!`,
+                    message: `"${ticket.badgeName}" has been approved!`,
                     time: ticket.decidedAt?.seconds || Date.now(),
                     read: false,
                     ticketId: ticket.id
@@ -191,7 +175,7 @@ function listenToTickets() {
                 notifications.push({
                     id: ticket.id,
                     type: 'rejected',
-                    message: `❌ "${ticket.badgeName}" was rejected`,
+                    message: `"${ticket.badgeName}" was rejected`,
                     time: ticket.decidedAt?.seconds || Date.now(),
                     read: false,
                     ticketId: ticket.id
@@ -237,12 +221,12 @@ function isBadgeAccessible(tab) {
 function renderLockedMessage(tab) {
     const messages = {
         'secondClass': {
-            title: '🔒 Second Class',
+            title: 'Second Class',
             message: 'Complete your Membership badge first to unlock Second Class!',
             progress: 'Membership → Second Class'
         },
         'firstClass': {
-            title: '🔒 First Class',
+            title: 'First Class',
             message: 'Complete your Second Class badge first to unlock First Class!',
             progress: 'Second Class → First Class'
         }
@@ -250,10 +234,11 @@ function renderLockedMessage(tab) {
     
     const info = messages[tab] || messages['secondClass'];
     return `
-        <div style="text-align:center;padding:60px 20px;background:white;border-radius:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-            <div style="font-size:48px;margin-bottom:16px;">${info.title}</div>
-            <h2 style="color:var(--text-muted);">${info.message}</h2>
-            <p style="color:var(--text-muted);font-size:14px;margin-top:8px;">${info.progress}</p>
+        <div style="text-align:center;padding:60px 20px;background:#fcf8f0;border-radius:24px;border:1px solid #e8dcc8;">
+            <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+            <h2 style="color:#6b5f4a;font-family:'Georgia',serif;">${info.title}</h2>
+            <p style="color:#8b7a6a;font-family:'Georgia',serif;font-size:16px;margin-top:8px;">${info.message}</p>
+            <p style="color:#6b5f4a;font-family:'Georgia',serif;font-size:14px;margin-top:8px;">${info.progress}</p>
         </div>
     `;
 }
@@ -266,24 +251,24 @@ function renderView() {
     if (pageHeading) {
         if (currentView === 'dashboard') {
             pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
-            if (scoutSubtitle) scoutSubtitle.textContent = '🏕️ Your Campsite';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
         } else if (currentView === 'membership') {
-            pageHeading.textContent = '🎯 Membership';
+            pageHeading.textContent = 'Membership';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
         } else if (currentView === 'second') {
-            pageHeading.textContent = '⭐ Second Class';
+            pageHeading.textContent = 'Second Class';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
         } else if (currentView === 'first') {
-            pageHeading.textContent = '🌟 First Class';
+            pageHeading.textContent = 'First Class';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
         } else if (currentView === 'badges') {
-            pageHeading.textContent = '🏅 Badges';
+            pageHeading.textContent = 'Badges';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
         } else if (currentView === 'sessions') {
-            pageHeading.textContent = '📅 Sessions';
+            pageHeading.textContent = 'Sessions';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
         } else if (currentView === 'profile') {
-            pageHeading.textContent = '👤 My Profile';
+            pageHeading.textContent = 'Profile';
             if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
         }
     }
@@ -332,35 +317,7 @@ function renderBadgeView() {
     };
 }
 
-// ─── RENDER EARNED BADGES ──────────────────────────────────
-function renderEarnedBadges() {
-    const earnedTickets = scoutTickets.filter(t => t.status === 'approved');
-    
-    if (earnedTickets.length === 0) {
-        return `
-            <div style="text-align:center;padding:20px;color:#8b7a6a;font-style:italic;font-size:14px;font-family:'Georgia',serif;">
-                No badges earned yet. Keep exploring.
-            </div>
-        `;
-    }
-    
-    return `
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;">
-            ${earnedTickets.map(t => `
-                <div style="text-align:center;padding:12px;background:#f5f0f8;border-radius:16px;border:2px solid #b8860b;box-shadow:0 2px 8px rgba(0,0,0,0.06);cursor:pointer;transition:transform 0.2s;" 
-                     onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'"
-                     onmouseover="this.style.transform='scale(1.05)'" 
-                     onmouseout="this.style.transform='scale(1)'">
-                    <div style="font-size:36px;">${t.badgeIcon || '🏅'}</div>
-                    <div style="font-size:11px;color:#3d2b1f;font-weight:600;margin-top:4px;font-family:'Georgia',serif;">${t.badgeName}</div>
-                    <div style="font-size:9px;color:#27ae60;font-weight:600;font-family:'Georgia',serif;">Earned</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-}
-
-// ─── DASHBOARD (Campsite) ──────────────────────────────
+// ─── DASHBOARD ──────────────────────────────────────────
 function renderDashboard() {
     const rank = scoutData.rank || 'Membership';
     const patrol = scoutData.patrol || 'No Patrol';
@@ -369,37 +326,32 @@ function renderDashboard() {
     let currentReqs = [];
     let currentLabel = '';
     let currentKey = '';
-    let nextLabel = '';
     
     if (rank === 'Membership') {
         currentReqs = membershipRequirements;
         currentLabel = 'Membership';
         currentKey = 'membership';
-        nextLabel = 'Second Class';
     } else if (rank === 'Second Class') {
         currentReqs = secondClassRequirements;
         currentLabel = 'Second Class';
         currentKey = 'secondClass';
-        nextLabel = 'First Class';
     } else if (rank === 'First Class') {
         currentReqs = firstClassRequirements;
         currentLabel = 'First Class';
         currentKey = 'firstClass';
-        nextLabel = '⭐ Completed!';
     }
     
     // ─── Calculate progress ─────────────────────────────────
     let completed = 0;
-    let pending = 0;
     let total = currentReqs.length;
     for (const req of currentReqs) {
         const key = `${currentKey}_${req.name}`;
         const status = scoutStatus[key];
         if (status && status.status === 'approved') completed++;
-        else if (status && status.status === 'pending') pending++;
     }
     const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-    const isComplete = completed === total && total > 0;
+    const circumference = 2 * Math.PI * 45;
+    const offset = circumference * (1 - progress / 100);
 
     // ─── Count earned badges ──────────────────────────────────
     const earnedBadges = scoutTickets.filter(t => t.status === 'approved');
@@ -418,18 +370,24 @@ function renderDashboard() {
         totalHours += session.duration || 0;
     }
 
-    // ─── Upcoming sessions ──────────────────────────────────
+    // ─── Upcoming sessions (invites) ────────────────────────
     const today = new Date().toISOString().split('T')[0];
     const upcomingSessions = allSessions
         .filter(s => s.date >= today)
         .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 3);
+        .slice(0, 4);
+
+    // ─── Attended sessions (past) ──────────────────────────
+    const attendedSessions = allSessions
+        .filter(s => s.date < today)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 4);
 
     // ─── Unread notifications ────────────────────────────────
     const unreadNotifications = notifications.filter(n => !n.read);
     const hasNotifications = unreadNotifications.length > 0;
 
-    // ─── Calculate patrol color ──────────────────────────────
+    // ─── Patrol colors ──────────────────────────────────────
     const patrolColors = {
         'Eagle': '#f1c40f',
         'Falcon': '#3498db',
@@ -439,7 +397,7 @@ function renderDashboard() {
     };
     const patrolColor = patrolColors[patrol] || '#6c3b8c';
 
-    // ─── Achievements ────────────────────────────────────────
+    // ─── Achievements ──────────────────────────────────────
     const achievements = [
         { key: 'membership', label: 'Membership', icon: '🏅', earned: rank !== 'Membership' },
         { key: 'second', label: 'Second Class', icon: '⭐', earned: rank === 'Second Class' || rank === 'First Class' },
@@ -447,30 +405,34 @@ function renderDashboard() {
         { key: 'badges', label: 'Badge Collector', icon: '🎯', earned: badgeCount >= 1 }
     ];
 
+    // ─── Build HTML ──────────────────────────────────────────
     let html = `
         <style>
             .campsite {
                 max-width: 100%;
                 padding: 0;
                 font-family: 'Georgia', 'Times New Roman', serif;
+                background: #f5ede0;
             }
 
             /* ─── WELCOME BAR ─── */
             .welcome-bar {
-                background: linear-gradient(135deg, #f2e8d5, #e8dcc8);
-                border-radius: 24px;
+                background: #fcf8f0;
+                border-radius: 20px;
                 padding: 24px 28px;
                 margin-bottom: 24px;
-                border: 2px solid #8b6b4d;
-                box-shadow: inset 0 0 0 2px #b8a080, 0 4px 12px rgba(0,0,0,0.06);
+                border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             }
             .welcome-bar .greeting {
-                font-size: 24px;
+                font-size: 22px;
                 color: #3d2b1f;
-                margin-bottom: 16px;
+                margin-bottom: 12px;
+                font-weight: 400;
             }
             .welcome-bar .greeting span {
                 color: #6c3b8c;
+                font-weight: 600;
             }
             .welcome-bar .stats-row {
                 display: grid;
@@ -478,45 +440,139 @@ function renderDashboard() {
                 gap: 12px;
             }
             .welcome-bar .stat-pill {
-                background: rgba(255,255,255,0.7);
-                backdrop-filter: blur(4px);
+                background: #f5ede0;
                 padding: 10px 16px;
                 border-radius: 40px;
                 text-align: center;
-                border: 1px solid #b8a080;
+                border: 1px solid #e8dcc8;
             }
             .welcome-bar .stat-pill .label {
                 font-size: 11px;
-                color: #6b5f4a;
+                color: #8b7a6a;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
             .welcome-bar .stat-pill .value {
-                font-size: 16px;
+                font-size: 15px;
                 font-weight: 700;
                 color: #3d2b1f;
                 margin-top: 2px;
             }
             .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
             .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
-            .welcome-bar .stat-pill .value.progress { color: #b8860b; }
+            .welcome-bar .stat-pill .value.progress { color: #e67e22; }
             .welcome-bar .stat-pill .value.badges { color: #2d5a4a; }
+
+            /* ─── PROGRESS RING ─── */
+            .ring-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                margin: 0 auto;
+            }
+            .ring-wrapper {
+                position: relative;
+                width: 100px;
+                height: 100px;
+            }
+            .ring-wrapper svg {
+                transform: rotate(-90deg);
+            }
+            .ring-wrapper .ring-bg {
+                fill: none;
+                stroke: #e8dcc8;
+                stroke-width: 8;
+            }
+            .ring-wrapper .ring-fill {
+                fill: none;
+                stroke: url(#progressGradient);
+                stroke-width: 8;
+                stroke-linecap: round;
+                stroke-dasharray: ${circumference};
+                stroke-dashoffset: ${offset};
+                transition: stroke-dashoffset 0.8s ease;
+            }
+            .ring-wrapper .center-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                font-family: 'Georgia', serif;
+            }
+            .ring-wrapper .center-text .number {
+                font-size: 22px;
+                font-weight: 700;
+                color: #3d2b1f;
+            }
+            .ring-wrapper .center-text .label {
+                font-size: 10px;
+                color: #8b7a6a;
+            }
+
+            /* ─── STATS CARDS ─── */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 2fr 1fr;
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+            .stat-card {
+                background: #fcf8f0;
+                border-radius: 16px;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .stat-card .number {
+                font-size: 28px;
+                font-weight: 700;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+            }
+            .stat-card .label {
+                font-size: 13px;
+                color: #8b7a6a;
+                font-family: 'Georgia', serif;
+                margin-top: 4px;
+            }
+            .stat-card .sub {
+                font-size: 12px;
+                color: #b8a080;
+                font-family: 'Georgia', serif;
+                margin-top: 2px;
+            }
+            .stat-card .icon-svg {
+                width: 32px;
+                height: 32px;
+                margin-bottom: 8px;
+                stroke: #6c3b8c;
+                stroke-width: 2;
+                fill: none;
+            }
+            .stat-card.hours .icon-svg { stroke: #2d5a4a; }
+            .stat-card.badges .icon-svg { stroke: #e67e22; }
 
             /* ─── NOTIFICATIONS ─── */
             .notification-board {
-                background: ${hasNotifications ? '#fef9e7' : '#f8f5fa'};
+                background: ${hasNotifications ? '#fcf8f0' : '#fcf8f0'};
                 border-radius: 16px;
-                padding: 14px 20px;
+                padding: 16px 20px;
                 margin-bottom: 24px;
-                border-left: 4px solid ${hasNotifications ? '#f39c12' : '#d4c4a8'};
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
+                border: 1px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                border-left: 4px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
             }
             .notification-board .notif-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
+                margin-bottom: 8px;
             }
             .notification-board .notif-header .title {
                 font-weight: 600;
@@ -524,17 +580,12 @@ function renderDashboard() {
                 color: #3d2b1f;
             }
             .notification-board .notif-header .badge {
-                background: ${hasNotifications ? '#e74c3c' : '#d4c4a8'};
-                color: ${hasNotifications ? 'white' : '#6b5f4a'};
+                background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                color: ${hasNotifications ? 'white' : '#8b7a6a'};
                 padding: 2px 12px;
                 border-radius: 20px;
                 font-size: 12px;
                 font-weight: 600;
-            }
-            .notification-board .notif-list {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
             }
             .notification-board .notif-item {
                 display: flex;
@@ -542,22 +593,23 @@ function renderDashboard() {
                 align-items: center;
                 padding: 6px 12px;
                 border-radius: 8px;
-                background: white;
+                background: #f5ede0;
                 font-size: 13px;
                 color: #3d2b1f;
                 cursor: pointer;
                 transition: background 0.2s;
+                margin-bottom: 4px;
             }
             .notification-board .notif-item:hover {
-                background: #f0e8d8;
+                background: #e8dcc8;
             }
             .notification-board .notif-item .time {
                 font-size: 10px;
                 color: #8b7a6a;
             }
             .notification-board .clear-btn {
-                background: ${hasNotifications ? '#e74c3c' : '#d4c4a8'};
-                color: ${hasNotifications ? 'white' : '#6b5f4a'};
+                background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                color: ${hasNotifications ? 'white' : '#8b7a6a'};
                 border: none;
                 padding: 4px 16px;
                 border-radius: 20px;
@@ -565,36 +617,34 @@ function renderDashboard() {
                 font-weight: 600;
                 cursor: pointer;
                 transition: all 0.2s;
-                align-self: flex-end;
+                margin-top: 4px;
+                float: right;
             }
             .notification-board .clear-btn:hover {
                 transform: scale(1.05);
                 opacity: 0.9;
             }
+            .notification-board .empty {
+                color: #8b7a6a;
+                font-size: 14px;
+                padding: 4px 0;
+            }
 
-            /* ─── GRID ─── */
-            .dashboard-grid {
+            /* ─── TWO COLUMN ─── */
+            .two-col {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
-                margin-bottom: 20px;
-            }
-            .dashboard-grid .full-width {
-                grid-column: 1 / -1;
+                margin-bottom: 24px;
             }
 
             /* ─── CARDS ─── */
             .card {
-                background: white;
-                border-radius: 20px;
+                background: #fcf8f0;
+                border-radius: 16px;
                 padding: 20px 24px;
                 border: 1px solid #e8dcc8;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                transition: transform 0.2s, box-shadow 0.2s;
-            }
-            .card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 16px rgba(0,0,0,0.06);
             }
             .card .card-header {
                 display: flex;
@@ -617,124 +667,7 @@ function renderDashboard() {
             .card .card-header .link:hover {
                 text-decoration: underline;
             }
-
-            /* ─── PROGRESS CARD ─── */
-            .progress-card .progress-bar {
-                background: #e8dcc8;
-                border-radius: 20px;
-                height: 10px;
-                overflow: hidden;
-                margin: 8px 0 12px 0;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-            }
-            .progress-card .progress-bar .fill {
-                height: 100%;
-                border-radius: 20px;
-                transition: width 0.8s ease;
-                background: linear-gradient(90deg, #6c3b8c, #b8860b);
-            }
-            .progress-card .progress-label {
-                display: flex;
-                justify-content: space-between;
-                font-size: 14px;
-                color: #6b5f4a;
-            }
-            .progress-card .btn-continue {
-                background: #6c3b8c;
-                color: white;
-                border: none;
-                padding: 10px 24px;
-                border-radius: 40px;
-                font-weight: 600;
-                font-size: 14px;
-                cursor: pointer;
-                transition: all 0.2s;
-                margin-top: 12px;
-                display: inline-block;
-                text-decoration: none;
-                font-family: 'Georgia', serif;
-            }
-            .progress-card .btn-continue:hover {
-                background: #4a2a5e;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(108,59,140,0.3);
-            }
-            .progress-card .btn-continue.complete {
-                background: #27ae60;
-            }
-            .progress-card .btn-continue.complete:hover {
-                background: #1e8449;
-            }
-
-            /* ─── BADGES CARD ─── */
-            .badges-card .badge-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-                gap: 10px;
-            }
-            .badges-card .badge-item {
-                text-align: center;
-                padding: 10px;
-                background: #f8f5fa;
-                border-radius: 12px;
-                border: 1px solid #e8dcc8;
-                transition: all 0.2s;
-                cursor: pointer;
-            }
-            .badges-card .badge-item:hover {
-                transform: scale(1.05);
-                border-color: #b8860b;
-            }
-            .badges-card .badge-item .icon {
-                font-size: 28px;
-            }
-            .badges-card .badge-item .name {
-                font-size: 9px;
-                color: #3d2b1f;
-                margin-top: 4px;
-                font-weight: 500;
-            }
-
-            /* ─── TICKETS CARD ─── */
-            .tickets-card .ticket-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 10px 0;
-                border-bottom: 1px solid #f0e8d8;
-                cursor: pointer;
-                transition: background 0.2s;
-            }
-            .tickets-card .ticket-item:hover {
-                background: #f8f5fa;
-                margin: 0 -8px;
-                padding: 10px 8px;
-                border-radius: 8px;
-            }
-            .tickets-card .ticket-item:last-child {
-                border-bottom: none;
-            }
-            .tickets-card .ticket-item .left {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            .tickets-card .ticket-item .left .icon {
-                font-size: 20px;
-            }
-            .tickets-card .ticket-item .left .info .name {
-                font-size: 14px;
-                font-weight: 500;
-                color: #3d2b1f;
-            }
-            .tickets-card .ticket-item .left .info .status {
-                font-size: 12px;
-                color: #6b5f4a;
-            }
-            .tickets-card .ticket-item .status-badge {
-                font-size: 14px;
-            }
-            .tickets-card .empty {
+            .card .empty {
                 text-align: center;
                 padding: 16px 0;
                 color: #8b7a6a;
@@ -742,114 +675,177 @@ function renderDashboard() {
                 font-size: 14px;
             }
 
-            /* ─── SESSIONS CARD ─── */
-            .sessions-card .stat-row {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
-                margin-bottom: 12px;
+            /* ─── TICKET ITEM ─── */
+            .ticket-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid #e8dcc8;
+                cursor: pointer;
+                transition: background 0.2s;
             }
-            .sessions-card .stat-box {
-                background: #f8f5fa;
-                padding: 10px;
-                border-radius: 12px;
-                text-align: center;
+            .ticket-item:hover {
+                background: #f5ede0;
+                margin: 0 -8px;
+                padding: 8px 8px;
+                border-radius: 8px;
             }
-            .sessions-card .stat-box .number {
-                font-size: 20px;
-                font-weight: 700;
+            .ticket-item:last-child {
+                border-bottom: none;
+            }
+            .ticket-item .left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .ticket-item .left .info .name {
+                font-size: 14px;
+                font-weight: 500;
                 color: #3d2b1f;
             }
-            .sessions-card .stat-box .label {
-                font-size: 11px;
-                color: #6b5f4a;
+            .ticket-item .left .info .status {
+                font-size: 12px;
+                color: #8b7a6a;
             }
-            .sessions-card .session-item {
+            .ticket-item .status-badge {
+                font-size: 14px;
+            }
+
+            /* ─── SESSION ITEM ─── */
+            .session-item {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 padding: 6px 0;
-                border-bottom: 1px solid #f0e8d8;
+                border-bottom: 1px solid #e8dcc8;
             }
-            .sessions-card .session-item:last-child {
+            .session-item:last-child {
                 border-bottom: none;
             }
-            .sessions-card .session-item .name {
+            .session-item .left .name {
                 font-size: 13px;
                 color: #3d2b1f;
             }
-            .sessions-card .session-item .meta {
+            .session-item .left .meta {
                 font-size: 12px;
-                color: #6b5f4a;
+                color: #8b7a6a;
             }
-            .sessions-card .session-item .tag {
+            .session-item .tag {
                 font-size: 10px;
                 font-weight: 600;
                 padding: 2px 10px;
                 border-radius: 20px;
-                background: #d4edda;
-                color: #155724;
             }
-            .sessions-card .session-item .tag.today {
+            .session-item .tag.today {
                 background: #fde8d0;
                 color: #d35400;
             }
+            .session-item .tag.upcoming {
+                background: #d4edda;
+                color: #155724;
+            }
+            .session-item .tag.attended {
+                background: #e8dcc8;
+                color: #6c3b8c;
+            }
+            .session-item .hours {
+                font-size: 12px;
+                color: #8b7a6a;
+                font-weight: 500;
+            }
 
-            /* ─── ACHIEVEMENTS CARD ─── */
-            .achievements-card .achieve-grid {
+            /* ─── ATTENDED SESSIONS ─── */
+            .attended-footer {
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #e8dcc8;
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                color: #8b7a6a;
+            }
+            .attended-footer .total {
+                font-weight: 600;
+                color: #3d2b1f;
+            }
+
+            /* ─── ACHIEVEMENTS ─── */
+            .achieve-grid {
                 display: grid;
                 grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
+                gap: 12px;
             }
-            .achievements-card .achieve-item {
+            .achieve-item {
                 text-align: center;
-                padding: 12px;
+                padding: 16px;
                 border-radius: 12px;
                 border: 2px solid #e8dcc8;
                 transition: all 0.2s;
+                background: #fcf8f0;
             }
-            .achievements-card .achieve-item.earned {
-                background: #f5f0f8;
+            .achieve-item.earned {
                 border-color: #6c3b8c;
+                background: #f5ede0;
             }
-            .achievements-card .achieve-item.locked {
-                background: #f8f5f5;
-                border-color: #e8e0e0;
-                opacity: 0.6;
+            .achieve-item.locked {
+                opacity: 0.5;
             }
-            .achievements-card .achieve-item .icon {
-                font-size: 24px;
+            .achieve-item .icon {
+                font-size: 28px;
             }
-            .achievements-card .achieve-item .label {
+            .achieve-item .label {
+                font-size: 11px;
+                color: #3d2b1f;
+                margin-top: 6px;
+                font-weight: 500;
+            }
+            .achieve-item .status {
                 font-size: 10px;
-                color: #6b5f4a;
+                font-weight: 600;
                 margin-top: 4px;
             }
-            .achievements-card .achieve-item .status {
-                font-size: 9px;
+            .achieve-item .status.earned {
+                color: #6c3b8c;
+            }
+            .achieve-item .status.locked {
+                color: #8b7a6a;
+            }
+            .achieve-footer {
+                text-align: center;
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #e8dcc8;
+                font-size: 13px;
+                color: #8b7a6a;
+            }
+            .achieve-footer .count {
                 font-weight: 600;
-                margin-top: 2px;
-            }
-            .achievements-card .achieve-item .status.earned {
-                color: #27ae60;
-            }
-            .achievements-card .achieve-item .status.locked {
-                color: #6b5f4a;
+                color: #6c3b8c;
             }
 
             /* ─── RESPONSIVE ─── */
             @media (max-width: 992px) {
-                .welcome-bar .stats-row {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-                .dashboard-grid {
+                .stats-grid {
                     grid-template-columns: 1fr;
                 }
-                .achievements-card .achieve-grid {
+                .two-col {
+                    grid-template-columns: 1fr;
+                }
+                .achieve-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .welcome-bar .stats-row {
                     grid-template-columns: repeat(2, 1fr);
                 }
             }
             @media (max-width: 480px) {
+                .welcome-bar {
+                    padding: 16px;
+                }
+                .welcome-bar .greeting {
+                    font-size: 18px;
+                }
                 .welcome-bar .stats-row {
                     grid-template-columns: 1fr 1fr;
                     gap: 8px;
@@ -858,35 +854,46 @@ function renderDashboard() {
                     padding: 8px 12px;
                 }
                 .welcome-bar .stat-pill .value {
-                    font-size: 14px;
+                    font-size: 13px;
                 }
                 .card {
                     padding: 16px;
                 }
-                .badges-card .badge-grid {
-                    grid-template-columns: repeat(3, 1fr);
-                }
-                .sessions-card .stat-row {
-                    grid-template-columns: 1fr 1fr;
-                }
-                .achievements-card .achieve-grid {
+                .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
+                }
+                .ring-wrapper {
+                    width: 70px;
+                    height: 70px;
+                }
+                .ring-wrapper .center-text .number {
+                    font-size: 16px;
                 }
             }
         </style>
 
         <div class="campsite">
+            <!-- ─── SVG GRADIENT ─── -->
+            <svg width="0" height="0">
+                <defs>
+                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#6c3b8c;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#e67e22;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+
             <!-- ─── WELCOME BAR ─── -->
             <div class="welcome-bar">
-                <div class="greeting">⛺ Welcome back, <span>${displayName}</span>!</div>
+                <div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>
                 <div class="stats-row">
                     <div class="stat-pill">
                         <div class="label">Rank</div>
-                        <div class="value rank">⚜️ ${rank}</div>
+                        <div class="value rank">${rank}</div>
                     </div>
                     <div class="stat-pill">
                         <div class="label">Patrol</div>
-                        <div class="value patrol">🦅 ${patrol}</div>
+                        <div class="value patrol">${patrol}</div>
                     </div>
                     <div class="stat-pill">
                         <div class="label">Progress</div>
@@ -894,97 +901,92 @@ function renderDashboard() {
                     </div>
                     <div class="stat-pill">
                         <div class="label">Badges</div>
-                        <div class="value badges">🏅 ${badgeCount}</div>
+                        <div class="value badges">${badgeCount}</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- ─── STATS CARDS ─── -->
+            <div class="stats-grid">
+                <!-- Progress Ring -->
+                <div class="stat-card">
+                    <div class="ring-wrapper">
+                        <svg width="100" height="100" viewBox="0 0 100 100">
+                            <circle class="ring-bg" cx="50" cy="50" r="45"/>
+                            <circle class="ring-fill" cx="50" cy="50" r="45"/>
+                        </svg>
+                        <div class="center-text">
+                            <div class="number">${progress}%</div>
+                            <div class="label">${currentLabel}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scouting Hours -->
+                <div class="stat-card hours">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <div class="number">${totalHours}</div>
+                    <div class="label">Scouting Hours</div>
+                    <div class="sub">${allSessions.length} sessions attended</div>
+                </div>
+
+                <!-- Badges Earned -->
+                <div class="stat-card badges">
+                    <svg class="icon-svg" viewBox="0 0 24 24">
+                        <path d="M12 2L9.5 9.5L2 9.5L8 14.5L5.5 22L12 17.5L18.5 22L16 14.5L22 9.5L14.5 9.5L12 2z"/>
+                    </svg>
+                    <div class="number">${badgeCount}</div>
+                    <div class="label">Badges Earned</div>
+                    <div class="sub">Keep going!</div>
                 </div>
             </div>
 
             <!-- ─── NOTIFICATIONS ─── -->
             <div class="notification-board">
                 <div class="notif-header">
-                    <span class="title">🔔 Notifications</span>
-                    <span class="badge">${unreadNotifications.length} New</span>
+                    <span class="title">Notifications</span>
+                    <span class="badge">${unreadNotifications.length} new</span>
                 </div>
                 ${notifications.length > 0 ? `
-                    <div class="notif-list">
-                        ${notifications.slice(0, 3).map(n => `
-                            <div class="notif-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${n.ticketId}'">
-                                <span>${n.message}</span>
-                                <span class="time">${n.read ? '✓ Read' : '● New'}</span>
-                            </div>
-                        `).join('')}
-                        ${notifications.length > 3 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${notifications.length - 3} more</div>` : ''}
-                    </div>
+                    ${notifications.slice(0, 3).map(n => `
+                        <div class="notif-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${n.ticketId}'">
+                            <span>${n.message}</span>
+                            <span class="time">${n.read ? 'Read' : 'New'}</span>
+                        </div>
+                    `).join('')}
+                    ${notifications.length > 3 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${notifications.length - 3} more</div>` : ''}
                     ${hasNotifications ? `
                         <button class="clear-btn" id="clearNotifsBtn">Mark All Read</button>
                     ` : ''}
                 ` : `
-                    <div style="color:#8b7a6a;font-size:14px;padding:4px 0;">No new notifications</div>
+                    <div class="empty">No new notifications</div>
                 `}
             </div>
 
-            <!-- ─── GRID ─── -->
-            <div class="dashboard-grid">
-                <!-- ─── PROGRESS CARD ─── -->
-                <div class="card progress-card">
-                    <div class="card-header">
-                        <span class="title">📊 Progress</span>
-                        <span style="font-size:14px;color:#6b5f4a;">${completed}/${total}</span>
-                    </div>
-                    <div style="font-size:14px;color:#3d2b1f;font-weight:500;">${currentLabel}</div>
-                    <div class="progress-bar">
-                        <div class="fill" style="width:${progress}%;"></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#6b5f4a;margin-bottom:12px;">
-                        <span>${isComplete ? '✅ Complete!' : `${progress}% Complete`}</span>
-                        <span>${completed}/${total}</span>
-                    </div>
-                    <a href="#" data-view="${rank === 'Membership' ? 'membership' : rank === 'Second Class' ? 'second' : 'first'}" class="btn-continue ${isComplete ? 'complete' : ''}">
-                        ${isComplete ? '✅ Completed!' : '📖 Continue Journey →'}
-                    </a>
-                </div>
-
-                <!-- ─── BADGES CARD ─── -->
-                <div class="card badges-card">
-                    <div class="card-header">
-                        <span class="title">🏅 Badges Earned</span>
-                        <a href="#" data-view="badges" class="link">View All →</a>
-                    </div>
-                    ${earnedBadges.length > 0 ? `
-                        <div class="badge-grid">
-                            ${earnedBadges.slice(0, 6).map(t => `
-                                <div class="badge-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'">
-                                    <div class="icon">${t.badgeIcon || '🏅'}</div>
-                                    <div class="name">${t.badgeName}</div>
-                                </div>
-                            `).join('')}
-                            ${earnedBadges.length > 6 ? `<div style="text-align:center;font-size:11px;color:#8b7a6a;grid-column:1/-1;">+${earnedBadges.length - 6} more</div>` : ''}
-                        </div>
-                    ` : `
-                        <div style="text-align:center;padding:16px 0;color:#8b7a6a;font-style:italic;font-size:14px;">No badges earned yet. Keep exploring!</div>
-                    `}
-                </div>
-
+            <!-- ─── TWO COLUMN ─── -->
+            <div class="two-col">
                 <!-- ─── ACTIVE TICKETS ─── -->
-                <div class="card tickets-card">
+                <div class="card">
                     <div class="card-header">
-                        <span class="title">🎫 Active Tickets</span>
+                        <span class="title">Active Tickets</span>
                         ${activeTickets.length > 0 ? `<a href="#" data-view="badges" class="link">View All →</a>` : ''}
                     </div>
                     ${activeTickets.length > 0 ? `
-                        ${activeTickets.slice(0, 3).map(t => {
+                        ${activeTickets.slice(0, 4).map(t => {
                             const statusMap = {
-                                'pending': { emoji: '⏳', label: 'Waiting for Leader' },
-                                'requirements_added': { emoji: '📋', label: 'Requirements Assigned' },
-                                'report_submitted': { emoji: '📤', label: 'Report Submitted' }
+                                'pending': { emoji: '⏳', label: 'Waiting' },
+                                'requirements_added': { emoji: '📋', label: 'Assigned' },
+                                'report_submitted': { emoji: '📤', label: 'Submitted' }
                             };
                             const s = statusMap[t.status] || { emoji: '📌', label: t.status };
                             return `
                                 <div class="ticket-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'">
                                     <div class="left">
-                                        <span class="icon">${t.badgeIcon || '🏅'}</span>
                                         <div class="info">
-                                            <div class="name">${t.badgeName}</div>
+                                            <div class="name">${t.badgeIcon || '🏅'} ${t.badgeName}</div>
                                             <div class="status">${s.label}</div>
                                         </div>
                                     </div>
@@ -992,56 +994,75 @@ function renderDashboard() {
                                 </div>
                             `;
                         }).join('')}
-                        ${activeTickets.length > 3 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${activeTickets.length - 3} more</div>` : ''}
+                        ${activeTickets.length > 4 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${activeTickets.length - 4} more</div>` : ''}
                     ` : `
-                        <div class="empty">No active tickets. All clear!</div>
+                        <div class="empty">No active tickets — all clear!</div>
                     `}
                 </div>
 
-                <!-- ─── SESSIONS CARD ─── -->
-                <div class="card sessions-card">
+                <!-- ─── SESSION INVITES ─── -->
+                <div class="card">
                     <div class="card-header">
-                        <span class="title">📅 Scouting Hours</span>
-                        <a href="#" data-view="sessions" class="link">View All →</a>
-                    </div>
-                    <div class="stat-row">
-                        <div class="stat-box">
-                            <div class="number">${totalHours}</div>
-                            <div class="label">Total Hours</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="number">${allSessions.length}</div>
-                            <div class="label">Sessions Attended</div>
-                        </div>
+                        <span class="title">Session Invites</span>
+                        ${upcomingSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
                     </div>
                     ${upcomingSessions.length > 0 ? `
-                        <div style="font-size:13px;color:#3d2b1f;font-weight:500;margin-bottom:6px;">Upcoming:</div>
                         ${upcomingSessions.map(s => `
                             <div class="session-item">
-                                <span class="name">${s.name}</span>
-                                <span class="meta">${s.date}</span>
-                                <span class="tag ${s.date === today ? 'today' : ''}">${s.date === today ? 'Today' : 'Upcoming'}</span>
+                                <div class="left">
+                                    <div class="name">${s.name}</div>
+                                    <div class="meta">${s.date}</div>
+                                </div>
+                                <span class="tag ${s.date === today ? 'today' : 'upcoming'}">${s.date === today ? 'Today' : 'Upcoming'}</span>
                             </div>
                         `).join('')}
                     ` : `
-                        <div style="text-align:center;padding:8px 0;color:#8b7a6a;font-style:italic;font-size:13px;">No upcoming sessions</div>
+                        <div class="empty">No upcoming sessions</div>
                     `}
                 </div>
+            </div>
 
-                <!-- ─── ACHIEVEMENTS CARD ─── -->
-                <div class="card achievements-card full-width">
-                    <div class="card-header">
-                        <span class="title">🏆 Achievements</span>
-                    </div>
-                    <div class="achieve-grid">
-                        ${achievements.map(a => `
-                            <div class="achieve-item ${a.earned ? 'earned' : 'locked'}">
-                                <div class="icon">${a.icon}</div>
-                                <div class="label">${a.label}</div>
-                                <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? '✅ Earned' : '🔒 Locked'}</div>
+            <!-- ─── ATTENDED SESSIONS ─── -->
+            <div class="card" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="title">Attended Sessions</span>
+                    ${attendedSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
+                </div>
+                ${attendedSessions.length > 0 ? `
+                    ${attendedSessions.map(s => `
+                        <div class="session-item">
+                            <div class="left">
+                                <div class="name">${s.name}</div>
+                                <div class="meta">${s.date}</div>
                             </div>
-                        `).join('')}
+                            <span class="hours">${s.duration || 0}h</span>
+                        </div>
+                    `).join('')}
+                    <div class="attended-footer">
+                        <span>Total: <span class="total">${allSessions.length}</span> sessions</span>
+                        <span><span class="total">${totalHours}</span> hours</span>
                     </div>
+                ` : `
+                    <div class="empty">No attended sessions yet</div>
+                `}
+            </div>
+
+            <!-- ─── ACHIEVEMENTS ─── -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="title">Achievements</span>
+                </div>
+                <div class="achieve-grid">
+                    ${achievements.map(a => `
+                        <div class="achieve-item ${a.earned ? 'earned' : 'locked'}">
+                            <div class="icon">${a.icon}</div>
+                            <div class="label">${a.label}</div>
+                            <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? 'Earned' : 'Locked'}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="achieve-footer">
+                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} achievements unlocked
                 </div>
             </div>
         </div>
@@ -1088,7 +1109,7 @@ function renderRequirements(tab, reqs) {
                 <span>${completed}/${total}</span>
             </div>
             <div style="background:#e8dcc8;border-radius:20px;height:10px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="background:linear-gradient(90deg,#6c3b8c,#b8860b);height:100%;width:${progress}%;border-radius:20px;transition:width 0.8s ease;"></div>
+                <div style="background:linear-gradient(90deg,#6c3b8c,#e67e22);height:100%;width:${progress}%;border-radius:20px;transition:width 0.8s ease;"></div>
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -1110,7 +1131,7 @@ function renderRequirements(tab, reqs) {
                 if (status === 'approved' && data) {
                     const approvedBy = data.approvedBy || 'Unknown';
                     const approvedAt = data.approvedAt ? new Date(data.approvedAt).toLocaleString() : 'Unknown date';
-                    approvedInfo = `<div style="font-size:11px;color:#6b5f4a;margin-top:6px;font-family:'Georgia',serif;">Approved by ${approvedBy} · ${approvedAt}</div>`;
+                    approvedInfo = `<div style="font-size:11px;color:#8b7a6a;margin-top:6px;font-family:'Georgia',serif;">Approved by ${approvedBy} · ${approvedAt}</div>`;
                 }
                 
                 const reportKey = `${tab}_${req.name}_report`;
@@ -1118,13 +1139,13 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#27ae60;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#6c3b8c;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
                 } else {
-                    reportBtn = `<button style="background:#e8e0f0;color:#3d2b1f;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
+                    reportBtn = `<button style="background:#e8dcc8;color:#3d2b1f;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
                 }
                 
                 return `
-                    <div style="background:white;border-radius:16px;padding:16px 20px;border-left:4px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#f39c12' : '#d4c4a8'};">
+                    <div style="background:#fcf8f0;border-radius:16px;padding:16px 20px;border-left:4px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#e67e22' : '#e8dcc8'};">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
                             <span style="font-weight:600;font-size:14px;color:#3d2b1f;font-family:'Georgia',serif;">${req.id}. ${req.name}</span>
                             ${statusPill}
@@ -1185,31 +1206,31 @@ function renderReportModal() {
 
     let html = `
         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
-            <div style="background:white;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid #e8dcc8;">
                 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                     <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Report: ${currentReportReq}</h2>
-                    <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:#6b5f4a;">×</button>
+                    <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:#8b7a6a;">×</button>
                 </div>
                 
                 <div style="margin-bottom:16px;">
                     <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Your Report Note</label>
-                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d6ec;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;">${report.note || ''}</textarea>
+                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e8dcc8;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;background:#f5ede0;">${report.note || ''}</textarea>
                 </div>
                 
                 <div style="margin-bottom:16px;">
                     <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Upload Images</label>
-                    <div id="drop-zone" style="border:2px dashed #e0d6ec;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;">
+                    <div id="drop-zone" style="border:2px dashed #e8dcc8;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f5ede0;">
                         <div style="font-size:40px;margin-bottom:8px;">📸</div>
-                        <p style="color:#6b5f4a;">Drag & drop images here, or click to select</p>
-                        <p style="font-size:12px;color:#6b5f4a;">Images will be compressed to ~100-200KB (max 5 images)</p>
+                        <p style="color:#8b7a6a;">Drag & drop images here, or click to select</p>
+                        <p style="font-size:12px;color:#8b7a6a;">Images will be compressed to ~100-200KB (max 5 images)</p>
                         <input type="file" id="image-upload" multiple accept="image/*" style="display:none;">
                     </div>
                 </div>
                 
                 <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
                     ${allImages.map((base64, index) => `
-                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
                             <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                             <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                         </div>
@@ -1218,11 +1239,11 @@ function renderReportModal() {
                 
                 <div style="display:flex;gap:12px;margin-top:16px;">
                     <button id="save-report" style="flex:1;background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Save Report</button>
-                    <button id="cancel-report" style="flex:1;background:#e8e0f0;color:#3d2b1f;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
+                    <button id="cancel-report" style="flex:1;background:#e8dcc8;color:#3d2b1f;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
                 </div>
                 
-                <div id="report-message" style="margin-top:12px;font-size:14px;color:#6b5f4a;text-align:center;font-family:'Georgia',serif;"></div>
-                ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:#6b5f4a;text-align:center;font-family:'Georgia',serif;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
+                <div id="report-message" style="margin-top:12px;font-size:14px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
+                ${report.updatedAt ? `<div style="margin-top:8px;font-size:12px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">Last saved: ${new Date(report.updatedAt).toLocaleString()}</div>` : ''}
             </div>
         </div>
     `;
@@ -1247,16 +1268,16 @@ function renderReportModal() {
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.style.borderColor = '#6c3b8c';
-        dropZone.style.background = '#f5f0f8';
+        dropZone.style.background = '#f5ede0';
     });
     dropZone.addEventListener('dragleave', () => {
-        dropZone.style.borderColor = '#e0d6ec';
-        dropZone.style.background = 'transparent';
+        dropZone.style.borderColor = '#e8dcc8';
+        dropZone.style.background = '#f5ede0';
     });
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropZone.style.borderColor = '#e0d6ec';
-        dropZone.style.background = 'transparent';
+        dropZone.style.borderColor = '#e8dcc8';
+        dropZone.style.background = '#f5ede0';
         handleFiles(e.dataTransfer.files);
     });
     fileInput.addEventListener('change', () => handleFiles(fileInput.files));
@@ -1267,14 +1288,14 @@ function renderReportModal() {
         
         if (allImages.length + files.length > 5) {
             message.textContent = '⚠️ Maximum 5 images allowed. You have ' + allImages.length + ' already.';
-            message.style.color = '#e67e22';
+            message.style.color = '#d35400';
             return;
         }
         
         for (const file of files) {
             if (!file.type.startsWith('image/')) {
                 message.textContent = '⚠️ Please select image files only.';
-                message.style.color = '#e67e22';
+                message.style.color = '#d35400';
                 continue;
             }
             
@@ -1283,7 +1304,7 @@ function renderReportModal() {
                 allImages.push(base64);
                 
                 const imgDiv = document.createElement('div');
-                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;';
+                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;';
                 imgDiv.innerHTML = `
                     <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                     <button class="remove-image" data-index="${allImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
@@ -1291,7 +1312,7 @@ function renderReportModal() {
                 container.appendChild(imgDiv);
                 
                 message.textContent = `✅ ${file.name} uploaded (${Math.round(base64.length / 1024)}KB)`;
-                message.style.color = '#4caf50';
+                message.style.color = '#27ae60';
                 
                 imgDiv.querySelector('.remove-image').addEventListener('click', function() {
                     const idx = parseInt(this.dataset.index);
@@ -1310,7 +1331,7 @@ function renderReportModal() {
         allImages.splice(index, 1);
         const container = document.getElementById('image-preview-container');
         container.innerHTML = allImages.map((base64, i) => `
-            <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8e0f0;">
+            <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
                 <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                 <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
@@ -1331,7 +1352,7 @@ function renderReportModal() {
         
         if (!note && allImages.length === 0) {
             message.textContent = '⚠️ Please add a note or at least one image.';
-            message.style.color = '#e67e22';
+            message.style.color = '#d35400';
             return;
         }
         
@@ -1350,7 +1371,7 @@ function renderReportModal() {
             scoutStatus = data;
             
             message.textContent = '✅ Report saved successfully!';
-            message.style.color = '#4caf50';
+            message.style.color = '#27ae60';
             
             setTimeout(() => {
                 currentView = currentReportTab === 'membership' ? 'membership' : 
@@ -1372,7 +1393,7 @@ function renderSessions() {
             <div style="text-align:center;padding:40px 0;">
                 <div style="font-size:64px;margin-bottom:16px;">📅</div>
                 <h3 style="color:#3d2b1f;margin-bottom:8px;font-family:'Georgia',serif;">No sessions yet</h3>
-                <p style="color:#6b5f4a;font-family:'Georgia',serif;">You haven't attended any sessions yet.</p>
+                <p style="color:#8b7a6a;font-family:'Georgia',serif;">You haven't attended any sessions yet.</p>
             </div>
         `;
         return;
@@ -1385,13 +1406,13 @@ function renderSessions() {
 
     let contentHtml = `
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
-            <div style="background:white;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
                 <div style="font-size:24px;font-weight:700;color:#6c3b8c;font-family:'Georgia',serif;">${allSessions.length}</div>
-                <div style="font-size:12px;color:#6b5f4a;font-family:'Georgia',serif;">Sessions Attended</div>
+                <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Sessions Attended</div>
             </div>
-            <div style="background:white;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
-                <div style="font-size:24px;font-weight:700;color:#27ae60;font-family:'Georgia',serif;">${totalHours}</div>
-                <div style="font-size:12px;color:#6b5f4a;font-family:'Georgia',serif;">Hours of Scouting</div>
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
+                <div style="font-size:24px;font-weight:700;color:#e67e22;font-family:'Georgia',serif;">${totalHours}</div>
+                <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Hours of Scouting</div>
             </div>
         </div>
 
@@ -1400,11 +1421,11 @@ function renderSessions() {
     
     for (const session of allSessions) {
         contentHtml += `
-            <div style="background:white;border-radius:20px;padding:16px;border:1px solid #e8dcc8;cursor:pointer;transition:transform 0.2s;border-left:4px solid #6c3b8c;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
+            <div style="background:#fcf8f0;border-radius:20px;padding:16px;border:1px solid #e8dcc8;cursor:pointer;transition:transform 0.2s;border-left:4px solid #6c3b8c;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div>
                         <div style="font-weight:600;font-size:18px;color:#3d2b1f;font-family:'Georgia',serif;">${session.name}</div>
-                        <div style="color:#6b5f4a;font-size:14px;font-family:'Georgia',serif;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
+                        <div style="color:#8b7a6a;font-size:14px;font-family:'Georgia',serif;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;font-family:'Georgia',serif;">Attended</span>
@@ -1424,7 +1445,7 @@ async function renderProfile() {
     const data = userDoc.data();
 
     if (!data) {
-        pageContent.innerHTML = `<p style="color:#6b5f4a;padding:40px;text-align:center;font-family:'Georgia',serif;">Profile not found.</p>`;
+        pageContent.innerHTML = `<p style="color:#8b7a6a;padding:40px;text-align:center;font-family:'Georgia',serif;">Profile not found.</p>`;
         return;
     }
 
@@ -1439,16 +1460,16 @@ async function renderProfile() {
     const healthLastUpdated = health.lastUpdated ? new Date(health.lastUpdated).toLocaleDateString() : 'Never';
     const healthDaysSince = health.lastUpdated ? Math.floor((new Date() - new Date(health.lastUpdated)) / (1000 * 60 * 60 * 24)) : 999;
     const healthStatus = healthDaysSince > 90 ? '⚠️ Needs update' : '✅ Up to date';
-    const healthStatusColor = healthDaysSince > 90 ? '#d45a7a' : '#27ae60';
+    const healthStatusColor = healthDaysSince > 90 ? '#d35400' : '#27ae60';
 
     let html = `
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-                <span id="profile-back" style="cursor:pointer;color:#6b5f4a;font-size:18px;font-family:'Georgia',serif;">←</span>
-                <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">My Profile</h2>
+                <span id="profile-back" style="cursor:pointer;color:#8b7a6a;font-size:18px;font-family:'Georgia',serif;">←</span>
+                <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Profile</h2>
             </div>
 
-            <div style="background:white;border-radius:24px;padding:32px;border:1px solid #e8dcc8;">
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;border:1px solid #e8dcc8;">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
                     <div style="width:80px;height:80px;background:${avatarColor};border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
                         <div style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
@@ -1456,7 +1477,7 @@ async function renderProfile() {
                     </div>
                     <div>
                         <div style="font-size:24px;font-weight:700;color:#3d2b1f;font-family:'Georgia',serif;">${fullName}</div>
-                        <div style="color:#6b5f4a;font-family:'Georgia',serif;">${patrol || 'No patrol'} · ${rank}</div>
+                        <div style="color:#8b7a6a;font-family:'Georgia',serif;">${patrol || 'No patrol'} · ${rank}</div>
                     </div>
                 </div>
 
@@ -1464,90 +1485,90 @@ async function renderProfile() {
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Full Name</label>
-                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                         <div>
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Date of Birth</label>
-                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Patrol</label>
-                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                         <div>
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Role</label>
-                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8e0f0;font-size:14px;background:#f5f0f8;color:#6b5f4a;font-family:'Georgia',serif;">
-                            <span style="font-size:12px;color:#6b5f4a;font-family:'Georgia',serif;">(Set by leader)</span>
+                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Rank</label>
-                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8e0f0;font-size:14px;background:#f5f0f8;color:#6b5f4a;font-family:'Georgia',serif;">
-                            <span style="font-size:12px;color:#6b5f4a;font-family:'Georgia',serif;">(Set by leader)</span>
+                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
+                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <div style="font-weight:600;font-size:16px;font-family:'Georgia',serif;color:#3d2b1f;">🏥 Health Information</div>
+                            <div style="font-weight:600;font-size:16px;font-family:'Georgia',serif;color:#3d2b1f;">Health Information</div>
                             <span style="font-size:12px;color:${healthStatusColor};font-family:'Georgia',serif;">${healthStatus}</span>
                         </div>
                         
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Allergies</label>
-                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medical Conditions</label>
-                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medications</label>
-                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Additional Notes</label>
-                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
-                        <div style="margin-top:8px;font-size:12px;color:#6b5f4a;font-family:'Georgia',serif;">
+                        <div style="margin-top:8px;font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">
                             Last updated: ${healthLastUpdated}
                             ${healthDaysSince > 90 ? ` ⚠️ Update needed (${healthDaysSince} days ago)` : ''}
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8e0f0;padding-top:16px;margin-top:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;font-family:'Georgia',serif;color:#3d2b1f;">📞 Emergency Contact</div>
+                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;font-family:'Georgia',serif;color:#3d2b1f;">Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Name</label>
-                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
                                 <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Phone</label>
-                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
                         <div style="margin-top:8px;">
                             <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Relation</label>
-                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d6ec;font-size:14px;font-family:'Georgia',serif;">
+                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
                     <button type="submit" style="background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;font-family:'Georgia',serif;">Save Profile</button>
                 </form>
 
-                <div id="profile-message" style="margin-top:16px;color:#6b5f4a;text-align:center;font-family:'Georgia',serif;"></div>
+                <div id="profile-message" style="margin-top:16px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
 
-                <div style="margin-top:16px;padding:12px;background:#f5f0f8;border-radius:12px;font-size:13px;color:#6b5f4a;text-align:center;font-family:'Georgia',serif;">
+                <div style="margin-top:16px;padding:12px;background:#f5ede0;border-radius:12px;font-size:13px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;">
                     Rank and Role can only be changed by your leader. Health information should be updated every 3 months.
                 </div>
             </div>
