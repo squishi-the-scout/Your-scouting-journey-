@@ -16,11 +16,12 @@ function isImageIcon(icon) {
 }
 
 // ─── HELPER: Get icon HTML ──────────────────────────────
-function getIconHtml(icon, name, size = '80px') {
+function getIconHtml(icon, name, size = '70px') {
     if (typeof icon === 'string' && isImageIcon(icon)) {
         return `<img src="${icon}" alt="${name}" style="width:${size};height:${size};object-fit:contain;display:block;margin:0 auto;">`;
     }
-    return `<span style="font-size:${size};">${icon}</span>`;
+    // Fallback: clean text-based icon
+    return `<span style="font-size:${size};font-weight:300;color:#8b7a6a;">${name.charAt(0)}</span>`;
 }
 
 // ─── State ──────────────────────────────────────────────
@@ -92,34 +93,54 @@ function openTicketModal(badge) {
     const overlay = document.createElement('div');
     overlay.className = 'ticket-modal-overlay';
 
-    const iconHtml = getIconHtml(badge.icon, badge.name, '56px');
+    const iconHtml = getIconHtml(badge.icon, badge.name, '100px');
 
     overlay.innerHTML = `
         <div class="ticket-modal">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
+            <!-- ─── HEADER: IMAGE + TEXT SIDE BY SIDE ─── -->
             <div class="badge-preview">
-                ${iconHtml}
-                <div class="info">
-                    <div class="name">${badge.name}</div>
-                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                <div class="badge-icon-wrapper">
+                    ${iconHtml}
+                </div>
+                <div class="badge-info">
+                    <div class="badge-name">${badge.name}</div>
+                    <div class="badge-type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                    <div class="badge-status">⏳ Pending</div>
                 </div>
             </div>
 
-            <label for="ticketDate">📅 Date</label>
-            <input type="date" id="ticketDate" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #b8a080;margin-bottom:12px;font-size:14px;background:#f8f0e0;box-sizing:border-box;">
+            <!-- ─── DATE & TIME ─── -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📅 Date</label>
+                    <input type="date" id="ticketDate" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div class="form-group">
+                    <label>⏰ Time</label>
+                    <input type="time" id="ticketTime" value="${new Date().toTimeString().slice(0, 5)}">
+                </div>
+            </div>
 
-            <label for="ticketTime">⏰ Time</label>
-            <input type="time" id="ticketTime" value="${new Date().toTimeString().slice(0, 5)}" style="width:100%;padding:10px;border-radius:12px;border:2px solid #b8a080;margin-bottom:12px;font-size:14px;background:#f8f0e0;box-sizing:border-box;">
-
-            <label for="ticketNote">📝 Message to your leader (optional)</label>
-            <textarea id="ticketNote" placeholder="Why do you want this badge? Any special request?"></textarea>
+            <!-- ─── NOTE ─── -->
+            <div class="form-group full-width">
+                <label>✏️ Message to your leader</label>
+                <textarea id="ticketNote" placeholder="Why do you want this badge? Any special request?"></textarea>
+            </div>
 
             <div class="modal-message" id="modalMessage"></div>
 
+            <!-- ─── BUTTONS ─── -->
             <div class="modal-actions">
                 <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
-                <button class="btn-submit" id="modalSubmitBtn">🎫 Request Badge</button>
+                <button class="btn-submit" id="modalSubmitBtn">Request Badge</button>
+            </div>
+
+            <!-- ─── FOOTER ─── -->
+            <div class="modal-footer">
+                <span class="footer-label">⏳ Status:</span>
+                <span class="footer-status pending">Pending Review</span>
             </div>
         </div>
     `;
@@ -156,7 +177,7 @@ function openTicketModal(badge) {
             const module = await import('./tickets.js');
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
-            const fullNote = `📅 ${date} at ${time}\n${note ? `📝 ${note}` : ''}`;
+            const fullNote = `📅 ${date} at ${time}\n${note ? `✏️ ${note}` : ''}`;
 
             const result = await module.createTicket(
                 currentUser.username,
@@ -184,7 +205,7 @@ function openTicketModal(badge) {
             messageEl.className = 'modal-message error';
             messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong. Try again.'}`;
             submitBtn.disabled = false;
-            submitBtn.textContent = '🎫 Request Badge';
+            submitBtn.textContent = 'Request Badge';
             cancelBtn.disabled = false;
         }
     });
@@ -200,17 +221,19 @@ function openReportModal(ticket, badge) {
     const overlay = document.createElement('div');
     overlay.className = 'report-modal-overlay';
 
-    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+    const iconHtml = getIconHtml(badge.icon, badge.name, '80px');
 
     overlay.innerHTML = `
         <div class="report-modal">
             <button class="modal-close" id="reportCloseBtn">✕</button>
 
             <div class="badge-preview">
-                ${iconHtml}
-                <div class="info">
-                    <div class="name">${badge.name}</div>
-                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                <div class="badge-icon-wrapper">
+                    ${iconHtml}
+                </div>
+                <div class="badge-info">
+                    <div class="badge-name">${badge.name}</div>
+                    <div class="badge-type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
                 </div>
             </div>
 
@@ -221,15 +244,19 @@ function openReportModal(ticket, badge) {
                 ${ticket.leaderName ? `<div style="font-size:12px;color:#6b5f4a;margin-top:4px;">Added by: ${ticket.leaderName}</div>` : ''}
             </div>
 
-            <label for="reportNote">📝 Your Report Note</label>
-            <textarea id="reportNote" placeholder="Describe what you did to complete this badge..."></textarea>
+            <div class="form-group full-width">
+                <label>✏️ Your Report Note</label>
+                <textarea id="reportNote" placeholder="Describe what you did to complete this badge..."></textarea>
+            </div>
 
-            <label style="margin-top:12px;">📸 Upload Images (max 5)</label>
-            <div id="reportDropZone" style="border:2px dashed #b8a080;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8f0e0;">
-                <div style="font-size:32px;margin-bottom:4px;">📸</div>
-                <p style="color:#6b5f4a;font-size:13px;">Drag & drop images here, or click to select</p>
-                <p style="font-size:11px;color:#8b7a6a;">Max 5 images</p>
-                <input type="file" id="reportFileInput" multiple accept="image/*" style="display:none;">
+            <div class="form-group full-width">
+                <label>📸 Upload Images (max 5)</label>
+                <div id="reportDropZone" style="border:2px dashed #b8a080;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f8f0e0;">
+                    <div style="font-size:32px;margin-bottom:4px;">📸</div>
+                    <p style="color:#6b5f4a;font-size:13px;">Drag & drop images here, or click to select</p>
+                    <p style="font-size:11px;color:#8b7a6a;">Max 5 images</p>
+                    <input type="file" id="reportFileInput" multiple accept="image/*" style="display:none;">
+                </div>
             </div>
 
             <div id="reportImagePreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
@@ -238,7 +265,7 @@ function openReportModal(ticket, badge) {
 
             <div class="modal-actions">
                 <button class="btn-cancel" id="reportCancelBtn">Cancel</button>
-                <button class="btn-submit" id="reportSubmitBtn">📤 Submit Report</button>
+                <button class="btn-submit" id="reportSubmitBtn">Submit Report</button>
             </div>
         </div>
     `;
@@ -368,7 +395,7 @@ function openReportModal(ticket, badge) {
             messageEl.className = 'modal-message error';
             messageEl.textContent = `❌ Failed: ${error.message || 'Something went wrong.'}`;
             submitBtn.disabled = false;
-            submitBtn.textContent = '📤 Submit Report';
+            submitBtn.textContent = 'Submit Report';
         }
     });
 }
@@ -388,11 +415,11 @@ function showTicketDetails(ticket, badge) {
     };
 
     const statusLabels = {
-        pending: '⏳ Waiting for Leader',
+        pending: '⏳ Pending',
         'requirements_added': '📋 Requirements Assigned',
         'report_submitted': '📤 Report Submitted',
-        approved: '✅ Approved!',
-        rejected: '❌ Not Approved',
+        approved: '✅ Approved',
+        rejected: '❌ Rejected',
         cancelled: '🚫 Cancelled'
     };
 
@@ -410,8 +437,8 @@ function showTicketDetails(ticket, badge) {
                 const parts = line.replace('📅 ', '').split(' at ');
                 requestDate = parts[0] || 'Unknown';
                 requestTime = parts[1] || 'Unknown';
-            } else if (line.startsWith('📝')) {
-                requestNote = line.replace('📝 ', '');
+            } else if (line.startsWith('✏️')) {
+                requestNote = line.replace('✏️ ', '');
             }
         }
         if (!requestNote && lines.length === 1) {
@@ -419,52 +446,54 @@ function showTicketDetails(ticket, badge) {
         }
     }
 
-    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+    const iconHtml = getIconHtml(badge.icon, badge.name, '80px');
 
     overlay.innerHTML = `
         <div class="ticket-modal ticket-detail">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
             <div class="badge-preview">
-                ${iconHtml}
-                <div class="info">
-                    <div class="name">${badge.name}</div>
-                    <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                <div class="badge-icon-wrapper">
+                    ${iconHtml}
+                </div>
+                <div class="badge-info">
+                    <div class="badge-name">${badge.name}</div>
+                    <div class="badge-type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
+                    <div class="badge-status" style="color:${statusColors[ticket.status] || '#95a5a6'};">${statusLabels[ticket.status] || ticket.status}</div>
                 </div>
             </div>
 
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:10px 14px;background:${statusColors[ticket.status] || '#95a5a6'}20;border-radius:10px;border-left:4px solid ${statusColors[ticket.status] || '#95a5a6'};">
-                <span style="font-weight:700;color:${statusColors[ticket.status] || '#95a5a6'};font-size:15px;">${statusLabels[ticket.status] || ticket.status}</span>
-                ${ticket.status === 'pending' ? `<button class="cancel-ticket-btn" data-ticket-id="${ticket.id}" style="margin-left:auto;background:#e74c3c;color:white;border:none;padding:4px 16px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:600;">Cancel Request</button>` : ''}
-                ${ticket.status === 'approved' ? `<span style="margin-left:auto;font-size:24px;">🎉</span>` : ''}
-            </div>
-
-            <div style="margin-bottom:12px;padding:10px 14px;background:#f8f0e0;border-radius:8px;">
-                <strong style="color:#3d2b1f;font-size:13px;">📅 Request Details:</strong>
-                <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">
-                    ${requestDate !== 'Unknown' ? `📅 ${requestDate} at ${requestTime}` : ''}
-                    ${requestNote ? `<br>📝 ${requestNote}` : ''}
+            <div class="details-card">
+                <div class="details-row">
+                    <span class="detail-label">📅 Requested:</span>
+                    <span class="detail-value">${requestDate !== 'Unknown' ? `${requestDate} at ${requestTime}` : 'Unknown'}</span>
                 </div>
+                ${requestNote ? `
+                    <div class="details-row">
+                        <span class="detail-label">✏️ Note:</span>
+                        <span class="detail-value">${requestNote}</span>
+                    </div>
+                ` : ''}
             </div>
 
             ${ticket.requirements ? `
-                <div style="margin-bottom:14px;padding:14px 16px;background:#d4c4a8;border-radius:10px;border:2px solid #8b6b4d;">
-                    <strong style="color:#3d2b1f;font-size:14px;display:block;margin-bottom:6px;">📋 Requirements from ${ticket.leaderName || 'Leader'}</strong>
-                    <div style="color:#3d2b1f;font-size:15px;line-height:1.5;">${ticket.requirements}</div>
+                <div class="requirements-box">
+                    <div class="requirements-label">📋 Requirements from ${ticket.leaderName || 'Leader'}</div>
+                    <div class="requirements-text">${ticket.requirements}</div>
                     ${ticket.requirementsImage ? `<img src="${ticket.requirementsImage}" style="max-width:100%;max-height:150px;margin-top:8px;border-radius:8px;">` : ''}
                     ${ticket.requirementsAddedAt ? `<div style="font-size:11px;color:#6b5f4a;margin-top:4px;">Added: ${new Date(ticket.requirementsAddedAt.seconds * 1000).toLocaleString()}</div>` : ''}
-                    ${ticket.status === 'requirements_added' ? `<button id="submitReportBtn" style="margin-top:10px;background:#8e44ad;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;">📤 Submit Report</button>` : ''}
+                    ${ticket.status === 'requirements_added' ? `<button id="submitReportBtn" style="margin-top:10px;background:#8e44ad;color:white;border:none;padding:6px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-weight:600;">Submit Report</button>` : ''}
                 </div>
             ` : `
-                <div style="margin-bottom:14px;padding:14px 16px;background:#f8f0e0;border-radius:10px;border:2px dashed #b8a080;text-align:center;">
-                    <em style="color:#8b7a6a;font-size:14px;">⏳ Your leader is reviewing this request and will assign requirements soon.</em>
+                <div class="waiting-box">
+                    <span>⏳ Your leader is reviewing this request and will assign requirements soon.</span>
                 </div>
             `}
 
             ${ticket.reportText ? `
-                <div style="margin-bottom:12px;padding:10px 14px;background:#fdf2e9;border-radius:8px;border-left:3px solid #e67e22;">
-                    <strong style="color:#3d2b1f;font-size:13px;">📤 Your Report:</strong>
-                    <div style="color:#6b5f4a;margin-top:3px;font-size:14px;">${ticket.reportText}</div>
+                <div class="report-box">
+                    <div class="report-label">📤 Your Report</div>
+                    <div class="report-text">${ticket.reportText}</div>
                     ${ticket.reportImages?.length ? `
                         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
                             ${ticket.reportImages.map(url => 
@@ -477,15 +506,18 @@ function showTicketDetails(ticket, badge) {
             ` : ''}
 
             ${ticket.decisionNote ? `
-                <div style="margin-bottom:12px;padding:10px 14px;background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};border-radius:8px;border-left:3px solid ${ticket.status === 'approved' ? '#27ae60' : '#e74c3c'};">
-                    <strong style="color:${ticket.status === 'approved' ? '#155724' : '#721c24'};font-size:13px;">${ticket.status === 'approved' ? '✅ Leader\'s Note:' : '❌ Leader\'s Note:'}</strong>
-                    <div style="color:${ticket.status === 'approved' ? '#155724' : '#721c24'};margin-top:3px;font-size:14px;">${ticket.decisionNote}</div>
+                <div class="decision-box" style="background:${ticket.status === 'approved' ? '#d4edda' : '#f8d7da'};border-left:3px solid ${ticket.status === 'approved' ? '#27ae60' : '#e74c3c'};">
+                    <div class="decision-label">${ticket.status === 'approved' ? '✅' : '❌'} Leader's Decision</div>
+                    <div class="decision-text">${ticket.decisionNote}</div>
+                    ${ticket.decidedBy ? `<div style="font-size:11px;color:#6b5f4a;margin-top:4px;">Decided by: ${ticket.decidedBy} · ${new Date(ticket.decidedAt.seconds * 1000).toLocaleString()}</div>` : ''}
                 </div>
             ` : ''}
 
-            <div style="font-size:12px;color:#8b7a6a;margin-top:12px;border-top:1px solid #d4c4a8;padding-top:10px;display:flex;justify-content:space-between;">
-                <span>Requested: ${ticket.createdAt?.seconds ? new Date(ticket.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}</span>
-                <span>Status: ${ticket.status}</span>
+            <div class="modal-footer">
+                <span class="footer-label">🆔 Ticket:</span>
+                <span class="footer-status">${ticket.id?.slice(0, 12) || 'N/A'}</span>
+                <span class="footer-label" style="margin-left:16px;">📅 Status:</span>
+                <span class="footer-status" style="color:${statusColors[ticket.status] || '#95a5a6'};">${ticket.status}</span>
             </div>
         </div>
     `;
@@ -573,37 +605,37 @@ function renderGridWithTickets(filtered) {
         if (isUnlocked) {
             slotClass += ' unlocked';
             statusEmoji = '✅';
-            statusText = 'Earned!';
-            hoverText = 'Click to view report 🎉';
+            statusText = 'Earned';
+            hoverText = 'Click to view report';
         } else if (ticketStatus === 'pending') {
             slotClass += ' ticket-pending';
             statusEmoji = '⏳';
             statusText = 'Pending';
-            hoverText = '⏳ Waiting for leader...';
+            hoverText = 'Waiting for leader...';
         } else if (ticketStatus === 'requirements_added') {
             slotClass += ' ticket-progress';
             statusEmoji = '📋';
-            statusText = 'Requirements Assigned';
-            hoverText = requirements ? `📋 ${requirements}` : '📋 Click to see requirements';
+            statusText = 'Assigned';
+            hoverText = requirements ? `${requirements}` : 'Click to see requirements';
         } else if (ticketStatus === 'report_submitted') {
             slotClass += ' ticket-review';
             statusEmoji = '📤';
-            statusText = 'Report Submitted';
-            hoverText = '📤 Waiting for leader to review your report';
+            statusText = 'Submitted';
+            hoverText = 'Waiting for leader to review';
         } else if (ticketStatus === 'rejected') {
             slotClass += ' ticket-rejected';
             statusEmoji = '❌';
             statusText = 'Rejected';
-            hoverText = '❌ Not approved. Talk to your leader.';
+            hoverText = 'Not approved. Talk to your leader.';
         } else if (ticketStatus === 'approved') {
             slotClass += ' unlocked';
             statusEmoji = '✅';
-            statusText = 'Approved!';
-            hoverText = '✅ Click to view report!';
+            statusText = 'Approved';
+            hoverText = 'Click to view report';
         } else {
             slotClass += ' locked';
             statusEmoji = '🔒';
-            statusText = 'Click to request';
+            statusText = 'Request';
             hoverText = 'Click to request this badge';
         }
 
@@ -611,15 +643,21 @@ function renderGridWithTickets(filtered) {
         slot.className = slotClass;
         slot.dataset.index = badge.id;
 
-        // ─── Icon HTML ─────────────────────────────────────────
-        const iconHtml = getIconHtml(badge.icon, badge.name, '32px');
+        // ─── Use badge color if available ──────────────────────
+        const badgeColor = badge.color || '#6b4c3a';
+
+        // ─── Add color to slot ─────────────────────────────────
+        slot.style.borderColor = isUnlocked ? '#b8860b' : badgeColor;
+        slot.style.background = isUnlocked ? '#f0e8d8' : `linear-gradient(135deg, ${badgeColor}15, ${badgeColor}05)`;
+
+        // ─── Icon HTML (bigger) ────────────────────────────────
+        const iconHtml = getIconHtml(badge.icon, badge.name, '70px');
 
         slot.innerHTML = `
             ${iconHtml}
             <span class="slot-name">${badge.name}</span>
-            <span class="slot-type">${typeLabels[badge.type] || ''}</span>
-            ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
-            ${ticket && ticket.leaderName && ticketStatus === 'requirements_added' ? `<span class="slot-type" style="font-size:7px;">by ${ticket.leaderName}</span>` : ''}
+            ${ticket && ticket.leaderName && ticketStatus === 'requirements_added' ? `<span class="slot-leader">by ${ticket.leaderName}</span>` : ''}
+            <span class="slot-status">${statusEmoji} ${statusText}</span>
             <span class="tooltip-text">${hoverText}</span>
         `;
 
@@ -830,7 +868,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
-                gap: 12px;
+                gap: 16px;
                 background: #d4c4a8;
                 padding: 16px;
                 border-radius: 16px;
@@ -844,18 +882,18 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #e8dcc8;
                 background-image: repeating-linear-gradient(45deg, rgba(120,90,60,0.05) 0px, rgba(120,90,60,0.05) 2px, transparent 2px, transparent 6px);
                 border: 2px dashed #a08060;
-                border-radius: 12px;
+                border-radius: 16px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                font-size: 28px;
                 cursor: pointer;
                 transition: all 0.25s ease;
                 position: relative;
-                padding: 6px;
+                padding: 12px 8px;
                 box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
-                min-height: 80px;
+                min-height: 100px;
+                gap: 4px;
             }
             .pouch-slot:hover {
                 transform: translateY(-4px) scale(1.02);
@@ -878,30 +916,35 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 50% { box-shadow: 0 0 25px rgba(184,134,11,0.25); }
             }
             .pouch-slot .slot-name {
-                font-size: 8px;
-                color: #6b5f4a;
-                margin-top: 3px;
+                font-size: 11px;
+                color: #3d2b1f;
                 text-align: center;
                 line-height: 1.2;
                 font-weight: 600;
                 font-family: 'Georgia', serif;
+                margin-top: 4px;
             }
-            .pouch-slot.unlocked .slot-name {
-                color: #3d2b1f;
-            }
-            .pouch-slot .slot-type {
-                font-size: 6px;
-                text-transform: uppercase;
-                color: #8b7a6a;
-                letter-spacing: 0.5px;
-                margin-top: 1px;
+            .pouch-slot .slot-leader {
+                font-size: 8px;
+                color: #6b5f4a;
                 font-family: 'Georgia', serif;
+            }
+            .pouch-slot .slot-status {
+                font-size: 9px;
+                color: #8b7a6a;
+                font-family: 'Georgia', serif;
+            }
+            .pouch-slot.locked .slot-status {
+                color: #6b5f4a;
+            }
+            .pouch-slot.unlocked .slot-status {
+                color: #b8860b;
             }
             .pouch-slot .lock-badge {
                 position: absolute;
                 top: 4px;
                 right: 6px;
-                font-size: 12px;
+                font-size: 14px;
                 opacity: 0.8;
             }
             .pouch-slot .tooltip-text {
@@ -912,9 +955,9 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 transform: translateX(-50%);
                 background: #3d2b1f;
                 color: #f2e8d5;
-                padding: 4px 14px;
+                padding: 6px 16px;
                 border-radius: 8px;
-                font-size: 10px;
+                font-size: 11px;
                 white-space: nowrap;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.4);
                 z-index: 10;
@@ -1014,7 +1057,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 border: 6px solid #6b4c3a;
                 border-radius: 24px;
                 padding: 32px;
-                max-width: 500px;
+                max-width: 560px;
                 width: 100%;
                 max-height: 90vh;
                 overflow-y: auto;
@@ -1038,63 +1081,97 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 color: #3d2b1f;
             }
 
-            .ticket-modal .badge-preview, .report-modal .badge-preview {
+            /* ─── BADGE PREVIEW (Image + Text Side by Side) ─── */
+            .badge-preview {
                 display: flex;
                 align-items: center;
-                gap: 16px;
+                gap: 24px;
+                padding: 16px 20px;
+                background: #f8f5fa;
+                border-radius: 16px;
                 margin-bottom: 20px;
-                padding-bottom: 16px;
-                border-bottom: 2px solid #d4c4a8;
             }
-            .ticket-modal .badge-preview .icon, .report-modal .badge-preview .icon {
-                font-size: 48px;
+            .badge-preview .badge-icon-wrapper {
+                flex-shrink: 0;
             }
-            .ticket-modal .badge-preview .info .name, .report-modal .badge-preview .info .name {
-                font-size: 20px;
+            .badge-preview img {
+                width: 80px !important;
+                height: 80px !important;
+                object-fit: contain;
+                display: block;
+            }
+            .badge-preview .badge-info {
+                flex: 1;
+            }
+            .badge-preview .badge-name {
+                font-size: 22px;
                 font-weight: 700;
                 color: #3d2b1f;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .badge-preview .info .type, .report-modal .badge-preview .info .type {
+            .badge-preview .badge-type {
                 font-size: 14px;
                 color: #6b5f4a;
+                font-family: 'Georgia', serif;
             }
-
-            .ticket-modal label, .report-modal label {
-                display: block;
+            .badge-preview .badge-status {
+                font-size: 13px;
                 font-weight: 600;
-                font-size: 14px;
-                color: #3d2b1f;
-                margin-bottom: 6px;
+                margin-top: 4px;
                 font-family: 'Georgia', serif;
             }
 
-            .ticket-modal textarea, .report-modal textarea {
+            /* ─── FORM ELEMENTS ─── */
+            .form-row {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 16px;
+            }
+            .form-row .form-group {
+                flex: 1;
+            }
+            .form-group.full-width {
                 width: 100%;
-                padding: 12px;
+            }
+            .form-group label {
+                display: block;
+                font-weight: 600;
+                font-size: 13px;
+                color: #3d2b1f;
+                margin-bottom: 4px;
+                font-family: 'Georgia', serif;
+            }
+            .form-group input,
+            .form-group textarea {
+                width: 100%;
+                padding: 10px 14px;
                 border: 2px solid #b8a080;
                 border-radius: 12px;
                 font-family: inherit;
                 font-size: 14px;
-                resize: vertical;
-                min-height: 80px;
-                transition: border-color 0.2s;
-                box-sizing: border-box;
                 background: #f8f0e0;
+                box-sizing: border-box;
+                transition: border-color 0.2s;
             }
-            .ticket-modal textarea:focus, .report-modal textarea:focus {
+            .form-group input:focus,
+            .form-group textarea:focus {
                 outline: none;
                 border-color: #b8860b;
             }
+            .form-group textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
 
-            .ticket-modal .modal-actions, .report-modal .modal-actions {
+            /* ─── MODAL BUTTONS ─── */
+            .modal-actions {
                 display: flex;
                 gap: 12px;
                 margin-top: 20px;
             }
-            .ticket-modal .modal-actions button, .report-modal .modal-actions button {
+            .modal-actions button {
                 flex: 1;
-                padding: 12px;
+                padding: 12px 24px;
                 border: none;
                 border-radius: 40px;
                 font-weight: 600;
@@ -1103,41 +1180,163 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 transition: all 0.2s;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .modal-actions .btn-cancel, .report-modal .modal-actions .btn-cancel {
+            .modal-actions .btn-cancel {
                 background: #d4c4a8;
                 color: #3d2b1f;
             }
-            .ticket-modal .modal-actions .btn-cancel:hover, .report-modal .modal-actions .btn-cancel:hover {
+            .modal-actions .btn-cancel:hover {
                 background: #c4a882;
             }
-            .ticket-modal .modal-actions .btn-submit, .report-modal .modal-actions .btn-submit {
+            .modal-actions .btn-submit {
                 background: #6b4c3a;
                 color: #f2e8d5;
             }
-            .ticket-modal .modal-actions .btn-submit:hover, .report-modal .modal-actions .btn-submit:hover {
+            .modal-actions .btn-submit:hover {
                 background: #8b6b4d;
             }
 
-            .ticket-modal .modal-message, .report-modal .modal-message {
+            /* ─── MODAL MESSAGE ─── */
+            .modal-message {
                 margin-top: 12px;
-                padding: 10px;
+                padding: 10px 16px;
                 border-radius: 8px;
                 font-size: 14px;
                 text-align: center;
                 display: none;
                 font-family: 'Georgia', serif;
             }
-            .ticket-modal .modal-message.success, .report-modal .modal-message.success {
+            .modal-message.success {
                 display: block;
                 background: #d4edda;
                 color: #155724;
             }
-            .ticket-modal .modal-message.error, .report-modal .modal-message.error {
+            .modal-message.error {
                 display: block;
                 background: #f8d7da;
                 color: #721c24;
             }
 
+            /* ─── MODAL FOOTER ─── */
+            .modal-footer {
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid #d4c4a8;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12px;
+                color: #6b5f4a;
+                font-family: 'Georgia', serif;
+                flex-wrap: wrap;
+            }
+            .modal-footer .footer-label {
+                font-weight: 600;
+            }
+            .modal-footer .footer-status {
+                font-weight: 500;
+            }
+            .modal-footer .footer-status.pending {
+                color: #f39c12;
+            }
+
+            /* ─── DETAILS CARD ─── */
+            .details-card {
+                background: #f8f5fa;
+                border-radius: 12px;
+                padding: 12px 16px;
+                margin-bottom: 16px;
+            }
+            .details-row {
+                display: flex;
+                gap: 8px;
+                padding: 2px 0;
+                font-size: 14px;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+            }
+            .details-row .detail-label {
+                font-weight: 600;
+                min-width: 70px;
+            }
+            .details-row .detail-value {
+                font-weight: 400;
+            }
+
+            /* ─── REQUIREMENTS BOX ─── */
+            .requirements-box {
+                background: #d4c4a8;
+                padding: 16px;
+                border-radius: 12px;
+                border-left: 4px solid #8e44ad;
+                margin-bottom: 16px;
+            }
+            .requirements-box .requirements-label {
+                font-weight: 600;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+                font-size: 13px;
+                margin-bottom: 4px;
+            }
+            .requirements-box .requirements-text {
+                color: #3d2b1f;
+                font-size: 15px;
+                line-height: 1.6;
+                font-family: 'Georgia', serif;
+            }
+
+            /* ─── WAITING BOX ─── */
+            .waiting-box {
+                background: #f8f5fa;
+                padding: 16px;
+                border-radius: 12px;
+                border: 2px dashed #b8a080;
+                text-align: center;
+                margin-bottom: 16px;
+                color: #6b5f4a;
+                font-family: 'Georgia', serif;
+                font-size: 14px;
+            }
+
+            /* ─── REPORT BOX ─── */
+            .report-box {
+                background: #fdf2e9;
+                padding: 16px;
+                border-radius: 12px;
+                border-left: 3px solid #e67e22;
+                margin-bottom: 16px;
+            }
+            .report-box .report-label {
+                font-weight: 600;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+                font-size: 13px;
+                margin-bottom: 4px;
+            }
+            .report-box .report-text {
+                color: #3d2b1f;
+                font-size: 14px;
+                line-height: 1.6;
+                font-family: 'Georgia', serif;
+            }
+
+            /* ─── DECISION BOX ─── */
+            .decision-box {
+                padding: 16px;
+                border-radius: 12px;
+                margin-bottom: 16px;
+                font-family: 'Georgia', serif;
+            }
+            .decision-box .decision-label {
+                font-weight: 600;
+                font-size: 13px;
+                margin-bottom: 4px;
+            }
+            .decision-box .decision-text {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            /* ─── DROP ZONE ─── */
             #reportDropZone {
                 border: 2px dashed #b8a080;
                 border-radius: 12px;
@@ -1148,10 +1347,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #f8f0e0;
             }
             #reportDropZone:hover {
-                border-color: #b8860b;
-                background: #f0e8d8;
-            }
-            #reportDropZone.dragover {
                 border-color: #b8860b;
                 background: #f0e8d8;
             }
@@ -1174,28 +1369,28 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
             @media (max-width: 768px) {
                 .badge-page { padding: 20px 16px; border-width: 6px; }
-                .corner-bracket { width: 24px; height: 24px; }
-                .corner-tl, .corner-bl { left: 12px; }
-                .corner-tr, .corner-br { right: 12px; }
-                .corner-tl, .corner-tr { top: 12px; }
-                .corner-bl, .corner-br { bottom: 12px; }
-                .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 12px; }
-                .pouch-slot { font-size: 22px; min-height: 70px; }
-                .pouch-slot .slot-name { font-size: 7px; }
-                .pouch-header-text h2 { font-size: 20px; padding: 6px 20px; }
-                .ticket-modal, .report-modal { padding: 24px; margin: 16px; }
+                .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 12px; }
+                .pouch-slot { min-height: 80px; padding: 8px 4px; }
+                .pouch-slot img { width: 50px !important; height: 50px !important; }
+                .ticket-modal, .report-modal { padding: 24px; margin: 16px; max-width: 100%; }
+                .badge-preview { flex-direction: column; text-align: center; gap: 12px; }
+                .badge-preview img { width: 60px !important; height: 60px !important; }
+                .form-row { flex-direction: column; gap: 12px; }
+                .modal-actions { flex-direction: column; }
             }
             @media (max-width: 500px) {
                 .badge-page { padding: 16px 12px; border-width: 4px; }
-                .pouch-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 10px; }
-                .pouch-slot { font-size: 18px; min-height: 60px; }
+                .pouch-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; }
+                .pouch-slot { min-height: 70px; padding: 6px 4px; }
+                .pouch-slot img { width: 40px !important; height: 40px !important; }
+                .pouch-slot .slot-name { font-size: 9px; }
                 .pouch-scout-card { flex-direction: column; align-items: stretch; text-align: center; }
                 .pouch-scout-card .scout-info { justify-content: center; }
                 .pouch-scout-card .badge-count { text-align: center; }
                 .pouch-filters .filter-btn { font-size: 10px; padding: 4px 12px; }
                 .pouch-header-text h2 { font-size: 18px; }
                 .ticket-modal, .report-modal { padding: 20px; }
-                .ticket-modal .modal-actions, .report-modal .modal-actions { flex-direction: column; }
+                .ticket-modal .badge-preview .badge-name { font-size: 18px; }
                 #reportDropZone { padding: 12px; }
             }
         </style>
