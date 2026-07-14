@@ -16,7 +16,7 @@ function isImageIcon(icon) {
 }
 
 // ─── HELPER: Get icon HTML ──────────────────────────────
-function getIconHtml(icon, name, size = '56px') {
+function getIconHtml(icon, name, size = '80px') {
     if (typeof icon === 'string' && isImageIcon(icon)) {
         return `<img src="${icon}" alt="${name}" style="width:${size};height:${size};object-fit:contain;display:block;margin:0 auto;">`;
     }
@@ -92,7 +92,7 @@ function openTicketModal(badge) {
     const overlay = document.createElement('div');
     overlay.className = 'ticket-modal-overlay';
 
-    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+    const iconHtml = getIconHtml(badge.icon, badge.name, '56px');
 
     overlay.innerHTML = `
         <div class="ticket-modal">
