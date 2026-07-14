@@ -98,7 +98,6 @@ function openTicketModal(badge) {
         <div class="ticket-modal">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
-            <!-- ─── HEADER: IMAGE + TEXT ─── -->
             <div class="badge-preview">
                 <div class="badge-icon-wrapper">
                     ${iconHtml}
@@ -110,7 +109,6 @@ function openTicketModal(badge) {
                 </div>
             </div>
 
-            <!-- ─── DATE & TIME ─── -->
             <div class="form-row">
                 <div class="form-group">
                     <label>📅 Date</label>
@@ -122,7 +120,6 @@ function openTicketModal(badge) {
                 </div>
             </div>
 
-            <!-- ─── NOTE ─── -->
             <div class="form-group full-width">
                 <label>✏️ Message to your leader</label>
                 <textarea id="ticketNote" placeholder="Why do you want this badge? Any special request?"></textarea>
@@ -130,7 +127,6 @@ function openTicketModal(badge) {
 
             <div class="modal-message" id="modalMessage"></div>
 
-            <!-- ─── BUTTONS ─── -->
             <div class="modal-actions">
                 <button class="btn-cancel" id="modalCancelBtn">Cancel</button>
                 <button class="btn-submit" id="modalSubmitBtn">Request Badge</button>
@@ -345,7 +341,6 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report ──────────────────────────────────────
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -393,7 +388,7 @@ function openReportModal(ticket, badge) {
     });
 }
 
-// ─── SHOW TICKET DETAILS (Scout View) ──────────────────
+// ─── SHOW TICKET DETAILS ──────────────────────────────────
 function showTicketDetails(ticket, badge) {
     const existing = document.querySelector('.ticket-modal-overlay');
     if (existing) existing.remove();
@@ -553,7 +548,7 @@ function showTicketDetails(ticket, badge) {
     }
 }
 
-// ─── Render grid ─────────────────────────────────────────────
+// ─── RENDER GRID ─────────────────────────────────────────────
 function renderGrid() {
     const grid = document.getElementById('pouchGrid');
     if (!grid) return;
@@ -586,7 +581,6 @@ function renderGridWithTickets(filtered) {
         const requirements = ticket ? ticket.requirements : null;
         const leaderName = ticket ? ticket.leaderName : null;
 
-        // ─── Determine slot style ──────────────────────────
         let slotClass = 'pouch-slot';
         let statusEmoji = '';
         let statusText = '';
@@ -634,13 +628,11 @@ function renderGridWithTickets(filtered) {
         slot.dataset.index = badge.id;
 
         // ─── ALL PROFICIENCY BADGES USE SAME BORDER COLOR ───
-        // Use badge.color for background tint, but border is always #6c3b8c (purple)
         const badgeColor = badge.type === 'proficiency' ? '#6c3b8c' : (badge.color || '#6b4c3a');
 
         slot.style.borderColor = isUnlocked ? '#b8860b' : badgeColor;
         slot.style.background = isUnlocked ? '#f0e8d8' : `linear-gradient(135deg, ${badgeColor}15, ${badgeColor}05)`;
 
-        // ─── Icon HTML ────────────────────────────────────────
         const iconHtml = getIconHtml(badge.icon, badge.name, '70px');
 
         slot.innerHTML = `
@@ -651,7 +643,6 @@ function renderGridWithTickets(filtered) {
             <span class="tooltip-text">${hoverText}</span>
         `;
 
-        // ─── Click handler ──────────────────────────────────
         slot.addEventListener('click', async () => {
             if (isUnlocked || ticketStatus === 'approved') {
                 const approvedTicket = scoutTicketsCache.find(t => 
@@ -678,7 +669,7 @@ function renderGridWithTickets(filtered) {
     });
 }
 
-// ─── Render the pouch ────────────────────────────────────
+// ─── RENDER THE POUCH ────────────────────────────────────
 export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scout', scoutRank = 'Membership') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -689,7 +680,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
 
     let html = `
         <style>
-            /* ===== BASE ===== */
             .badge-page {
                 max-width: 100%;
                 width: 100%;
@@ -780,6 +770,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             .pouch-scout-card .scout-info .scout-avatar {
                 width: 56px;
                 height: 56px;
+                image-rendering: pixelated;
                 border-radius: 50%;
                 background: #b8a080;
                 padding: 4px;
@@ -792,6 +783,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 width: 100%;
                 height: 100%;
                 object-fit: contain;
+                image-rendering: pixelated;
                 border-radius: 50%;
             }
             .pouch-scout-card .scout-info .name {
@@ -821,7 +813,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 color: #ffd700;
             }
 
-            /* ===== FILTERS ===== */
             .pouch-filters {
                 display: flex;
                 gap: 8px;
@@ -840,7 +831,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 transition: all 0.2s;
                 color: #3d2b1f;
                 font-family: 'Georgia', serif;
-                touch-action: manipulation;
             }
             .pouch-filters .filter-btn:hover {
                 background: #c4a882;
@@ -853,7 +843,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 border-color: #6b4c3a;
             }
 
-            /* ===== GRID ===== */
             .pouch-grid {
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
@@ -956,15 +945,11 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 font-weight: 500;
                 border: 1px solid #8b6b4d;
                 font-family: 'Georgia', serif;
-                max-width: 90vw;
-                white-space: normal;
-                word-wrap: break-word;
             }
             .pouch-slot:hover .tooltip-text {
                 display: block;
             }
 
-            /* ===== TICKET STATUS ON BADGES ===== */
             .pouch-slot.ticket-pending {
                 border: 2px solid #f39c12;
                 animation: pulseOrange 1.5s ease-in-out infinite;
@@ -994,7 +979,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 filter: grayscale(0.3);
             }
 
-            /* ===== ACTIONS ===== */
             .pouch-actions {
                 display: flex;
                 gap: 10px;
@@ -1006,7 +990,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 border: none;
                 border-bottom: 3px solid #3d2b1f;
                 color: #f2e8d5;
-                padding: 10px 24px;
+                padding: 8px 24px;
                 border-radius: 40px;
                 font-weight: 600;
                 font-size: 13px;
@@ -1014,8 +998,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 transition: all 0.15s;
                 font-family: 'Georgia', serif;
                 letter-spacing: 0.5px;
-                touch-action: manipulation;
-                min-height: 44px;
             }
             .pouch-actions button:hover {
                 transform: translateY(-2px);
@@ -1031,7 +1013,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #d4a017;
             }
 
-            /* ===== MODALS ===== */
             .ticket-modal-overlay, .report-modal-overlay {
                 position: fixed;
                 top: 0;
@@ -1051,7 +1032,7 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #f5ede0;
                 border: 6px solid #6b4c3a;
                 border-radius: 24px;
-                padding: 28px 32px;
+                padding: 32px;
                 max-width: 560px;
                 width: 100%;
                 max-height: 90vh;
@@ -1062,26 +1043,23 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             }
             .ticket-modal .modal-close, .report-modal .modal-close {
                 position: absolute;
-                top: 14px;
-                right: 18px;
+                top: 16px;
+                right: 20px;
                 background: none;
                 border: none;
                 font-size: 28px;
                 color: #6b5f4a;
                 cursor: pointer;
                 transition: color 0.2s;
-                padding: 4px 8px;
-                touch-action: manipulation;
             }
             .ticket-modal .modal-close:hover, .report-modal .modal-close:hover {
                 color: #3d2b1f;
             }
 
-            /* ===== BADGE PREVIEW (Image + Text Side by Side) ===== */
             .badge-preview {
                 display: flex;
                 align-items: center;
-                gap: 20px;
+                gap: 24px;
                 padding: 16px 20px;
                 background: #e8dcc8;
                 border-radius: 16px;
@@ -1099,14 +1077,12 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             }
             .badge-preview .badge-info {
                 flex: 1;
-                min-width: 0;
             }
             .badge-preview .badge-name {
-                font-size: 20px;
+                font-size: 22px;
                 font-weight: 700;
                 color: #3d2b1f;
                 font-family: 'Georgia', serif;
-                word-break: break-word;
             }
             .badge-preview .badge-type {
                 font-size: 14px;
@@ -1120,7 +1096,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 font-family: 'Georgia', serif;
             }
 
-            /* ===== FORM ELEMENTS ===== */
             .form-row {
                 display: flex;
                 gap: 16px;
@@ -1128,7 +1103,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             }
             .form-row .form-group {
                 flex: 1;
-                min-width: 0;
             }
             .form-group.full-width {
                 width: 100%;
@@ -1152,8 +1126,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #f8f0e0;
                 box-sizing: border-box;
                 transition: border-color 0.2s;
-                -webkit-appearance: none;
-                appearance: none;
             }
             .form-group input:focus,
             .form-group textarea:focus {
@@ -1165,7 +1137,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 min-height: 80px;
             }
 
-            /* ===== MODAL BUTTONS ===== */
             .modal-actions {
                 display: flex;
                 gap: 12px;
@@ -1181,8 +1152,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 cursor: pointer;
                 transition: all 0.2s;
                 font-family: 'Georgia', serif;
-                touch-action: manipulation;
-                min-height: 48px;
             }
             .modal-actions .btn-cancel {
                 background: #d4c4a8;
@@ -1199,7 +1168,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 background: #8b6b4d;
             }
 
-            /* ===== MODAL MESSAGE ===== */
             .modal-message {
                 margin-top: 12px;
                 padding: 10px 16px;
@@ -1220,7 +1188,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 color: #721c24;
             }
 
-            /* ===== MODAL FOOTER ===== */
             .modal-footer {
                 margin-top: 20px;
                 padding-top: 16px;
@@ -1243,7 +1210,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 color: #f39c12;
             }
 
-            /* ===== DETAILS CARD ===== */
             .details-card {
                 background: #e8dcc8;
                 border-radius: 12px;
@@ -1269,7 +1235,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 word-break: break-word;
             }
 
-            /* ===== REQUIREMENTS BOX ===== */
             .requirements-box {
                 background: #d4c4a8;
                 padding: 16px;
@@ -1292,7 +1257,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 word-break: break-word;
             }
 
-            /* ===== WAITING BOX ===== */
             .waiting-box {
                 background: #e8dcc8;
                 padding: 16px;
@@ -1305,7 +1269,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 font-size: 14px;
             }
 
-            /* ===== REPORT BOX ===== */
             .report-box {
                 background: #fdf2e9;
                 padding: 16px;
@@ -1328,7 +1291,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 word-break: break-word;
             }
 
-            /* ===== DECISION BOX ===== */
             .decision-box {
                 padding: 16px;
                 border-radius: 12px;
@@ -1346,7 +1308,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 word-break: break-word;
             }
 
-            /* ===== DROP ZONE ===== */
             #reportDropZone {
                 border: 2px dashed #b8a080;
                 border-radius: 12px;
@@ -1355,7 +1316,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
                 cursor: pointer;
                 transition: all 0.2s;
                 background: #f8f0e0;
-                touch-action: manipulation;
             }
             #reportDropZone:hover {
                 border-color: #b8860b;
@@ -1375,76 +1335,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
             @keyframes slideUp {
                 from { transform: translateY(20px); opacity: 0; }
                 to { transform: translateY(0); opacity: 1; }
-            }
-
-            /* ===== RESPONSIVE ===== */
-            @media (max-width: 992px) {
-                .pouch-grid { grid-template-columns: repeat(5, 1fr); gap: 14px; padding: 14px; }
-            }
-
-            @media (max-width: 768px) {
-                .badge-page { padding: 16px 12px; border-width: 6px; }
-                .pouch-grid { grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 12px; }
-                .pouch-slot { min-height: 80px; padding: 8px 4px; }
-                .pouch-slot img { width: 50px !important; height: 50px !important; }
-                .pouch-slot .slot-name { font-size: 9px; }
-                .pouch-slot .slot-status { font-size: 8px; }
-                
-                .ticket-modal, .report-modal { 
-                    padding: 20px; 
-                    margin: 10px; 
-                    max-width: 100%; 
-                    border-width: 4px;
-                }
-                .badge-preview { 
-                    flex-direction: column; 
-                    text-align: center; 
-                    gap: 12px; 
-                    padding: 14px;
-                }
-                .badge-preview img { width: 60px !important; height: 60px !important; }
-                .badge-preview .badge-name { font-size: 18px; }
-                
-                .form-row { flex-direction: column; gap: 12px; }
-                .modal-actions { flex-direction: column; }
-                .modal-actions button { width: 100%; }
-                
-                .pouch-filters .filter-btn { font-size: 10px; padding: 6px 14px; }
-                .pouch-header-text h2 { font-size: 20px; padding: 6px 20px; }
-            }
-
-            @media (max-width: 480px) {
-                .badge-page { padding: 12px 8px; border-width: 4px; }
-                .pouch-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; }
-                .pouch-slot { min-height: 70px; padding: 6px 4px; }
-                .pouch-slot img { width: 40px !important; height: 40px !important; }
-                .pouch-slot .slot-name { font-size: 8px; }
-                .pouch-slot .slot-status { font-size: 7px; }
-                .pouch-scout-card { flex-direction: column; align-items: stretch; text-align: center; }
-                .pouch-scout-card .scout-info { justify-content: center; }
-                .pouch-scout-card .badge-count { text-align: center; font-size: 12px; }
-                .pouch-filters .filter-btn { font-size: 9px; padding: 4px 10px; }
-                .pouch-header-text h2 { font-size: 16px; }
-                .pouch-actions button { font-size: 11px; padding: 8px 16px; min-height: 38px; }
-                
-                .ticket-modal, .report-modal { padding: 16px; margin: 8px; }
-                .badge-preview { padding: 12px; }
-                .badge-preview img { width: 50px !important; height: 50px !important; }
-                .badge-preview .badge-name { font-size: 16px; }
-                .form-group input, .form-group textarea { font-size: 13px; padding: 8px 12px; }
-                .modal-actions button { font-size: 13px; padding: 10px 16px; min-height: 40px; }
-                .corner-bracket { width: 20px; height: 20px; }
-                .corner-tl, .corner-bl { left: 8px; }
-                .corner-tr, .corner-br { right: 8px; }
-                .corner-tl, .corner-tr { top: 8px; }
-                .corner-bl, .corner-br { bottom: 8px; }
-            }
-
-            @media (max-width: 380px) {
-                .pouch-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
-                .pouch-slot { min-height: 60px; padding: 4px 2px; }
-                .pouch-slot img { width: 35px !important; height: 35px !important; }
-                .pouch-slot .slot-name { font-size: 7px; }
             }
         </style>
 
@@ -1539,7 +1429,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         });
     });
 
-    // ─── Reset button ────────────────────────────────────────────
     document.getElementById('pouchResetBtn')?.addEventListener('click', () => {
         if (confirm('Reset all badges? This will lock everything.')) {
             resetBadges();
@@ -1549,12 +1438,10 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         }
     });
 
-    // ─── Ticket button ───────────────────────────────────────────
     document.getElementById('pouchTicketBtn')?.addEventListener('click', () => {
         alert('🎫 Select a locked badge from the grid to request it.');
     });
 
-    // ─── Click scout for surprise ───────────────────────────────
     document.getElementById('scoutCard')?.addEventListener('click', () => {
         const locked = badgeState.filter(b => !b.unlocked);
         if (locked.length === 0) {
@@ -1569,7 +1456,6 @@ export function renderBadgePouch(containerId = 'page-content', scoutName = 'Scou
         renderGrid();
     });
 
-    // ─── INIT ──────────────────────────────────────────────────
     initAvatarAnimation();
     renderGrid();
 }
