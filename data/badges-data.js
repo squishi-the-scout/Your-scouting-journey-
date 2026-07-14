@@ -5,7 +5,7 @@ export const allBadges = [
     {
         id: 'advance-pioneer',
         name: 'Advance Pioneer',
-        icon: 'data/badge-images/advance-pioneer.png',
+        icon: 'https://squishi-the-scout.github.io/Your-scouting-journey-/data/badge-images/advance-pioneer.png',
         type: 'proficiency',
         color: '#6c3b8c',
         description: 'Master advanced pioneering skills'
