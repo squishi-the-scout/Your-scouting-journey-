@@ -1,5 +1,28 @@
 import { allBadges, typeLabels } from './data/badges-data.js';
 
+// ─── HELPER: Check if icon is an image ──────────────────
+function isImageIcon(icon) {
+    if (!icon) return false;
+    if (typeof icon === 'string') {
+        return icon.includes('.png') || 
+               icon.includes('.jpg') || 
+               icon.includes('.jpeg') || 
+               icon.includes('.svg') || 
+               icon.includes('.gif') ||
+               icon.includes('data/') ||
+               icon.includes('http');
+    }
+    return false;
+}
+
+// ─── HELPER: Get icon HTML ──────────────────────────────
+function getIconHtml(icon, name, size = '36px') {
+    if (typeof icon === 'string' && isImageIcon(icon)) {
+        return `<img src="${icon}" alt="${name}" style="width:${size};height:${size};object-fit:contain;display:block;margin:0 auto;">`;
+    }
+    return `<span style="font-size:${size};">${icon}</span>`;
+}
+
 // ─── State ──────────────────────────────────────────────
 let badgeState = [];
 let currentFilter = 'all';
@@ -69,12 +92,14 @@ function openTicketModal(badge) {
     const overlay = document.createElement('div');
     overlay.className = 'ticket-modal-overlay';
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="ticket-modal">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -175,12 +200,14 @@ function openReportModal(ticket, badge) {
     const overlay = document.createElement('div');
     overlay.className = 'report-modal-overlay';
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="report-modal">
             <button class="modal-close" id="reportCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -298,7 +325,7 @@ function openReportModal(ticket, badge) {
         });
     }
 
-    // ─── Submit report (FIXED — uses submitReport) ──────
+    // ─── Submit report ──────────────────────────────────────
     document.getElementById('reportSubmitBtn').addEventListener('click', async function() {
         const note = document.getElementById('reportNote').value.trim();
         const messageEl = document.getElementById('reportMessage');
@@ -320,7 +347,6 @@ function openReportModal(ticket, badge) {
 
             console.log(`📤 Submitting report with ${imageBase64.length} images...`);
 
-            // ─── FIXED: Use submitReport (not submitReportWithBase64) ───
             const result = await module.submitReport(
                 ticket.id,
                 note || '',
@@ -393,12 +419,14 @@ function showTicketDetails(ticket, badge) {
         }
     }
 
+    const iconHtml = getIconHtml(badge.icon, badge.name, '48px');
+
     overlay.innerHTML = `
         <div class="ticket-modal ticket-detail">
             <button class="modal-close" id="modalCloseBtn">✕</button>
 
             <div class="badge-preview">
-                <span class="icon">${badge.icon}</span>
+                ${iconHtml}
                 <div class="info">
                     <div class="name">${badge.name}</div>
                     <div class="type">${badge.type.charAt(0).toUpperCase() + badge.type.slice(1)} Badge</div>
@@ -582,8 +610,12 @@ function renderGridWithTickets(filtered) {
         const slot = document.createElement('div');
         slot.className = slotClass;
         slot.dataset.index = badge.id;
+
+        // ─── Icon HTML ─────────────────────────────────────────
+        const iconHtml = getIconHtml(badge.icon, badge.name, '32px');
+
         slot.innerHTML = `
-            <span>${badge.icon}</span>
+            ${iconHtml}
             <span class="slot-name">${badge.name}</span>
             <span class="slot-type">${typeLabels[badge.type] || ''}</span>
             ${!isUnlocked ? `<span class="lock-badge">${statusEmoji}</span>` : ''}
