@@ -64,13 +64,13 @@ function getScoutTickets() {
 // ─── HELPER: Check if icon is an image ──────────────────
 function isImageIcon(icon) {
     if (!icon) return false;
-    return icon.startsWith('data/') || 
-           icon.startsWith('http') || 
-           icon.startsWith('/') ||
-           icon.includes('.png') ||
-           icon.includes('.jpg') ||
-           icon.includes('.svg') ||
-           icon.includes('.gif');
+    return icon.includes('.png') || 
+           icon.includes('.jpg') || 
+           icon.includes('.jpeg') || 
+           icon.includes('.svg') || 
+           icon.includes('.gif') ||
+           icon.includes('data/') ||
+           icon.includes('http');
 }
 
 // ─── HELPER: Get icon HTML ──────────────────────────────
