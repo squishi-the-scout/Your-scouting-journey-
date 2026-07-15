@@ -246,25 +246,60 @@ function renderView() {
     pageContent.innerHTML = '';
     
     if (currentView === 'dashboard') {
-        // ─── Welcome bar replaces heading ──────────────────
+        // ─── Welcome bar with curved cream background ────────
         const rank = scoutData.rank || 'Membership';
         const patrol = scoutData.patrol || 'No Patrol';
-        pageHeading.innerHTML = `
-            <div style="font-family:'Georgia',serif;">
-                <div style="font-size:22px;font-weight:300;color:#2d2a1e;letter-spacing:0.5px;">
-                    ⛺ Welcome back, <span style="color:#5b2e7a;font-weight:600;">${displayName}</span>
-                </div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
-                    <span style="font-size:13px;color:#5b2e7a;background:#f5ede0;padding:4px 18px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.06);">
-                        ⚜️ ${rank}
-                    </span>
-                    <span style="font-size:13px;color:#8b7a6a;background:#f5ede0;padding:4px 18px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.06);">
-                        🦅 ${patrol}
-                    </span>
-                </div>
+        
+        // ─── Create wrapper with curved top ──────────────────
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = `
+            background: #fcf8f0;
+            border-radius: 20px;
+            border: 1px solid #e0d4c0;
+            padding: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(91,46,122,0.06);
+        `;
+        
+        // ─── Heading inside wrapper ──────────────────────────
+        const headingDiv = document.createElement('div');
+        headingDiv.style.cssText = `
+            padding: 24px 28px 12px 28px;
+            border-bottom: 1px solid #e0d4c0;
+            font-family: 'Georgia', serif;
+        `;
+        headingDiv.innerHTML = `
+            <div style="font-size:28px;font-weight:300;color:#2d2a1e;letter-spacing:0.5px;">
+                ⛺ Welcome back, <span style="color:#5b2e7a;font-weight:600;">${displayName}</span>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
+                <span style="font-size:15px;color:#5b2e7a;background:#f5ede0;padding:6px 22px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.08);font-weight:500;">
+                    ⚜️ ${rank}
+                </span>
+                <span style="font-size:15px;color:#8b7a6a;background:#f5ede0;padding:6px 22px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.08);font-weight:500;">
+                    🦅 ${patrol}
+                </span>
             </div>
         `;
+        wrapper.appendChild(headingDiv);
+        
+        // ─── Content container ────────────────────────────────
+        const contentDiv = document.createElement('div');
+        contentDiv.style.cssText = `
+            padding: 24px 28px 28px 28px;
+        `;
+        contentDiv.id = 'dashboard-content';
+        wrapper.appendChild(contentDiv);
+        
+        // ─── Replace page heading ─────────────────────────────
+        pageHeading.innerHTML = '';
+        pageHeading.appendChild(wrapper);
+        
         if (scoutSubtitle) scoutSubtitle.textContent = '';
+        
+        // ─── Render dashboard inside contentDiv ───────────────
+        renderDashboardContent(contentDiv);
+        return;
     } else if (currentView === 'membership') {
         pageHeading.textContent = 'Membership';
         if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
@@ -285,34 +320,34 @@ function renderView() {
         if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
     }
     
-    if (currentView === 'dashboard') renderDashboard();
-    else if (currentView === 'membership') {
+    // ─── Handle other views ──────────────────────────────────
+    if (currentView === 'membership') {
         if (isBadgeAccessible('membership')) {
             renderRequirements('membership', membershipRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('membership');
         }
-    }
-    else if (currentView === 'second') {
+    } else if (currentView === 'second') {
         if (isBadgeAccessible('secondClass')) {
             renderRequirements('secondClass', secondClassRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('secondClass');
         }
-    }
-    else if (currentView === 'first') {
+    } else if (currentView === 'first') {
         if (isBadgeAccessible('firstClass')) {
             renderRequirements('firstClass', firstClassRequirements);
         } else {
             pageContent.innerHTML = renderLockedMessage('firstClass');
         }
-    }
-    else if (currentView === 'badges') {
+    } else if (currentView === 'badges') {
         renderBadgeView();
+    } else if (currentView === 'sessions') {
+        renderSessions();
+    } else if (currentView === 'profile') {
+        renderProfile();
+    } else if (currentView === 'reportModal') {
+        renderReportModal();
     }
-    else if (currentView === 'sessions') renderSessions();
-    else if (currentView === 'profile') renderProfile();
-    else if (currentView === 'reportModal') renderReportModal();
 }
 
 // ─── Badge View ──────────────────────────────────────────
@@ -329,8 +364,8 @@ function renderBadgeView() {
     };
 }
 
-// ─── DASHBOARD ──────────────────────────────────────────
-function renderDashboard() {
+// ─── DASHBOARD CONTENT ──────────────────────────────────
+function renderDashboardContent(container) {
     const rank = scoutData.rank || 'Membership';
     const patrol = scoutData.patrol || 'No Patrol';
     
@@ -826,6 +861,9 @@ function renderDashboard() {
                 }
             }
             @media (max-width: 480px) {
+                #page-content {
+                    padding: 16px;
+                }
                 .card {
                     padding: 16px;
                 }
@@ -1028,6 +1066,7 @@ function renderDashboard() {
                                         <path d="M2 12l10 5 10-5"/>
                                         <path d="M12 22v-10"/>
                                         <path d="M8 7l4 2 4-2"/>
+                                        <circle cx="12" cy="12" r="3"/>
                                     </svg>
                                 ` : a.key === 'second' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1040,10 +1079,7 @@ function renderDashboard() {
                                     </svg>
                                 ` : a.key === 'badges' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="8" r="4"/>
-                                        <path d="M12 12v4"/>
-                                        <path d="M8 16h8"/>
-                                        <path d="M4 20h16"/>
+                                        <path d="M12 2L9.5 9.5L2 9.5L8 14.5L5.5 22L12 17.5L18.5 22L16 14.5L22 9.5L14.5 9.5L12 2z"/>
                                     </svg>
                                 ` : ''}
                             </div>
@@ -1059,10 +1095,10 @@ function renderDashboard() {
         </div>
     `;
 
-    pageContent.innerHTML = html;
+    container.innerHTML = html;
 
     // ─── Event listeners ──────────────────────────────────────
-    document.querySelectorAll('a[data-view]').forEach(link => {
+    container.querySelectorAll('a[data-view]').forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             currentView = this.dataset.view;
@@ -1072,11 +1108,11 @@ function renderDashboard() {
     });
 
     // ─── Clear notifications ──────────────────────────────────
-    const clearBtn = document.getElementById('clearNotifsBtn');
+    const clearBtn = container.querySelector('#clearNotifsBtn');
     if (clearBtn) {
         clearBtn.addEventListener('click', function() {
             notifications.forEach(n => n.read = true);
-            renderDashboard();
+            renderDashboardContent(container);
         });
     }
 }
