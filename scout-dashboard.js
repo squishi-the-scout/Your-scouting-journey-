@@ -459,7 +459,7 @@ function renderDashboardContent(container) {
                 max-width: 100%;
                 padding: 0;
                 font-family: 'Georgia', 'Times New Roman', serif;
-                background: #f5ede0;
+                background: #fcf8f0;
             }
 
             /* ─── STATS CARDS ─── */
