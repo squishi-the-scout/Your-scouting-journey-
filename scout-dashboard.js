@@ -1058,21 +1058,26 @@ function renderDashboardContent(container) {
                             <div class="icon-svg-wrapper">
                                 ${a.key === 'membership' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                        <path d="M2 17l10 5 10-5"/>
-                                        <path d="M2 12l10 5 10-5"/>
-                                        <path d="M12 22v-10"/>
-                                        <path d="M8 7l4 2 4-2"/>
-                                    </svg>
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                </svg>
                                 ` : a.key === 'second' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                    </svg>
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                    <path d="M12 22v-10"/>
+                                </svg>
+
                                 ` : a.key === 'first' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                    <path d="M12 22v-10"/>
+                                    <path d="M8 7l4 2 4-2"/>
+                                 </svg>
                                 ` : a.key === 'badges' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 2L9.5 9.5L2 9.5L8 14.5L5.5 22L12 17.5L18.5 22L16 14.5L22 9.5L14.5 9.5L12 2z"/>
