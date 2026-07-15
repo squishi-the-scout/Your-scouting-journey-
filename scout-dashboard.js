@@ -24,12 +24,15 @@ const sidebarAvatar = document.getElementById('sidebar-avatar');
 const pageHeading = document.getElementById('page-heading');
 
 // ─── Set user info ──────────────────────────────────────
-let displayName = currentUser.fullName || currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 
 function updateDisplayName(name) {
     displayName = name;
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
+    if (currentView === 'dashboard' && pageHeading) {
+      pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;  
+    }
 }
 
 // ─── Avatar colors ──────────────────────────────────────
@@ -245,36 +248,29 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     
-    if (currentView === 'dashboard') {
-        // ─── Welcome bar replaces heading ──────────────────
-        const rank = scoutData.rank || 'Membership';
-        const patrol = scoutData.patrol || 'No Patrol';
-        pageHeading.innerHTML = `
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:'Georgia',serif;">
-                <span style="font-size:20px;font-weight:300;color:#3d2b1f;">⛺ Welcome back, <span style="color:#6c3b8c;font-weight:600;">${displayName}</span></span>
-                <span style="font-size:12px;color:#6c3b8c;background:#f5ede0;padding:4px 14px;border-radius:40px;border:1px solid #e8dcc8;">⚜️ ${rank}</span>
-                <span style="font-size:12px;color:#8b7a6a;background:#f5ede0;padding:4px 14px;border-radius:40px;border:1px solid #e8dcc8;">🦅 ${patrol}</span>
-            </div>
-        `;
-        if (scoutSubtitle) scoutSubtitle.textContent = '';
-    } else if (currentView === 'membership') {
-        pageHeading.textContent = 'Membership';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
-    } else if (currentView === 'second') {
-        pageHeading.textContent = 'Second Class';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
-    } else if (currentView === 'first') {
-        pageHeading.textContent = 'First Class';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
-    } else if (currentView === 'badges') {
-        pageHeading.textContent = 'Badges';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
-    } else if (currentView === 'sessions') {
-        pageHeading.textContent = 'Sessions';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
-    } else if (currentView === 'profile') {
-        pageHeading.textContent = 'Profile';
-        if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
+    if (pageHeading) {
+        if (currentView === 'dashboard') {
+            pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
+        } else if (currentView === 'membership') {
+            pageHeading.textContent = 'Membership';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
+        } else if (currentView === 'second') {
+            pageHeading.textContent = 'Second Class';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
+        } else if (currentView === 'first') {
+            pageHeading.textContent = 'First Class';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
+        } else if (currentView === 'badges') {
+            pageHeading.textContent = 'Badges';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
+        } else if (currentView === 'sessions') {
+            pageHeading.textContent = 'Sessions';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
+        } else if (currentView === 'profile') {
+            pageHeading.textContent = 'Profile';
+            if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
+        }
     }
     
     if (currentView === 'dashboard') renderDashboard();
@@ -403,10 +399,10 @@ function renderDashboard() {
 
     // ─── Achievements ──────────────────────────────────────
     const achievements = [
-        { key: 'membership', label: 'Membership', earned: rank !== 'Membership' },
-        { key: 'second', label: 'Second Class', earned: rank === 'Second Class' || rank === 'First Class' },
-        { key: 'first', label: 'First Class', earned: rank === 'First Class' },
-        { key: 'badges', label: 'Badge Collector', earned: badgeCount >= 1 }
+        { key: 'membership', label: 'Membership', icon: '🏅', earned: rank !== 'Membership' },
+        { key: 'second', label: 'Second Class', icon: '⭐', earned: rank === 'Second Class' || rank === 'First Class' },
+        { key: 'first', label: 'First Class', icon: '🌟', earned: rank === 'First Class' },
+        { key: 'badges', label: 'Badge Collector', icon: '🎯', earned: badgeCount >= 1 }
     ];
 
     // ─── Build HTML ──────────────────────────────────────────
@@ -422,101 +418,59 @@ function renderDashboard() {
             /* ─── WELCOME BAR ─── */
             .welcome-bar {
                 background: #fcf8f0;
-                border-radius: 16px;
-                padding: 20px 24px;
-                margin-bottom: 20px;
+                border-radius: 20px;
+                padding: 24px 28px;
+                margin-bottom: 24px;
                 border: 1px solid #e8dcc8;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                flex-wrap: wrap;
-                gap: 12px;
             }
             .welcome-bar .greeting {
-                font-size: 20px;
-                font-weight: 300;
+                font-size: 22px;
                 color: #3d2b1f;
-                font-family: 'Georgia', serif;
+                margin-bottom: 12px;
+                font-weight: 400;
             }
             .welcome-bar .greeting span {
                 color: #6c3b8c;
                 font-weight: 600;
             }
-            .welcome-bar .pills {
-                display: flex;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-            .welcome-bar .pill {
-                font-size: 12px;
-                padding: 4px 16px;
-                border-radius: 40px;
-                background: #f5ede0;
-                border: 1px solid #e8dcc8;
-                color: #6b5f4a;
-                font-family: 'Georgia', serif;
-            }
-            .welcome-bar .pill.rank {
-                color: #6c3b8c;
-            }
-            .welcome-bar .pill.patrol {
-                color: ${patrolColor};
-            }
-
-            /* ─── STATS CARDS ─── */
-            .stats-grid {
+            .welcome-bar .stats-row {
                 display: grid;
-                grid-template-columns: 1fr 2fr 1fr;
-                gap: 20px;
-                margin-bottom: 20px;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
             }
-            .stat-card {
-                background: #fcf8f0;
-                border-radius: 16px;
-                padding: 20px;
+            .welcome-bar .stat-pill {
+                background: #f5ede0;
+                padding: 10px 16px;
+                border-radius: 40px;
                 text-align: center;
                 border: 1px solid #e8dcc8;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                transition: transform 0.2s;
             }
-            .stat-card:hover {
-                transform: translateY(-2px);
+            .welcome-bar .stat-pill .label {
+                font-size: 11px;
+                color: #8b7a6a;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
             }
-            .stat-card .number {
-                font-size: 28px;
+            .welcome-bar .stat-pill .value {
+                font-size: 15px;
                 font-weight: 700;
                 color: #3d2b1f;
-                font-family: 'Georgia', serif;
-            }
-            .stat-card .label {
-                font-size: 13px;
-                color: #8b7a6a;
-                font-family: 'Georgia', serif;
-                margin-top: 4px;
-            }
-            .stat-card .sub {
-                font-size: 12px;
-                color: #b8a080;
-                font-family: 'Georgia', serif;
                 margin-top: 2px;
             }
-            .stat-card .icon-svg {
-                width: 32px;
-                height: 32px;
-                margin-bottom: 8px;
-                stroke: #6c3b8c;
-                stroke-width: 2;
-                fill: none;
-            }
-            .stat-card.hours .icon-svg { stroke: #2d5a4a; }
-            .stat-card.badges .icon-svg { stroke: #e67e22; }
+            .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
+            .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
+            .welcome-bar .stat-pill .value.progress { color: #e67e22; }
+            .welcome-bar .stat-pill .value.badges { color: #2d5a4a; }
 
             /* ─── PROGRESS RING ─── */
+            .ring-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+                margin: 0 auto;
+            }
             .ring-wrapper {
                 position: relative;
                 width: 100px;
@@ -557,12 +511,60 @@ function renderDashboard() {
                 color: #8b7a6a;
             }
 
-            /* ─── NOTIFICATIONS ─── */
-            .notification-board {
+            /* ─── STATS CARDS ─── */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 2fr 1fr;
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+            .stat-card {
                 background: #fcf8f0;
                 border-radius: 16px;
+                padding: 20px;
+                text-align: center;
+                border: 1px solid #e8dcc8;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .stat-card .number {
+                font-size: 28px;
+                font-weight: 700;
+                color: #3d2b1f;
+                font-family: 'Georgia', serif;
+            }
+            .stat-card .label {
+                font-size: 13px;
+                color: #8b7a6a;
+                font-family: 'Georgia', serif;
+                margin-top: 4px;
+            }
+            .stat-card .sub {
+                font-size: 12px;
+                color: #b8a080;
+                font-family: 'Georgia', serif;
+                margin-top: 2px;
+            }
+            .stat-card .icon-svg {
+                width: 32px;
+                height: 32px;
+                margin-bottom: 8px;
+                stroke: #6c3b8c;
+                stroke-width: 2;
+                fill: none;
+            }
+            .stat-card.hours .icon-svg { stroke: #2d5a4a; }
+            .stat-card.badges .icon-svg { stroke: #e67e22; }
+
+            /* ─── NOTIFICATIONS ─── */
+            .notification-board {
+                background: ${hasNotifications ? '#fcf8f0' : '#fcf8f0'};
+                border-radius: 16px;
                 padding: 16px 20px;
-                margin-bottom: 20px;
+                margin-bottom: 24px;
                 border: 1px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
                 border-left: 4px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
             }
@@ -633,7 +635,7 @@ function renderDashboard() {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 20px;
-                margin-bottom: 20px;
+                margin-bottom: 24px;
             }
 
             /* ─── CARDS ─── */
@@ -643,10 +645,6 @@ function renderDashboard() {
                 padding: 20px 24px;
                 border: 1px solid #e8dcc8;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                transition: transform 0.2s;
-            }
-            .card:hover {
-                transform: translateY(-2px);
             }
             .card .card-header {
                 display: flex;
@@ -793,32 +791,19 @@ function renderDashboard() {
             .achieve-item.locked {
                 opacity: 0.5;
             }
-            .achieve-item .icon-svg-wrapper {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                margin-bottom: 4px;
-            }
-            .achieve-item .achieve-svg {
-                width: 32px;
-                height: 32px;
-                stroke: #8b7a6a;
-                stroke-width: 2;
-                fill: none;
-            }
-            .achieve-item.earned .achieve-svg {
-                stroke: #6c3b8c;
+            .achieve-item .icon {
+                font-size: 28px;
             }
             .achieve-item .label {
                 font-size: 11px;
                 color: #3d2b1f;
-                margin-top: 4px;
+                margin-top: 6px;
                 font-weight: 500;
             }
             .achieve-item .status {
                 font-size: 10px;
                 font-weight: 600;
-                margin-top: 2px;
+                margin-top: 4px;
             }
             .achieve-item .status.earned {
                 color: #6c3b8c;
@@ -850,8 +835,27 @@ function renderDashboard() {
                 .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
+                .welcome-bar .stats-row {
+                    grid-template-columns: repeat(2, 1fr);
+                }
             }
             @media (max-width: 480px) {
+                .welcome-bar {
+                    padding: 16px;
+                }
+                .welcome-bar .greeting {
+                    font-size: 18px;
+                }
+                .welcome-bar .stats-row {
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                }
+                .welcome-bar .stat-pill {
+                    padding: 8px 12px;
+                }
+                .welcome-bar .stat-pill .value {
+                    font-size: 13px;
+                }
                 .card {
                     padding: 16px;
                 }
@@ -864,25 +868,6 @@ function renderDashboard() {
                 }
                 .ring-wrapper .center-text .number {
                     font-size: 16px;
-                }
-                .stats-grid {
-                    gap: 12px;
-                }
-                .stat-card {
-                    padding: 16px;
-                }
-                .stat-card .number {
-                    font-size: 22px;
-                }
-                .two-col {
-                    gap: 12px;
-                }
-                .notification-board {
-                    padding: 12px 16px;
-                }
-                .welcome-bar {
-                    flex-direction: column;
-                    align-items: flex-start;
                 }
             }
         </style>
@@ -897,6 +882,29 @@ function renderDashboard() {
                     </linearGradient>
                 </defs>
             </svg>
+
+            <!-- ─── WELCOME BAR ─── -->
+            <div class="welcome-bar">
+                
+                <div class="stats-row">
+                    <div class="stat-pill">
+                        <div class="label">Rank</div>
+                        <div class="value rank">${rank}</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Patrol</div>
+                        <div class="value patrol">${patrol}</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Progress</div>
+                        <div class="value progress">${progress}%</div>
+                    </div>
+                    <div class="stat-pill">
+                        <div class="label">Badges</div>
+                        <div class="value badges">${badgeCount}</div>
+                    </div>
+                </div>
+            </div>
 
             <!-- ─── STATS CARDS ─── -->
             <div class="stats-grid">
@@ -922,7 +930,7 @@ function renderDashboard() {
                     </svg>
                     <div class="number">${totalHours}</div>
                     <div class="label">Scouting Hours</div>
-                    <div class="sub">${allSessions.length} sessions</div>
+                    <div class="sub">${allSessions.length} sessions attended</div>
                 </div>
 
                 <!-- Badges Earned -->
@@ -988,7 +996,7 @@ function renderDashboard() {
                         }).join('')}
                         ${activeTickets.length > 4 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${activeTickets.length - 4} more</div>` : ''}
                     ` : `
-                        <div class="empty">No active tickets</div>
+                        <div class="empty">No active tickets — all clear!</div>
                     `}
                 </div>
 
@@ -1015,7 +1023,7 @@ function renderDashboard() {
             </div>
 
             <!-- ─── ATTENDED SESSIONS ─── -->
-            <div class="card" style="margin-bottom:20px;">
+            <div class="card" style="margin-bottom:24px;">
                 <div class="card-header">
                     <span class="title">Attended Sessions</span>
                     ${attendedSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
@@ -1047,40 +1055,14 @@ function renderDashboard() {
                 <div class="achieve-grid">
                     ${achievements.map(a => `
                         <div class="achieve-item ${a.earned ? 'earned' : 'locked'}">
-                            <div class="icon-svg-wrapper">
-                                ${a.key === 'membership' ? `
-                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                                        <path d="M2 17l10 5 10-5"/>
-                                        <path d="M2 12l10 5 10-5"/>
-                                        <path d="M12 22v-10"/>
-                                        <path d="M8 7l4 2 4-2"/>
-                                    </svg>
-                                ` : a.key === 'second' ? `
-                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                    </svg>
-                                ` : a.key === 'first' ? `
-                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                                        <circle cx="12" cy="12" r="3"/>
-                                    </svg>
-                                ` : a.key === 'badges' ? `
-                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="8" r="4"/>
-                                        <path d="M12 12v4"/>
-                                        <path d="M8 16h8"/>
-                                        <path d="M4 20h16"/>
-                                    </svg>
-                                ` : ''}
-                            </div>
+                            <div class="icon">${a.icon}</div>
                             <div class="label">${a.label}</div>
                             <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? 'Earned' : 'Locked'}</div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="achieve-footer">
-                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} unlocked
+                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} achievements unlocked
                 </div>
             </div>
         </div>
