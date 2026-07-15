@@ -861,9 +861,6 @@ function renderDashboardContent(container) {
                 }
             }
             @media (max-width: 480px) {
-                #page-content {
-                    padding: 16px;
-                }
                 .card {
                     padding: 16px;
                 }
@@ -1066,7 +1063,6 @@ function renderDashboardContent(container) {
                                         <path d="M2 12l10 5 10-5"/>
                                         <path d="M12 22v-10"/>
                                         <path d="M8 7l4 2 4-2"/>
-                                        <circle cx="12" cy="12" r="3"/>
                                     </svg>
                                 ` : a.key === 'second' ? `
                                     <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
