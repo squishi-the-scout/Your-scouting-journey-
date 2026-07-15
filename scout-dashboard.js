@@ -270,14 +270,14 @@ function renderView() {
         `;
         headingDiv.innerHTML = `
             <div style="font-size:28px;font-weight:300;color:#2d2a1e;letter-spacing:0.5px;">
-                ⛺ Welcome back, <span style="color:#5b2e7a;font-weight:600;">${displayName}</span>
+                 Welcome back, <span style="color:#5b2e7a;font-weight:600;">${displayName}</span>
             </div>
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;">
                 <span style="font-size:15px;color:#5b2e7a;background:#f5ede0;padding:6px 22px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.08);font-weight:500;">
                     ⚜️ ${rank}
                 </span>
                 <span style="font-size:15px;color:#8b7a6a;background:#f5ede0;padding:6px 22px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.08);font-weight:500;">
-                    🦅 ${patrol}
+                     ${patrol}
                 </span>
             </div>
         `;
@@ -971,22 +971,22 @@ function renderDashboardContent(container) {
                 <!-- ─── ACTIVE TICKETS ─── -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="title">🎫 Active Tickets</span>
+                        <span class="title"> Active Tickets</span>
                         ${activeTickets.length > 0 ? `<a href="#" data-view="badges" class="link">View All →</a>` : ''}
                     </div>
                     ${activeTickets.length > 0 ? `
                         ${activeTickets.slice(0, 4).map(t => {
                             const statusMap = {
                                 'pending': { emoji: '⏳', label: 'Waiting' },
-                                'requirements_added': { emoji: '📋', label: 'Assigned' },
-                                'report_submitted': { emoji: '📤', label: 'Submitted' }
+                                'requirements_added': { emoji: '', label: 'Assigned' },
+                                'report_submitted': { emoji: '', label: 'Submitted' }
                             };
                             const s = statusMap[t.status] || { emoji: '📌', label: t.status };
                             return `
                                 <div class="ticket-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${t.id}'">
                                     <div class="left">
                                         <div class="info">
-                                            <div class="name">${t.badgeIcon || '🏅'} ${t.badgeName}</div>
+                                            <div class="name">${t.badgeIcon || ''} ${t.badgeName}</div>
                                             <div class="status">${s.label}</div>
                                         </div>
                                     </div>
@@ -1003,7 +1003,7 @@ function renderDashboardContent(container) {
                 <!-- ─── SESSION INVITES ─── -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="title">📅 Session Invites</span>
+                        <span class="title"> Session Invites</span>
                         ${upcomingSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
                     </div>
                     ${upcomingSessions.length > 0 ? `
@@ -1025,7 +1025,7 @@ function renderDashboardContent(container) {
             <!-- ─── ATTENDED SESSIONS ─── -->
             <div class="card" style="margin-bottom:24px;">
                 <div class="card-header">
-                    <span class="title">📋 Attended Sessions</span>
+                    <span class="title"> Attended Sessions</span>
                     ${attendedSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
                 </div>
                 ${attendedSessions.length > 0 ? `
@@ -1050,7 +1050,7 @@ function renderDashboardContent(container) {
             <!-- ─── ACHIEVEMENTS ─── -->
             <div class="card">
                 <div class="card-header">
-                    <span class="title">🏆 Achievements</span>
+                    <span class="title"> Achievements</span>
                 </div>
                 <div class="achieve-grid">
                     ${achievements.map(a => `
