@@ -24,15 +24,12 @@ const sidebarAvatar = document.getElementById('sidebar-avatar');
 const pageHeading = document.getElementById('page-heading');
 
 // ─── Set user info ──────────────────────────────────────
-let displayName = currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
+let displayName = currentUser.fullName || currentUser.username.charAt(0).toUpperCase() + currentUser.username.slice(1);
 
 function updateDisplayName(name) {
     displayName = name;
     if (scoutNameEl) scoutNameEl.textContent = name;
     if (sidebarName) sidebarName.textContent = name;
-    if (currentView === 'dashboard' && pageHeading) {
-      pageHeading.innerHTML = `<div class="greeting">⛺ Welcome back, <span>${displayName}</span></div>`;  
-    }
 }
 
 // ─── Avatar colors ──────────────────────────────────────
@@ -234,7 +231,7 @@ function renderLockedMessage(tab) {
     
     const info = messages[tab] || messages['secondClass'];
     return `
-        <div style="text-align:center;padding:60px 20px;background:#fcf8f0;border-radius:24px;border:1px solid #e8dcc8;">
+        <div style="text-align:center;padding:60px 20px;background:#fcf8f0;border-radius:24px;border:1px solid #e0d4c0;">
             <div style="font-size:48px;margin-bottom:16px;">🔒</div>
             <h2 style="color:#6b5f4a;font-family:'Georgia',serif;">${info.title}</h2>
             <p style="color:#8b7a6a;font-family:'Georgia',serif;font-size:16px;margin-top:8px;">${info.message}</p>
@@ -248,29 +245,44 @@ function renderView() {
     if (!pageContent) return;
     pageContent.innerHTML = '';
     
-    if (pageHeading) {
-        if (currentView === 'dashboard') {
-            pageHeading.innerHTML = `⛺ <span style="color:#3d2b1f;">${displayName}</span>`;
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Campsite';
-        } else if (currentView === 'membership') {
-            pageHeading.textContent = 'Membership';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
-        } else if (currentView === 'second') {
-            pageHeading.textContent = 'Second Class';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
-        } else if (currentView === 'first') {
-            pageHeading.textContent = 'First Class';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
-        } else if (currentView === 'badges') {
-            pageHeading.textContent = 'Badges';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
-        } else if (currentView === 'sessions') {
-            pageHeading.textContent = 'Sessions';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
-        } else if (currentView === 'profile') {
-            pageHeading.textContent = 'Profile';
-            if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
-        }
+    if (currentView === 'dashboard') {
+        // ─── Welcome bar replaces heading ──────────────────
+        const rank = scoutData.rank || 'Membership';
+        const patrol = scoutData.patrol || 'No Patrol';
+        pageHeading.innerHTML = `
+            <div style="font-family:'Georgia',serif;">
+                <div style="font-size:22px;font-weight:300;color:#2d2a1e;letter-spacing:0.5px;">
+                    ⛺ Welcome back, <span style="color:#5b2e7a;font-weight:600;">${displayName}</span>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;">
+                    <span style="font-size:13px;color:#5b2e7a;background:#f5ede0;padding:4px 18px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.06);">
+                        ⚜️ ${rank}
+                    </span>
+                    <span style="font-size:13px;color:#8b7a6a;background:#f5ede0;padding:4px 18px;border-radius:40px;border:1px solid #e0d4c0;box-shadow:0 2px 4px rgba(91,46,122,0.06);">
+                        🦅 ${patrol}
+                    </span>
+                </div>
+            </div>
+        `;
+        if (scoutSubtitle) scoutSubtitle.textContent = '';
+    } else if (currentView === 'membership') {
+        pageHeading.textContent = 'Membership';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Membership badge';
+    } else if (currentView === 'second') {
+        pageHeading.textContent = 'Second Class';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your Second Class badge';
+    } else if (currentView === 'first') {
+        pageHeading.textContent = 'First Class';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Earn your First Class badge';
+    } else if (currentView === 'badges') {
+        pageHeading.textContent = 'Badges';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Your badge logbook';
+    } else if (currentView === 'sessions') {
+        pageHeading.textContent = 'Sessions';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Your attended sessions';
+    } else if (currentView === 'profile') {
+        pageHeading.textContent = 'Profile';
+        if (scoutSubtitle) scoutSubtitle.textContent = 'Manage your information';
     }
     
     if (currentView === 'dashboard') renderDashboard();
@@ -389,20 +401,20 @@ function renderDashboard() {
 
     // ─── Patrol colors ──────────────────────────────────────
     const patrolColors = {
-        'Eagle': '#f1c40f',
-        'Falcon': '#3498db',
-        'Wolf': '#95a5a6',
+        'Eagle': '#d4a017',
+        'Falcon': '#2980b9',
+        'Wolf': '#7f8c8d',
         'Bear': '#8d6e63',
-        'Lion': '#e67e22'
+        'Lion': '#d35400'
     };
-    const patrolColor = patrolColors[patrol] || '#6c3b8c';
+    const patrolColor = patrolColors[patrol] || '#5b2e7a';
 
     // ─── Achievements ──────────────────────────────────────
     const achievements = [
-        { key: 'membership', label: 'Membership', icon: '🏅', earned: rank !== 'Membership' },
-        { key: 'second', label: 'Second Class', icon: '⭐', earned: rank === 'Second Class' || rank === 'First Class' },
-        { key: 'first', label: 'First Class', icon: '🌟', earned: rank === 'First Class' },
-        { key: 'badges', label: 'Badge Collector', icon: '🎯', earned: badgeCount >= 1 }
+        { key: 'membership', label: 'Membership', earned: rank !== 'Membership' },
+        { key: 'second', label: 'Second Class', earned: rank === 'Second Class' || rank === 'First Class' },
+        { key: 'first', label: 'First Class', earned: rank === 'First Class' },
+        { key: 'badges', label: 'Badge Collector', earned: badgeCount >= 1 }
     ];
 
     // ─── Build HTML ──────────────────────────────────────────
@@ -415,107 +427,11 @@ function renderDashboard() {
                 background: #f5ede0;
             }
 
-            /* ─── WELCOME BAR ─── */
-            .welcome-bar {
-                background: #fcf8f0;
-                border-radius: 20px;
-                padding: 24px 28px;
-                margin-bottom: 24px;
-                border: 1px solid #e8dcc8;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            }
-            .welcome-bar .greeting {
-                font-size: 22px;
-                color: #3d2b1f;
-                margin-bottom: 12px;
-                font-weight: 400;
-            }
-            .welcome-bar .greeting span {
-                color: #6c3b8c;
-                font-weight: 600;
-            }
-            .welcome-bar .stats-row {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 12px;
-            }
-            .welcome-bar .stat-pill {
-                background: #f5ede0;
-                padding: 10px 16px;
-                border-radius: 40px;
-                text-align: center;
-                border: 1px solid #e8dcc8;
-            }
-            .welcome-bar .stat-pill .label {
-                font-size: 11px;
-                color: #8b7a6a;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .welcome-bar .stat-pill .value {
-                font-size: 15px;
-                font-weight: 700;
-                color: #3d2b1f;
-                margin-top: 2px;
-            }
-            .welcome-bar .stat-pill .value.rank { color: #6c3b8c; }
-            .welcome-bar .stat-pill .value.patrol { color: ${patrolColor}; }
-            .welcome-bar .stat-pill .value.progress { color: #e67e22; }
-            .welcome-bar .stat-pill .value.badges { color: #2d5a4a; }
-
-            /* ─── PROGRESS RING ─── */
-            .ring-container {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                gap: 20px;
-                margin: 0 auto;
-            }
-            .ring-wrapper {
-                position: relative;
-                width: 100px;
-                height: 100px;
-            }
-            .ring-wrapper svg {
-                transform: rotate(-90deg);
-            }
-            .ring-wrapper .ring-bg {
-                fill: none;
-                stroke: #e8dcc8;
-                stroke-width: 8;
-            }
-            .ring-wrapper .ring-fill {
-                fill: none;
-                stroke: url(#progressGradient);
-                stroke-width: 8;
-                stroke-linecap: round;
-                stroke-dasharray: ${circumference};
-                stroke-dashoffset: ${offset};
-                transition: stroke-dashoffset 0.8s ease;
-            }
-            .ring-wrapper .center-text {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                text-align: center;
-                font-family: 'Georgia', serif;
-            }
-            .ring-wrapper .center-text .number {
-                font-size: 22px;
-                font-weight: 700;
-                color: #3d2b1f;
-            }
-            .ring-wrapper .center-text .label {
-                font-size: 10px;
-                color: #8b7a6a;
-            }
-
             /* ─── STATS CARDS ─── */
             .stats-grid {
                 display: grid;
                 grid-template-columns: 1fr 2fr 1fr;
-                gap: 16px;
+                gap: 20px;
                 margin-bottom: 24px;
             }
             .stat-card {
@@ -523,17 +439,22 @@ function renderDashboard() {
                 border-radius: 16px;
                 padding: 20px;
                 text-align: center;
-                border: 1px solid #e8dcc8;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                border: 1px solid #e0d4c0;
+                box-shadow: 0 2px 12px rgba(91,46,122,0.06);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+            }
+            .stat-card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 24px rgba(91,46,122,0.10);
             }
             .stat-card .number {
                 font-size: 28px;
                 font-weight: 700;
-                color: #3d2b1f;
+                color: #2d2a1e;
                 font-family: 'Georgia', serif;
             }
             .stat-card .label {
@@ -552,21 +473,65 @@ function renderDashboard() {
                 width: 32px;
                 height: 32px;
                 margin-bottom: 8px;
-                stroke: #6c3b8c;
+                stroke: #5b2e7a;
                 stroke-width: 2;
                 fill: none;
             }
             .stat-card.hours .icon-svg { stroke: #2d5a4a; }
-            .stat-card.badges .icon-svg { stroke: #e67e22; }
+            .stat-card.badges .icon-svg { stroke: #d35400; }
+
+            /* ─── PROGRESS RING ─── */
+            .ring-wrapper {
+                position: relative;
+                width: 100px;
+                height: 100px;
+            }
+            .ring-wrapper svg {
+                transform: rotate(-90deg);
+            }
+            .ring-wrapper .ring-bg {
+                fill: none;
+                stroke: #e0d4c0;
+                stroke-width: 8;
+            }
+            .ring-wrapper .ring-fill {
+                fill: none;
+                stroke: url(#progressGradient);
+                stroke-width: 8;
+                stroke-linecap: round;
+                stroke-dasharray: ${circumference};
+                stroke-dashoffset: ${offset};
+                transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+                filter: drop-shadow(0 0 6px rgba(91,46,122,0.15));
+            }
+            .ring-wrapper .center-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+                font-family: 'Georgia', serif;
+            }
+            .ring-wrapper .center-text .number {
+                font-size: 22px;
+                font-weight: 700;
+                color: #2d2a1e;
+            }
+            .ring-wrapper .center-text .label {
+                font-size: 10px;
+                color: #8b7a6a;
+            }
 
             /* ─── NOTIFICATIONS ─── */
             .notification-board {
-                background: ${hasNotifications ? '#fcf8f0' : '#fcf8f0'};
+                background: #fcf8f0;
                 border-radius: 16px;
                 padding: 16px 20px;
                 margin-bottom: 24px;
-                border: 1px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
-                border-left: 4px solid ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                border: 1px solid ${hasNotifications ? '#d35400' : '#e0d4c0'};
+                border-left: 4px solid ${hasNotifications ? '#d35400' : '#e0d4c0'};
+                box-shadow: 0 2px 12px rgba(91,46,122,0.06);
+                transition: border-color 0.3s ease;
             }
             .notification-board .notif-header {
                 display: flex;
@@ -577,10 +542,10 @@ function renderDashboard() {
             .notification-board .notif-header .title {
                 font-weight: 600;
                 font-size: 15px;
-                color: #3d2b1f;
+                color: #2d2a1e;
             }
             .notification-board .notif-header .badge {
-                background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                background: ${hasNotifications ? '#d35400' : '#e0d4c0'};
                 color: ${hasNotifications ? 'white' : '#8b7a6a'};
                 padding: 2px 12px;
                 border-radius: 20px;
@@ -595,20 +560,22 @@ function renderDashboard() {
                 border-radius: 8px;
                 background: #f5ede0;
                 font-size: 13px;
-                color: #3d2b1f;
+                color: #2d2a1e;
                 cursor: pointer;
-                transition: background 0.2s;
+                transition: background 0.2s ease;
                 margin-bottom: 4px;
+                border-left: 3px solid transparent;
             }
             .notification-board .notif-item:hover {
                 background: #e8dcc8;
+                border-left-color: #5b2e7a;
             }
             .notification-board .notif-item .time {
                 font-size: 10px;
                 color: #8b7a6a;
             }
             .notification-board .clear-btn {
-                background: ${hasNotifications ? '#e67e22' : '#e8dcc8'};
+                background: ${hasNotifications ? '#d35400' : '#e0d4c0'};
                 color: ${hasNotifications ? 'white' : '#8b7a6a'};
                 border: none;
                 padding: 4px 16px;
@@ -616,7 +583,7 @@ function renderDashboard() {
                 font-size: 12px;
                 font-weight: 600;
                 cursor: pointer;
-                transition: all 0.2s;
+                transition: all 0.2s ease;
                 margin-top: 4px;
                 float: right;
             }
@@ -643,8 +610,13 @@ function renderDashboard() {
                 background: #fcf8f0;
                 border-radius: 16px;
                 padding: 20px 24px;
-                border: 1px solid #e8dcc8;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                border: 1px solid #e0d4c0;
+                box-shadow: 0 2px 12px rgba(91,46,122,0.06);
+                transition: transform 0.25s ease, box-shadow 0.25s ease;
+            }
+            .card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 8px 24px rgba(91,46,122,0.10);
             }
             .card .card-header {
                 display: flex;
@@ -655,16 +627,18 @@ function renderDashboard() {
             .card .card-header .title {
                 font-size: 16px;
                 font-weight: 600;
-                color: #3d2b1f;
+                color: #2d2a1e;
             }
             .card .card-header .link {
                 font-size: 13px;
-                color: #6c3b8c;
+                color: #5b2e7a;
                 text-decoration: none;
                 font-weight: 500;
                 cursor: pointer;
+                transition: color 0.2s ease;
             }
             .card .card-header .link:hover {
+                color: #7d4a9e;
                 text-decoration: underline;
             }
             .card .empty {
@@ -681,9 +655,9 @@ function renderDashboard() {
                 justify-content: space-between;
                 align-items: center;
                 padding: 8px 0;
-                border-bottom: 1px solid #e8dcc8;
+                border-bottom: 1px solid #e0d4c0;
                 cursor: pointer;
-                transition: background 0.2s;
+                transition: background 0.2s ease, padding 0.2s ease, border-radius 0.2s ease;
             }
             .ticket-item:hover {
                 background: #f5ede0;
@@ -702,7 +676,7 @@ function renderDashboard() {
             .ticket-item .left .info .name {
                 font-size: 14px;
                 font-weight: 500;
-                color: #3d2b1f;
+                color: #2d2a1e;
             }
             .ticket-item .left .info .status {
                 font-size: 12px;
@@ -718,14 +692,14 @@ function renderDashboard() {
                 justify-content: space-between;
                 align-items: center;
                 padding: 6px 0;
-                border-bottom: 1px solid #e8dcc8;
+                border-bottom: 1px solid #e0d4c0;
             }
             .session-item:last-child {
                 border-bottom: none;
             }
             .session-item .left .name {
                 font-size: 13px;
-                color: #3d2b1f;
+                color: #2d2a1e;
             }
             .session-item .left .meta {
                 font-size: 12px;
@@ -747,7 +721,7 @@ function renderDashboard() {
             }
             .session-item .tag.attended {
                 background: #e8dcc8;
-                color: #6c3b8c;
+                color: #5b2e7a;
             }
             .session-item .hours {
                 font-size: 12px;
@@ -759,7 +733,7 @@ function renderDashboard() {
             .attended-footer {
                 margin-top: 12px;
                 padding-top: 12px;
-                border-top: 1px solid #e8dcc8;
+                border-top: 1px solid #e0d4c0;
                 display: flex;
                 justify-content: space-between;
                 font-size: 13px;
@@ -767,7 +741,7 @@ function renderDashboard() {
             }
             .attended-footer .total {
                 font-weight: 600;
-                color: #3d2b1f;
+                color: #2d2a1e;
             }
 
             /* ─── ACHIEVEMENTS ─── */
@@ -780,33 +754,48 @@ function renderDashboard() {
                 text-align: center;
                 padding: 16px;
                 border-radius: 12px;
-                border: 2px solid #e8dcc8;
-                transition: all 0.2s;
+                border: 2px solid #e0d4c0;
+                transition: all 0.3s ease;
                 background: #fcf8f0;
             }
             .achieve-item.earned {
-                border-color: #6c3b8c;
+                border-color: #5b2e7a;
                 background: #f5ede0;
+                box-shadow: 0 0 20px rgba(91,46,122,0.06);
             }
             .achieve-item.locked {
                 opacity: 0.5;
             }
-            .achieve-item .icon {
-                font-size: 28px;
+            .achieve-item .icon-svg-wrapper {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-bottom: 4px;
+            }
+            .achieve-item .achieve-svg {
+                width: 32px;
+                height: 32px;
+                stroke: #8b7a6a;
+                stroke-width: 2;
+                fill: none;
+                transition: stroke 0.3s ease;
+            }
+            .achieve-item.earned .achieve-svg {
+                stroke: #5b2e7a;
             }
             .achieve-item .label {
                 font-size: 11px;
-                color: #3d2b1f;
-                margin-top: 6px;
+                color: #2d2a1e;
+                margin-top: 4px;
                 font-weight: 500;
             }
             .achieve-item .status {
                 font-size: 10px;
                 font-weight: 600;
-                margin-top: 4px;
+                margin-top: 2px;
             }
             .achieve-item .status.earned {
-                color: #6c3b8c;
+                color: #5b2e7a;
             }
             .achieve-item .status.locked {
                 color: #8b7a6a;
@@ -815,13 +804,13 @@ function renderDashboard() {
                 text-align: center;
                 margin-top: 12px;
                 padding-top: 12px;
-                border-top: 1px solid #e8dcc8;
+                border-top: 1px solid #e0d4c0;
                 font-size: 13px;
                 color: #8b7a6a;
             }
             .achieve-footer .count {
                 font-weight: 600;
-                color: #6c3b8c;
+                color: #5b2e7a;
             }
 
             /* ─── RESPONSIVE ─── */
@@ -835,27 +824,8 @@ function renderDashboard() {
                 .achieve-grid {
                     grid-template-columns: repeat(2, 1fr);
                 }
-                .welcome-bar .stats-row {
-                    grid-template-columns: repeat(2, 1fr);
-                }
             }
             @media (max-width: 480px) {
-                .welcome-bar {
-                    padding: 16px;
-                }
-                .welcome-bar .greeting {
-                    font-size: 18px;
-                }
-                .welcome-bar .stats-row {
-                    grid-template-columns: 1fr 1fr;
-                    gap: 8px;
-                }
-                .welcome-bar .stat-pill {
-                    padding: 8px 12px;
-                }
-                .welcome-bar .stat-pill .value {
-                    font-size: 13px;
-                }
                 .card {
                     padding: 16px;
                 }
@@ -869,6 +839,24 @@ function renderDashboard() {
                 .ring-wrapper .center-text .number {
                     font-size: 16px;
                 }
+                .stats-grid {
+                    gap: 12px;
+                }
+                .stat-card {
+                    padding: 16px;
+                }
+                .stat-card .number {
+                    font-size: 22px;
+                }
+                .two-col {
+                    gap: 12px;
+                }
+                .notification-board {
+                    padding: 12px 16px;
+                }
+                .notification-board .notif-item {
+                    flex-wrap: wrap;
+                }
             }
         </style>
 
@@ -877,34 +865,11 @@ function renderDashboard() {
             <svg width="0" height="0">
                 <defs>
                     <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" style="stop-color:#6c3b8c;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#e67e22;stop-opacity:1" />
+                        <stop offset="0%" style="stop-color:#5b2e7a;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#d35400;stop-opacity:1" />
                     </linearGradient>
                 </defs>
             </svg>
-
-            <!-- ─── WELCOME BAR ─── -->
-            <div class="welcome-bar">
-                
-                <div class="stats-row">
-                    <div class="stat-pill">
-                        <div class="label">Rank</div>
-                        <div class="value rank">${rank}</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Patrol</div>
-                        <div class="value patrol">${patrol}</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Progress</div>
-                        <div class="value progress">${progress}%</div>
-                    </div>
-                    <div class="stat-pill">
-                        <div class="label">Badges</div>
-                        <div class="value badges">${badgeCount}</div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ─── STATS CARDS ─── -->
             <div class="stats-grid">
@@ -930,7 +895,7 @@ function renderDashboard() {
                     </svg>
                     <div class="number">${totalHours}</div>
                     <div class="label">Scouting Hours</div>
-                    <div class="sub">${allSessions.length} sessions attended</div>
+                    <div class="sub">${allSessions.length} sessions</div>
                 </div>
 
                 <!-- Badges Earned -->
@@ -947,14 +912,14 @@ function renderDashboard() {
             <!-- ─── NOTIFICATIONS ─── -->
             <div class="notification-board">
                 <div class="notif-header">
-                    <span class="title">Notifications</span>
+                    <span class="title">🔔 Notifications</span>
                     <span class="badge">${unreadNotifications.length} new</span>
                 </div>
                 ${notifications.length > 0 ? `
                     ${notifications.slice(0, 3).map(n => `
                         <div class="notif-item" onclick="window.location.href='report-viewer-ticket.html?ticketId=${n.ticketId}'">
                             <span>${n.message}</span>
-                            <span class="time">${n.read ? 'Read' : 'New'}</span>
+                            <span class="time">${n.read ? '✓ Read' : '● New'}</span>
                         </div>
                     `).join('')}
                     ${notifications.length > 3 ? `<div style="text-align:center;padding:4px;font-size:12px;color:#8b7a6a;">+${notifications.length - 3} more</div>` : ''}
@@ -962,7 +927,7 @@ function renderDashboard() {
                         <button class="clear-btn" id="clearNotifsBtn">Mark All Read</button>
                     ` : ''}
                 ` : `
-                    <div class="empty">No new notifications</div>
+                    <div class="empty">No new notifications ✨</div>
                 `}
             </div>
 
@@ -971,7 +936,7 @@ function renderDashboard() {
                 <!-- ─── ACTIVE TICKETS ─── -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="title">Active Tickets</span>
+                        <span class="title">🎫 Active Tickets</span>
                         ${activeTickets.length > 0 ? `<a href="#" data-view="badges" class="link">View All →</a>` : ''}
                     </div>
                     ${activeTickets.length > 0 ? `
@@ -1003,7 +968,7 @@ function renderDashboard() {
                 <!-- ─── SESSION INVITES ─── -->
                 <div class="card">
                     <div class="card-header">
-                        <span class="title">Session Invites</span>
+                        <span class="title">📅 Session Invites</span>
                         ${upcomingSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
                     </div>
                     ${upcomingSessions.length > 0 ? `
@@ -1025,7 +990,7 @@ function renderDashboard() {
             <!-- ─── ATTENDED SESSIONS ─── -->
             <div class="card" style="margin-bottom:24px;">
                 <div class="card-header">
-                    <span class="title">Attended Sessions</span>
+                    <span class="title">📋 Attended Sessions</span>
                     ${attendedSessions.length > 0 ? `<a href="#" data-view="sessions" class="link">View All →</a>` : ''}
                 </div>
                 ${attendedSessions.length > 0 ? `
@@ -1050,19 +1015,45 @@ function renderDashboard() {
             <!-- ─── ACHIEVEMENTS ─── -->
             <div class="card">
                 <div class="card-header">
-                    <span class="title">Achievements</span>
+                    <span class="title">🏆 Achievements</span>
                 </div>
                 <div class="achieve-grid">
                     ${achievements.map(a => `
                         <div class="achieve-item ${a.earned ? 'earned' : 'locked'}">
-                            <div class="icon">${a.icon}</div>
+                            <div class="icon-svg-wrapper">
+                                ${a.key === 'membership' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                        <path d="M2 17l10 5 10-5"/>
+                                        <path d="M2 12l10 5 10-5"/>
+                                        <path d="M12 22v-10"/>
+                                        <path d="M8 7l4 2 4-2"/>
+                                    </svg>
+                                ` : a.key === 'second' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                    </svg>
+                                ` : a.key === 'first' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                ` : a.key === 'badges' ? `
+                                    <svg class="achieve-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="8" r="4"/>
+                                        <path d="M12 12v4"/>
+                                        <path d="M8 16h8"/>
+                                        <path d="M4 20h16"/>
+                                    </svg>
+                                ` : ''}
+                            </div>
                             <div class="label">${a.label}</div>
-                            <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? 'Earned' : 'Locked'}</div>
+                            <div class="status ${a.earned ? 'earned' : 'locked'}">${a.earned ? '✅ Earned' : '🔒 Locked'}</div>
                         </div>
                     `).join('')}
                 </div>
                 <div class="achieve-footer">
-                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} achievements unlocked
+                    <span class="count">${achievements.filter(a => a.earned).length}</span> of ${achievements.length} unlocked
                 </div>
             </div>
         </div>
@@ -1104,12 +1095,12 @@ function renderRequirements(tab, reqs) {
 
     let html = `
         <div style="margin-bottom:20px;">
-            <div style="display:flex;justify-content:space-between;font-size:14px;color:#3d2b1f;font-family:'Georgia',serif;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#2d2a1e;font-family:'Georgia',serif;margin-bottom:8px;">
                 <span>Progress</span>
                 <span>${completed}/${total}</span>
             </div>
-            <div style="background:#e8dcc8;border-radius:20px;height:10px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
-                <div style="background:linear-gradient(90deg,#6c3b8c,#e67e22);height:100%;width:${progress}%;border-radius:20px;transition:width 0.8s ease;"></div>
+            <div style="background:#e0d4c0;border-radius:20px;height:10px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,0.05);">
+                <div style="background:linear-gradient(90deg,#5b2e7a,#d35400);height:100%;width:${progress}%;border-radius:20px;transition:width 0.8s ease;"></div>
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -1124,7 +1115,7 @@ function renderRequirements(tab, reqs) {
                 } else if (status === 'pending') {
                     statusPill = `<span style="background:#fde8d0;color:#d35400;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" data-req="${req.name}" data-tab="${tab}">Pending</span>`;
                 } else {
-                    statusPill = `<button style="background:#e67e22;color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
+                    statusPill = `<button style="background:#d35400;color:white;border:none;padding:4px 16px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;font-family:'Georgia',serif;" class="ready-btn" data-req="${req.name}" data-tab="${tab}">Mark Ready</button>`;
                 }
                 
                 let approvedInfo = '';
@@ -1139,19 +1130,19 @@ function renderRequirements(tab, reqs) {
                 
                 let reportBtn = '';
                 if (hasReport) {
-                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#6c3b8c;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
+                    reportBtn = `<a href="report-viewer.html?email=${userDocId}&tab=${tab}&req=${encodeURIComponent(req.name)}" style="background:#5b2e7a;color:white;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;text-decoration:none;display:inline-block;font-family:'Georgia',serif;">View Report</a>`;
                 } else {
-                    reportBtn = `<button style="background:#e8dcc8;color:#3d2b1f;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
+                    reportBtn = `<button style="background:#e0d4c0;color:#2d2a1e;border:none;padding:4px 12px;border-radius:40px;font-size:12px;cursor:pointer;font-weight:500;font-family:'Georgia',serif;" class="report-btn no-report" data-req="${req.name}" data-tab="${tab}">Add Report</button>`;
                 }
                 
                 return `
-                    <div style="background:#fcf8f0;border-radius:16px;padding:16px 20px;border-left:4px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#e67e22' : '#e8dcc8'};">
+                    <div style="background:#fcf8f0;border-radius:16px;padding:16px 20px;border-left:4px solid ${status === 'approved' ? '#27ae60' : status === 'pending' ? '#d35400' : '#e0d4c0'};">
                         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-                            <span style="font-weight:600;font-size:14px;color:#3d2b1f;font-family:'Georgia',serif;">${req.id}. ${req.name}</span>
+                            <span style="font-weight:600;font-size:14px;color:#2d2a1e;font-family:'Georgia',serif;">${req.id}. ${req.name}</span>
                             ${statusPill}
                         </div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
-                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" style="font-size:12px;color:#6c3b8c;text-decoration:underline;cursor:pointer;font-family:'Georgia',serif;">Notes</a>
+                            <a href="requirement-detail.html?name=${encodeURIComponent(req.name)}&tab=${tab}" style="font-size:12px;color:#5b2e7a;text-decoration:underline;cursor:pointer;font-family:'Georgia',serif;">Notes</a>
                             ${reportBtn}
                         </div>
                         ${approvedInfo}
@@ -1206,21 +1197,21 @@ function renderReportModal() {
 
     let html = `
         <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;">
-            <div style="background:#fcf8f0;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid #e8dcc8;">
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;border:1px solid #e0d4c0;">
                 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                    <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Report: ${currentReportReq}</h2>
+                    <h2 style="color:#2d2a1e;margin:0;font-family:'Georgia',serif;">Report: ${currentReportReq}</h2>
                     <button id="close-report-modal" style="background:none;border:none;font-size:28px;cursor:pointer;color:#8b7a6a;">×</button>
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Your Report Note</label>
-                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e8dcc8;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;background:#f5ede0;">${report.note || ''}</textarea>
+                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#2d2a1e;">Your Report Note</label>
+                    <textarea id="report-note" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e0d4c0;font-family:inherit;font-size:14px;min-height:100px;resize:vertical;background:#f5ede0;">${report.note || ''}</textarea>
                 </div>
                 
                 <div style="margin-bottom:16px;">
-                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#3d2b1f;">Upload Images</label>
-                    <div id="drop-zone" style="border:2px dashed #e8dcc8;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f5ede0;">
+                    <label style="font-weight:600;display:block;margin-bottom:6px;font-family:'Georgia',serif;color:#2d2a1e;">Upload Images</label>
+                    <div id="drop-zone" style="border:2px dashed #e0d4c0;border-radius:12px;padding:30px;text-align:center;cursor:pointer;transition:all 0.2s;background:#f5ede0;">
                         <div style="font-size:40px;margin-bottom:8px;">📸</div>
                         <p style="color:#8b7a6a;">Drag & drop images here, or click to select</p>
                         <p style="font-size:12px;color:#8b7a6a;">Images will be compressed to ~100-200KB (max 5 images)</p>
@@ -1230,7 +1221,7 @@ function renderReportModal() {
                 
                 <div id="image-preview-container" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
                     ${allImages.map((base64, index) => `
-                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
+                        <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e0d4c0;">
                             <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                             <button class="remove-image" data-index="${index}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
                         </div>
@@ -1238,8 +1229,8 @@ function renderReportModal() {
                 </div>
                 
                 <div style="display:flex;gap:12px;margin-top:16px;">
-                    <button id="save-report" style="flex:1;background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Save Report</button>
-                    <button id="cancel-report" style="flex:1;background:#e8dcc8;color:#3d2b1f;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
+                    <button id="save-report" style="flex:1;background:#5b2e7a;color:white;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Save Report</button>
+                    <button id="cancel-report" style="flex:1;background:#e0d4c0;color:#2d2a1e;border:none;padding:12px 24px;border-radius:40px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Georgia',serif;">Cancel</button>
                 </div>
                 
                 <div id="report-message" style="margin-top:12px;font-size:14px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
@@ -1267,16 +1258,16 @@ function renderReportModal() {
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
-        dropZone.style.borderColor = '#6c3b8c';
+        dropZone.style.borderColor = '#5b2e7a';
         dropZone.style.background = '#f5ede0';
     });
     dropZone.addEventListener('dragleave', () => {
-        dropZone.style.borderColor = '#e8dcc8';
+        dropZone.style.borderColor = '#e0d4c0';
         dropZone.style.background = '#f5ede0';
     });
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
-        dropZone.style.borderColor = '#e8dcc8';
+        dropZone.style.borderColor = '#e0d4c0';
         dropZone.style.background = '#f5ede0';
         handleFiles(e.dataTransfer.files);
     });
@@ -1304,7 +1295,7 @@ function renderReportModal() {
                 allImages.push(base64);
                 
                 const imgDiv = document.createElement('div');
-                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;';
+                imgDiv.style.cssText = 'position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e0d4c0;';
                 imgDiv.innerHTML = `
                     <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                     <button class="remove-image" data-index="${allImages.length - 1}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
@@ -1331,7 +1322,7 @@ function renderReportModal() {
         allImages.splice(index, 1);
         const container = document.getElementById('image-preview-container');
         container.innerHTML = allImages.map((base64, i) => `
-            <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e8dcc8;">
+            <div style="position:relative;width:100px;height:100px;border-radius:12px;overflow:hidden;border:2px solid #e0d4c0;">
                 <img src="${base64}" style="width:100%;height:100%;object-fit:cover;">
                 <button class="remove-image" data-index="${i}" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.6);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
@@ -1392,7 +1383,7 @@ function renderSessions() {
         pageContent.innerHTML = `
             <div style="text-align:center;padding:40px 0;">
                 <div style="font-size:64px;margin-bottom:16px;">📅</div>
-                <h3 style="color:#3d2b1f;margin-bottom:8px;font-family:'Georgia',serif;">No sessions yet</h3>
+                <h3 style="color:#2d2a1e;margin-bottom:8px;font-family:'Georgia',serif;">No sessions yet</h3>
                 <p style="color:#8b7a6a;font-family:'Georgia',serif;">You haven't attended any sessions yet.</p>
             </div>
         `;
@@ -1406,12 +1397,12 @@ function renderSessions() {
 
     let contentHtml = `
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
-            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
-                <div style="font-size:24px;font-weight:700;color:#6c3b8c;font-family:'Georgia',serif;">${allSessions.length}</div>
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e0d4c0;">
+                <div style="font-size:24px;font-weight:700;color:#5b2e7a;font-family:'Georgia',serif;">${allSessions.length}</div>
                 <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Sessions Attended</div>
             </div>
-            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e8dcc8;">
-                <div style="font-size:24px;font-weight:700;color:#e67e22;font-family:'Georgia',serif;">${totalHours}</div>
+            <div style="background:#fcf8f0;border-radius:16px;padding:12px;text-align:center;border:1px solid #e0d4c0;">
+                <div style="font-size:24px;font-weight:700;color:#d35400;font-family:'Georgia',serif;">${totalHours}</div>
                 <div style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">Hours of Scouting</div>
             </div>
         </div>
@@ -1421,15 +1412,15 @@ function renderSessions() {
     
     for (const session of allSessions) {
         contentHtml += `
-            <div style="background:#fcf8f0;border-radius:20px;padding:16px;border:1px solid #e8dcc8;cursor:pointer;transition:transform 0.2s;border-left:4px solid #6c3b8c;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
+            <div style="background:#fcf8f0;border-radius:20px;padding:16px;border:1px solid #e0d4c0;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;border-left:4px solid #5b2e7a;" onclick="window.location.href='session-detail-scout.html?id=${session.id}'">
                 <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
                     <div>
-                        <div style="font-weight:600;font-size:18px;color:#3d2b1f;font-family:'Georgia',serif;">${session.name}</div>
+                        <div style="font-weight:600;font-size:18px;color:#2d2a1e;font-family:'Georgia',serif;">${session.name}</div>
                         <div style="color:#8b7a6a;font-size:14px;font-family:'Georgia',serif;">${session.date} · ${session.time} · ${session.location || 'TBD'}</div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="background:#d4edda;color:#155724;padding:2px 10px;border-radius:12px;font-size:12px;font-family:'Georgia',serif;">Attended</span>
-                        <span style="font-size:14px;font-weight:600;color:#6c3b8c;font-family:'Georgia',serif;">${session.duration || 0}h</span>
+                        <span style="font-size:14px;font-weight:600;color:#5b2e7a;font-family:'Georgia',serif;">${session.duration || 0}h</span>
                     </div>
                 </div>
             </div>
@@ -1466,17 +1457,17 @@ async function renderProfile() {
         <div style="max-width:600px;margin:0 auto;">
             <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
                 <span id="profile-back" style="cursor:pointer;color:#8b7a6a;font-size:18px;font-family:'Georgia',serif;">←</span>
-                <h2 style="color:#3d2b1f;margin:0;font-family:'Georgia',serif;">Profile</h2>
+                <h2 style="color:#2d2a1e;margin:0;font-family:'Georgia',serif;">Profile</h2>
             </div>
 
-            <div style="background:#fcf8f0;border-radius:24px;padding:32px;border:1px solid #e8dcc8;">
+            <div style="background:#fcf8f0;border-radius:24px;padding:32px;border:1px solid #e0d4c0;">
                 <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
                     <div style="width:80px;height:80px;background:${avatarColor};border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
                         <div style="width:24px;height:24px;border-radius:50%;background:white;position:absolute;top:16px;"></div>
                         <div style="width:38px;height:22px;border-radius:50% 50% 0 0;background:white;position:absolute;bottom:14px;"></div>
                     </div>
                     <div>
-                        <div style="font-size:24px;font-weight:700;color:#3d2b1f;font-family:'Georgia',serif;">${fullName}</div>
+                        <div style="font-size:24px;font-weight:700;color:#2d2a1e;font-family:'Georgia',serif;">${fullName}</div>
                         <div style="color:#8b7a6a;font-family:'Georgia',serif;">${patrol || 'No patrol'} · ${rank}</div>
                     </div>
                 </div>
@@ -1484,59 +1475,59 @@ async function renderProfile() {
                 <form id="profile-form">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Full Name</label>
-                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Full Name</label>
+                            <input type="text" id="profile-fullname" value="${fullName}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Date of Birth</label>
-                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Date of Birth</label>
+                            <input type="date" id="profile-dob" value="${dob}" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Patrol</label>
-                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Patrol</label>
+                            <input type="text" id="profile-patrol" value="${patrol}" placeholder="e.g., Eagle" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Role</label>
-                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Role</label>
+                            <input type="text" id="profile-role" value="${role}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
                             <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
                         </div>
                     </div>
 
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
                         <div>
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Rank</label>
-                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Rank</label>
+                            <input type="text" id="profile-rank" value="${rank}" disabled style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;background:#f5ede0;color:#8b7a6a;font-family:'Georgia',serif;">
                             <span style="font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">(Set by leader)</span>
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
+                    <div style="border-top:1px solid #e0d4c0;padding-top:16px;margin-top:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <div style="font-weight:600;font-size:16px;font-family:'Georgia',serif;color:#3d2b1f;">Health Information</div>
+                            <div style="font-weight:600;font-size:16px;font-family:'Georgia',serif;color:#2d2a1e;">Health Information</div>
                             <span style="font-size:12px;color:${healthStatusColor};font-family:'Georgia',serif;">${healthStatus}</span>
                         </div>
                         
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Allergies</label>
-                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Allergies</label>
+                                <input type="text" id="health-allergies" value="${health.allergies || ''}" placeholder="e.g., Peanuts, Shellfish" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medical Conditions</label>
-                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medical Conditions</label>
+                                <input type="text" id="health-conditions" value="${health.conditions || ''}" placeholder="e.g., Asthma, Diabetes" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;">
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medications</label>
-                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Medications</label>
+                                <input type="text" id="health-medications" value="${health.medications || ''}" placeholder="e.g., Inhaler" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Additional Notes</label>
-                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-size:13px;font-family:'Georgia',serif;">Additional Notes</label>
+                                <input type="text" id="health-notes" value="${health.notes || ''}" placeholder="e.g., Carry inhaler at all times" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
                         <div style="margin-top:8px;font-size:12px;color:#8b7a6a;font-family:'Georgia',serif;">
@@ -1545,25 +1536,25 @@ async function renderProfile() {
                         </div>
                     </div>
 
-                    <div style="border-top:1px solid #e8dcc8;padding-top:16px;margin-top:16px;">
-                        <div style="font-weight:600;margin-bottom:8px;font-family:'Georgia',serif;color:#3d2b1f;">Emergency Contact</div>
+                    <div style="border-top:1px solid #e0d4c0;padding-top:16px;margin-top:16px;">
+                        <div style="font-weight:600;margin-bottom:8px;font-family:'Georgia',serif;color:#2d2a1e;">Emergency Contact</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Name</label>
-                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Name</label>
+                                <input type="text" id="profile-emergency-name" value="${emergency.name || ''}" placeholder="Full name" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                             <div>
-                                <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Phone</label>
-                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                                <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Phone</label>
+                                <input type="text" id="profile-emergency-phone" value="${emergency.phone || ''}" placeholder="+960 777-1234" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                             </div>
                         </div>
                         <div style="margin-top:8px;">
-                            <label style="font-weight:500;color:#3d2b1f;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Relation</label>
-                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e8dcc8;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
+                            <label style="font-weight:500;color:#2d2a1e;display:block;margin-bottom:4px;font-family:'Georgia',serif;">Relation</label>
+                            <input type="text" id="profile-emergency-relation" value="${emergency.relation || ''}" placeholder="e.g., Father, Mother, Guardian" style="width:100%;padding:10px;border-radius:12px;border:1px solid #e0d4c0;font-size:14px;font-family:'Georgia',serif;background:#f5ede0;">
                         </div>
                     </div>
 
-                    <button type="submit" style="background:#6c3b8c;color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;font-family:'Georgia',serif;">Save Profile</button>
+                    <button type="submit" style="background:#5b2e7a;color:white;border:none;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;width:100%;margin-top:16px;font-family:'Georgia',serif;">Save Profile</button>
                 </form>
 
                 <div id="profile-message" style="margin-top:16px;color:#8b7a6a;text-align:center;font-family:'Georgia',serif;"></div>
